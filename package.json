@@ -1,0 +1,30 @@
+{
+  "name": "macro-tracker-and-planner",
+  "version": "1.0.0",
+  "description": "A React application for tracking and planning nutritional macros (proteins, carbs, fats) with multi-user support.",
+  "main": "index.js",
+  "scripts": {
+    "start": "cd client && npm start",
+    "build": "cd client && npm run build:win",
+    "deploy": "firebase deploy",
+    "deploy:rules": "firebase deploy --only firestore:rules",
+    "deploy:rules:win": "powershell -ExecutionPolicy Bypass -File .\\Deploy-Rules.ps1",
+    "test:rules": "powershell -ExecutionPolicy Bypass -File .\\rules-test\\Run-Tests.ps1",
+    "emulator": "firebase emulators:start",
+    "setup:rules": "node securityRulesSetup.js",
+    "test:indexes": "node indexTester.js"
+  },
+  "keywords": [
+    "react",
+    "firebase",
+    "nutrition",
+    "macros",
+    "tracker"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "dotenv": "^17.2.3",
+    "firebase-tools": "^12.9.1"
+  }
+}

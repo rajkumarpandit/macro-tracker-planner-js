@@ -1,0 +1,37 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "daily_food_log",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "date_eaten", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "daily_food_log", 
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "date_eaten", "order": "ASCENDING" },
+        { "fieldPath": "userId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "daily_food_log",
+      "queryScope": "COLLECTION", 
+      "fields": [
+        { "fieldPath": "userId", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "date_eaten", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "daily_food_log",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "date_eaten", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
