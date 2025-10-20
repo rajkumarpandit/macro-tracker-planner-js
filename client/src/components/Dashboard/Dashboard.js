@@ -21,23 +21,28 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase/firebase';
 import { format } from 'date-fns';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
+import { useAuth } from '../Auth/AuthContext';
 
 function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [dailyLogs, setDailyLogs] = useState([]);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { currentUser } = useAuth();
   
   // Get today's date in YYYY-MM-DD format
   const today = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
 
   useEffect(() => {
     const fetchTodayLogs = async () => {
+      if (!currentUser) return;
+      
       setLoading(true);
       try {
         const q = query(
           collection(db, 'daily_food_log'),
-          where('date_eaten', '==', today)
+          where('date_eaten', '==', today),
+          where('userId', '==', currentUser.uid) // Filter by current user ID
         );
         
         const logSnapshot = await getDocs(q);
@@ -55,7 +60,7 @@ function Dashboard() {
     };
 
     fetchTodayLogs();
-  }, [today]);
+  }, [today, currentUser]);
 
   // Calculate daily summary
   const dailySummary = useMemo(() => {
