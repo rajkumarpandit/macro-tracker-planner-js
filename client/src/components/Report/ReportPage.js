@@ -23,9 +23,10 @@ import {
 } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '../../firebase/firebase';
 import { format, subDays, startOfWeek, endOfWeek } from 'date-fns';
+import { useAuth } from '../Auth/AuthContext';
 
 // Only import the specific components needed to reduce bundle size
 import {
@@ -38,6 +39,7 @@ import {
 
 function ReportPage() {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [period, setPeriod] = useState('week');
   const [tabValue, setTabValue] = useState(0);
   const [startDate, setStartDate] = useState(startOfWeek(new Date()));
@@ -45,6 +47,7 @@ function ReportPage() {
   const [dailyData, setDailyData] = useState([]);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { currentUser } = useAuth();
 
   // Handle period change - memoized callback
   const handlePeriodChange = useCallback((event) => {
@@ -60,65 +63,152 @@ function ReportPage() {
     }
   }, []);
 
+  // Helper function to process query results
+  const processResults = useCallback((logSnapshot) => {
+    const logs = logSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    
+    // Group by date
+    const dailyLogs = logs.reduce((acc, log) => {
+      if (!acc[log.date_eaten]) {
+        acc[log.date_eaten] = {
+          date: log.date_eaten,
+          calories: 0,
+          protein: 0,
+          carbs: 0,
+          fat: 0
+        };
+      }
+      
+      // Coerce to numbers and guard against missing fields
+      acc[log.date_eaten].calories += Number(log.calories) || 0;
+      acc[log.date_eaten].protein += Number(log.protein) || 0;
+      acc[log.date_eaten].carbs += Number(log.carbs) || 0;
+      acc[log.date_eaten].fat += Number(log.fat) || 0;
+      
+      return acc;
+    }, {});
+    
+    // Convert to array and sort by date
+    const dailyDataArray = Object.values(dailyLogs).sort((a, b) => 
+      new Date(a.date) - new Date(b.date)
+    );
+    
+    setDailyData(dailyDataArray);
+  }, []);
+
   // Memoized fetch function
   const fetchReportData = useCallback(async () => {
-    if (!startDate || !endDate) return;
+    if (!startDate || !endDate || !currentUser) return;
     
     setLoading(true);
+    setError("");
     
     try {
-      const startDateStr = format(startDate, 'yyyy-MM-dd');
-      const endDateStr = format(endDate, 'yyyy-MM-dd');
-      
-      const q = query(
+      // First, check if we have any logs at all for this user (requires no complex index)
+      const checkQ = query(
         collection(db, 'daily_food_log'),
-        where('date_eaten', '>=', startDateStr),
-        where('date_eaten', '<=', endDateStr)
+        where('userId', '==', currentUser.uid),
+        limit(1)
       );
       
-      const logSnapshot = await getDocs(q);
-      const logs = logSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const checkSnapshot = await getDocs(checkQ);
+      console.log("User has any logs:", !checkSnapshot.empty);
       
-      // Group by date more efficiently
-      const dailyLogs = logs.reduce((acc, log) => {
-        if (!acc[log.date_eaten]) {
-          acc[log.date_eaten] = {
-            date: log.date_eaten,
-            calories: 0,
-            protein: 0,
-            carbs: 0,
-            fat: 0
-          };
+      // Use the same date string format as DailyLog (UTC ISO date) to avoid timezone mismatches
+      const startDateStr = new Date(startDate).toISOString().split('T')[0];
+      const endDateStr = new Date(endDate).toISOString().split('T')[0];      // Try the simplified approach with backup strategy
+      try {
+        // Approach 1: Optimized with index - userId first, then date range filter
+        const q = query(
+          collection(db, 'daily_food_log'),
+          where('userId', '==', currentUser.uid),
+          where('date_eaten', '>=', startDateStr),
+          where('date_eaten', '<=', endDateStr)
+        );
+        
+        const logSnapshot = await getDocs(q);
+        console.log("Main query returned entries:", logSnapshot.size);
+        
+        // If we got results, use them
+        if (logSnapshot.size > 0) {
+          processResults(logSnapshot);
+          return;
         }
-        
-        acc[log.date_eaten].calories += log.calories;
-        acc[log.date_eaten].protein += log.protein;
-        acc[log.date_eaten].carbs += log.carbs;
-        acc[log.date_eaten].fat += log.fat;
-        
-        return acc;
-      }, {});
+      } catch (indexError) {
+        console.log("Index-optimized query failed, falling back:", indexError);
+        // We'll continue to the fallback approach
+      }
       
-      // Convert to array and sort by date
-      const dailyDataArray = Object.values(dailyLogs).sort((a, b) => 
-        new Date(a.date) - new Date(b.date)
+      // Fallback approach: Get all user logs first, then filter by date in memory
+      console.log("Using fallback query approach");
+      const fallbackQ = query(
+        collection(db, 'daily_food_log'),
+        where('userId', '==', currentUser.uid)
       );
       
-      setDailyData(dailyDataArray);
+      // This is our final query that we'll use for processing
+      // Bug fix: We were using 'q' here but it's undefined in the fallback case.
+      // We should be using fallbackQ instead.
+      const logSnapshot = await getDocs(fallbackQ);
+      
+      // For debugging: Show the query parameters and returned logs
+      console.log("Report query:", { 
+        startDate: startDateStr, 
+        endDate: endDateStr, 
+        userId: currentUser.uid,
+        resultsCount: logSnapshot.size
+      });
+      
+      // Filter logs by date manually
+      const logs = logSnapshot.docs
+        .map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+        .filter(log => {
+          return log.date_eaten >= startDateStr && log.date_eaten <= endDateStr;
+        });
+      
+      console.log("Filtered log entries:", logs);
+      
+      // Process the filtered logs using our common function
+      if (logs.length > 0) {
+        // Convert logs to a snapshot-like structure for processResults
+        const filteredSnapshot = {
+          docs: logs.map(log => ({
+            id: log.id,
+            data: () => log
+          }))
+        };
+        processResults(filteredSnapshot);
+      } else {
+        setDailyData([]);
+      }
     } catch (error) {
       console.error("Error fetching report data: ", error);
+      // Surface a friendly message when common Firestore index error occurs
+      const msg = (error?.message || "");
+      const code = error?.code || "";
+      
+      console.log("Error details:", { message: msg, code });
+      
+      if (msg.includes("FAILED_PRECONDITION") || msg.includes("index") || msg.includes("requires an index")) {
+        setError(`Reports query requires a Firestore composite index. We've added and deployed it, but you may need to refresh or restart the app. Error: ${code}`);
+      } else {
+        setError(`Could not load report data: ${msg.substring(0, 100)}`);
+      }
     } finally {
       setLoading(false);
     }
-  }, [startDate, endDate]);
+  }, [startDate, endDate, currentUser, processResults]);
 
   // Fetch data when period or dates change
   useEffect(() => {
     fetchReportData();
-  }, [period, startDate, endDate, fetchReportData]);
+  }, [period, startDate, endDate, fetchReportData, currentUser]);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
@@ -155,14 +245,20 @@ function ReportPage() {
       return dailyData
         .filter((_, i) => i % step === 0)
         .map(day => ({
-          ...day,
-          date: format(new Date(day.date), 'M/d')
+          date: format(new Date(day.date), 'M/d'),
+          calories: Number(day.calories),
+          protein: Number(day.protein),
+          carbs: Number(day.carbs),
+          fat: Number(day.fat)
         }));
     }
     
     return dailyData.map(day => ({
-      ...day,
-      date: format(new Date(day.date), isMobile ? 'M/d' : 'MMM d')
+      date: format(new Date(day.date), isMobile ? 'M/d' : 'MMM d'),
+      calories: Number(day.calories),
+      protein: Number(day.protein),
+      carbs: Number(day.carbs),
+      fat: Number(day.fat)
     }));
   }, [dailyData, isMobile]);
 
@@ -216,6 +312,14 @@ function ReportPage() {
           </Grid>
         )}
       </Paper>
+
+      {!!error && (
+        <Box sx={{ mb: 2 }}>
+          <Paper elevation={0} sx={{ p: 2, bgcolor: 'error.light' }}>
+            <Typography variant="body2" color="error.main">{error}</Typography>
+          </Paper>
+        </Box>
+      )}
 
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
@@ -296,12 +400,29 @@ function ReportPage() {
                     <XAxis 
                       dataKey="date" 
                       tick={{ fontSize: 12 }}
+                      padding={{ left: 10, right: 10 }}
                     />
                     <YAxis 
                       tick={{ fontSize: 12 }}
                       width={30}
                     />
-                    <Tooltip />
+                    <Tooltip 
+                      formatter={(value) => [Math.round(value), "Calories"]}
+                      contentStyle={{ 
+                        fontSize: '11px', 
+                        padding: '5px 8px',
+                        borderRadius: '3px',
+                      }}
+                      itemStyle={{ 
+                        padding: '1px 0',
+                        fontSize: '11px',
+                      }}
+                      labelStyle={{ 
+                        fontSize: '10px',
+                        padding: '0 0 2px 0',
+                        marginBottom: '2px'
+                      }}
+                    />
                     <Line 
                       type="monotone" 
                       dataKey="calories" 
@@ -327,12 +448,29 @@ function ReportPage() {
                       dataKey="date" 
                       tick={{ fontSize: 12 }}
                       scale="point"
+                      padding={{ left: 10, right: 10 }}
                     />
                     <YAxis 
                       tick={{ fontSize: 12 }}
                       width={30}
                     />
-                    <Tooltip />
+                    <Tooltip 
+                      formatter={(value, name) => [Math.round(value), name]}
+                      contentStyle={{ 
+                        fontSize: '11px', 
+                        padding: '5px 8px',
+                        borderRadius: '3px',
+                      }}
+                      itemStyle={{ 
+                        padding: '1px 0',
+                        fontSize: '11px',
+                      }}
+                      labelStyle={{ 
+                        fontSize: '10px',
+                        padding: '0 0 2px 0',
+                        marginBottom: '2px'
+                      }}
+                    />
                     <Legend />
                     <Bar dataKey="protein" fill="#8884d8" name="Protein" />
                     <Bar dataKey="carbs" fill="#82ca9d" name="Carbs" />
@@ -350,7 +488,7 @@ function ReportPage() {
                       <ListItemText
                         primary={format(new Date(day.date), 'MMM d, yyyy')}
                         secondary={
-                          `Calories: ${day.calories.toFixed(0)} | P: ${day.protein.toFixed(1)}g | C: ${day.carbs.toFixed(1)}g | F: ${day.fat.toFixed(1)}g`
+                          `Calories: ${Math.round(day.calories)} | P: ${Math.round(day.protein)}g | C: ${Math.round(day.carbs)}g | F: ${Math.round(day.fat)}g`
                         }
                       />
                     </ListItem>
