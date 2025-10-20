@@ -42,6 +42,7 @@ const LandingPage = lazy(() => import('./components/LandingPage/LandingPage'));
 const AdminManagement = lazy(() => import('./components/Admin/AdminManagement'));
 const InitializeAdminCollection = lazy(() => import('./components/InitializeAdminCollection'));
 const TestFirestorePermissions = lazy(() => import('./components/TestFirestorePermissions'));
+const DataDebugger = lazy(() => import('./components/DataDebugger'));
 
 // Create a theme optimized for faster rendering
 const theme = createTheme({
@@ -322,6 +323,12 @@ function AppContent() {
               <Route path="/admin/test-permissions" element={
                 <PrivateRoute>
                   <TestFirestorePermissions />
+                </PrivateRoute>
+              } />
+              
+              <Route path="/debug-data" element={
+                <PrivateRoute>
+                  <DataDebugger />
                 </PrivateRoute>
               } />
               

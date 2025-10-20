@@ -32,6 +32,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { collection, addDoc, getDocs, query, where, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../firebase/firebase';
 import { format } from 'date-fns';
+import { useAuth } from '../Auth/AuthContext';
 
 function DailyLogPage() {
   const [foods, setFoods] = useState([]);
@@ -45,6 +46,7 @@ function DailyLogPage() {
   const [message, setMessage] = useState({ text: '', type: '' });
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { currentUser } = useAuth();
 
   // Memoized date string to prevent unnecessary recalculations
   const dateString = useMemo(() => {
@@ -61,7 +63,11 @@ function DailyLogPage() {
         id: doc.id,
         ...doc.data()
       }));
-      setFoods(foodList);
+      // Sort the food list alphabetically by food_name
+      const sortedFoodList = foodList.sort((a, b) => 
+        a.food_name.localeCompare(b.food_name)
+      );
+      setFoods(sortedFoodList);
     } catch (error) {
       console.error("Error fetching foods: ", error);
       setMessage({ text: 'Failed to load food items', type: 'error' });
@@ -72,13 +78,14 @@ function DailyLogPage() {
 
   // Fetch daily logs - memoized callback
   const fetchDailyLogs = useCallback(async () => {
-    if (!dateString) return;
+    if (!dateString || !currentUser) return;
     
     setLoading(true);
     try {
       const q = query(
         collection(db, 'daily_food_log'),
-        where('date_eaten', '==', dateString)
+        where('date_eaten', '==', dateString),
+        where('userId', '==', currentUser.uid) // Filter by current user ID
       );
       
       const logSnapshot = await getDocs(q);
@@ -94,7 +101,7 @@ function DailyLogPage() {
     } finally {
       setLoading(false);
     }
-  }, [dateString]);
+  }, [dateString, currentUser]);
 
   // Initial data loading
   useEffect(() => {
@@ -158,18 +165,18 @@ function DailyLogPage() {
     const macros = {
       food_name: food.food_name,
       unit: food.measuring_unit,
-      quantity: quantity,
-      calories: food.calories_in_gms * ratio,
-      protein: food.Protien_in_gms * ratio,
-      carbs: food.carb_in_gms * ratio,
-      fat: food.fat_in_gms * ratio
+      quantity: Number(quantity),
+      calories: Number(food.calories_in_gms * ratio),
+      protein: Number(food.Protien_in_gms * ratio),
+      carbs: Number(food.carb_in_gms * ratio),
+      fat: Number(food.fat_in_gms * ratio)
     };
     
     setCalculatedMacros(macros);
   };
 
   const handleAddLog = async () => {
-    if (!calculatedMacros) {
+    if (!calculatedMacros || !currentUser) {
       setMessage({ text: 'Please calculate macros first', type: 'error' });
       return;
     }
@@ -178,6 +185,8 @@ function DailyLogPage() {
       const logData = {
         date_eaten: dateString,
         food_item: selectedFood,
+        userId: currentUser.uid, // Add user ID to the log
+        createdAt: new Date().toISOString(),
         ...calculatedMacros
       };
       
@@ -265,7 +274,7 @@ function DailyLogPage() {
               >
                 {foods.map((food) => (
                   <MenuItem key={food.id} value={food.id}>
-                    {food.food_name} ({food.measuring_quantity} {food.measuring_unit})
+                    {food.food_name} (in {food.measuring_unit})
                   </MenuItem>
                 ))}
               </Select>
