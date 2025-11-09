@@ -13,7 +13,6 @@ import {
   BottomNavigationAction,
   Paper,
   CircularProgress,
-  Button,
   Menu,
   MenuItem,
   IconButton
@@ -26,6 +25,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 import MonitorWeightIcon from '@mui/icons-material/MonitorWeight';
+import TrackChangesIcon from '@mui/icons-material/TrackChanges';
 
 // Import authentication components
 import { AuthProvider, useAuth } from './components/Auth/AuthContext';
@@ -38,6 +38,7 @@ const FoodMasterPage = lazy(() => import('./components/FoodMaster/FoodMasterPage
 const DailyLogPage = lazy(() => import('./components/DailyLog/DailyLogPage'));
 const WeightLogPage = lazy(() => import('./components/WeightLog/WeightLogPage'));
 const ReportPage = lazy(() => import('./components/Report/ReportPage'));
+const MacroTargetPage = lazy(() => import('./components/MacroTarget/MacroTargetPage'));
 const Login = lazy(() => import('./components/Auth/Login'));
 const Signup = lazy(() => import('./components/Auth/Signup'));
 const LandingPage = lazy(() => import('./components/LandingPage/LandingPage'));
@@ -176,8 +177,10 @@ function NavigationBar() {
       setValue(2);
     } else if (location.pathname === '/reports') {
       setValue(3);
-    } else if (location.pathname === '/food-master') {
+    } else if (location.pathname === '/macro-target') {
       setValue(4);
+    } else if (location.pathname === '/food-master') {
+      setValue(5);
     }
   }, [location]);
   
@@ -221,7 +224,13 @@ function NavigationBar() {
           icon={<BarChartIcon />} 
           component={Link} 
           to="/reports"
-          sx={{ minWidth: userIsAdmin ? '16.67%' : '20%' }}
+          sx={{ minWidth: userIsAdmin ? '14.29%' : '20%' }}
+        />
+        <BottomNavigationAction 
+          icon={<TrackChangesIcon />} 
+          component={Link} 
+          to="/macro-target"
+          sx={{ minWidth: userIsAdmin ? '14.29%' : '20%' }}
         />
         {userIsAdmin && (
           <>
@@ -229,13 +238,13 @@ function NavigationBar() {
               icon={<MenuBookIcon />} 
               component={Link} 
               to="/food-master"
-              sx={{ minWidth: '20%' }}
+              sx={{ minWidth: '14.29%' }}
             />
             <BottomNavigationAction 
               icon={<SupervisorAccountIcon />} 
               component={Link} 
               to="/admin"
-              sx={{ minWidth: '20%' }}
+              sx={{ minWidth: '14.29%' }}
             />
           </>
         )}
@@ -318,6 +327,11 @@ function AppContent() {
               <Route path="/reports" element={
                 <PrivateRoute>
                   <ReportPage />
+                </PrivateRoute>
+              } />
+              <Route path="/macro-target" element={
+                <PrivateRoute>
+                  <MacroTargetPage />
                 </PrivateRoute>
               } />
               <Route path="/admin" element={

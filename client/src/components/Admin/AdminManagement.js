@@ -18,6 +18,7 @@ import { useIsAdmin, addAdmin, removeAdmin } from '../../utils/adminUtils';
 import { getAuth } from 'firebase/auth';
 import { db } from '../../firebase/firebase';
 import { collection, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
+import Footer from '../Common/Footer';
 
 const AdminManagement = () => {
   const [users, setUsers] = useState([]);
@@ -358,6 +359,7 @@ const AdminManagement = () => {
           {notification.message}
         </Alert>
       </Snackbar>
+      <Footer />
     </Box>
   );
 };

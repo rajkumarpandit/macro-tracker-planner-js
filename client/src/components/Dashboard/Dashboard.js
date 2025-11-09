@@ -22,10 +22,13 @@ import { db } from '../../firebase/firebase';
 import { format } from 'date-fns';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import { useAuth } from '../Auth/AuthContext';
+import { fetchUserMacroTargets } from '../../utils/macroTargetUtils';
+import Footer from '../Common/Footer';
 
 function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [dailyLogs, setDailyLogs] = useState([]);
+  const [targets, setTargets] = useState({ calories: 2000, protein: 140, carbs: 200, fat: 100 });
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { currentUser } = useAuth();
@@ -74,8 +77,15 @@ function Dashboard() {
     }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
   }, [dailyLogs]);
 
-  // Simplified targets
-  const targets = { calories: 2000, protein: 150, carbs: 250, fat: 70 };
+  // Fetch user's macro targets
+  useEffect(() => {
+    const loadTargets = async () => {
+      if (!currentUser) return;
+      const userTargets = await fetchUserMacroTargets(currentUser.uid);
+      setTargets(userTargets);
+    };
+    loadTargets();
+  }, [currentUser]);
 
   return (
     <div>
@@ -217,6 +227,7 @@ function Dashboard() {
           )}
         </>
       )}
+      <Footer />
     </div>
   );
 }

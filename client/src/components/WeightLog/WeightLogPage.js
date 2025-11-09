@@ -26,6 +26,7 @@ import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, getDocs, T
 import { useAuth } from '../Auth/AuthContext';
 import { db } from '../../firebase/firebase';
 import { format, subDays } from 'date-fns';
+import Footer from '../Common/Footer';
 
 const WeightLogPage = () => {
   const { currentUser } = useAuth();
@@ -393,6 +394,7 @@ const WeightLogPage = () => {
       <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
         Track your weight progress over time. Your data will be displayed on the Reports page.
       </Typography>
+      <Footer />
     </Container>
   );
 };

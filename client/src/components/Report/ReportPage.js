@@ -28,6 +28,7 @@ import { collection, query, where, getDocs, limit, addDoc, Timestamp } from 'fir
 import { db } from '../../firebase/firebase';
 import { format, subDays, startOfWeek, endOfWeek } from 'date-fns';
 import { useAuth } from '../Auth/AuthContext';
+import Footer from '../Common/Footer';
 
 // Only import the specific components needed to reduce bundle size
 import {
@@ -901,6 +902,7 @@ function ReportPage() {
           )}
         </Paper>
       </Box>
+      <Footer />
     </div>
   );
 }

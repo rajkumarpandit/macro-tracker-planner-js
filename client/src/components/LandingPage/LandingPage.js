@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 
 import { useAuth } from '../Auth/AuthContext';
+import Footer from '../Common/Footer';
 
 const LandingPage = () => {
   const { currentUser } = useAuth();
@@ -88,6 +89,7 @@ const LandingPage = () => {
 
         </Grid>
       </Paper>
+      <Footer />
     </Container>
   );
 };

@@ -24,6 +24,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { collection, addDoc, getDocs, doc, deleteDoc, updateDoc, query, where } from 'firebase/firestore';
 import { db } from '../../firebase/firebase';
 import { useAuth } from '../Auth/AuthContext';
+import Footer from '../Common/Footer';
 
 function FoodMasterPage() {
   const [foods, setFoods] = useState([]);
@@ -460,6 +461,7 @@ function FoodMasterPage() {
           )}
         </>
       )}
+      <Footer />
     </div>
   );
 }
