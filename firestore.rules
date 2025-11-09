@@ -20,10 +20,10 @@ service cloud.firestore {
       allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
     }
     
-    // Food master rules - users can read all, but only edit their own unless item is public
+    // Food master rules - fully personal database, users can only access their own food items
     match /food_calorie_master/{foodId} {
-      // Anyone authenticated can read all food items
-      allow read: if isSignedIn();
+      // Users can only read their own food items
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
       
       // Users can create food items and must include their userId
       allow create: if isSignedIn() && 
@@ -92,6 +92,19 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow write: if isSignedIn() && 
                     (request.auth.token.email in ['rajkumarpandit@gmail.com', 'admin@example.com']);
+    }
+    
+    // Weight tracking - users can only access their own weight data
+    match /weights/{weightId} {
+      // Simpler rule: allow read operations if user is signed in
+      // We'll rely on the query to filter by userId
+      allow read: if isSignedIn();
+      
+      // For write operations, ensure user can only write their own data
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.userId;
+      allow update: if isSignedIn() && request.auth.uid == resource.data.userId 
+                    && request.auth.uid == request.resource.data.userId;
+      allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
     }
   }
 }

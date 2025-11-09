@@ -55,10 +55,16 @@ function DailyLogPage() {
 
   // Fetch foods from database - memoized callback
   const fetchFoods = useCallback(async () => {
+    if (!currentUser) return;
+    
     setFoodsLoading(true);
     try {
-      const foodCollection = collection(db, 'food_calorie_master');
-      const foodSnapshot = await getDocs(foodCollection);
+      // Fetch only user's own food items
+      const foodQuery = query(
+        collection(db, 'food_calorie_master'),
+        where('userId', '==', currentUser.uid)
+      );
+      const foodSnapshot = await getDocs(foodQuery);
       const foodList = foodSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -74,7 +80,7 @@ function DailyLogPage() {
     } finally {
       setFoodsLoading(false);
     }
-  }, []);
+  }, [currentUser]);
 
   // Fetch daily logs - memoized callback
   const fetchDailyLogs = useCallback(async () => {

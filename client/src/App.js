@@ -25,6 +25,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
+import MonitorWeightIcon from '@mui/icons-material/MonitorWeight';
 
 // Import authentication components
 import { AuthProvider, useAuth } from './components/Auth/AuthContext';
@@ -35,6 +36,7 @@ import { cleanupLegacyData } from './firebase/cleanupUtils';
 const Dashboard = lazy(() => import('./components/Dashboard/Dashboard'));
 const FoodMasterPage = lazy(() => import('./components/FoodMaster/FoodMasterPage'));
 const DailyLogPage = lazy(() => import('./components/DailyLog/DailyLogPage'));
+const WeightLogPage = lazy(() => import('./components/WeightLog/WeightLogPage'));
 const ReportPage = lazy(() => import('./components/Report/ReportPage'));
 const Login = lazy(() => import('./components/Auth/Login'));
 const Signup = lazy(() => import('./components/Auth/Signup'));
@@ -170,10 +172,12 @@ function NavigationBar() {
       setValue(0);
     } else if (location.pathname === '/daily-log') {
       setValue(1);
-    } else if (location.pathname === '/reports') {
+    } else if (location.pathname === '/weight-log') {
       setValue(2);
-    } else if (location.pathname === '/food-master') {
+    } else if (location.pathname === '/reports') {
       setValue(3);
+    } else if (location.pathname === '/food-master') {
+      setValue(4);
     }
   }, [location]);
   
@@ -193,6 +197,7 @@ function NavigationBar() {
         onChange={(event, newValue) => {
           setValue(newValue);
         }}
+        showLabels={false}
       >
         <BottomNavigationAction 
           icon={<HomeIcon />} 
@@ -201,30 +206,32 @@ function NavigationBar() {
           sx={{ minWidth: userIsAdmin ? '20%' : '25%' }}
         />
         <BottomNavigationAction 
-          label="Daily Log" 
           icon={<RestaurantMenuIcon />} 
           component={Link} 
           to="/daily-log"
-          sx={{ minWidth: userIsAdmin ? '20%' : '25%' }}
+          sx={{ minWidth: userIsAdmin ? '16.67%' : '20%' }}
         />
         <BottomNavigationAction 
-          label="Reports" 
+          icon={<MonitorWeightIcon />} 
+          component={Link} 
+          to="/weight-log"
+          sx={{ minWidth: userIsAdmin ? '16.67%' : '20%' }}
+        />
+        <BottomNavigationAction 
           icon={<BarChartIcon />} 
           component={Link} 
           to="/reports"
-          sx={{ minWidth: userIsAdmin ? '20%' : '25%' }}
+          sx={{ minWidth: userIsAdmin ? '16.67%' : '20%' }}
         />
         {userIsAdmin && (
           <>
             <BottomNavigationAction 
-              label="Food DB" 
               icon={<MenuBookIcon />} 
               component={Link} 
               to="/food-master"
               sx={{ minWidth: '20%' }}
             />
             <BottomNavigationAction 
-              label="Admin" 
               icon={<SupervisorAccountIcon />} 
               component={Link} 
               to="/admin"
@@ -301,6 +308,11 @@ function AppContent() {
               <Route path="/daily-log" element={
                 <PrivateRoute>
                   <DailyLogPage />
+                </PrivateRoute>
+              } />
+              <Route path="/weight-log" element={
+                <PrivateRoute>
+                  <WeightLogPage />
                 </PrivateRoute>
               } />
               <Route path="/reports" element={

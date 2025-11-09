@@ -3,21 +3,14 @@ import {
   Box, 
   Typography, 
   Paper, 
-  List, 
-  ListItem, 
-  ListItemText, 
-  ListItemSecondaryAction,
-  Alert, 
-  Button,
-  Switch,
+  Alert,
   CircularProgress,
-  Divider,
   Snackbar,
-  IconButton,
-  Tooltip,
-  FormControlLabel
+  Chip,
+  Checkbox,
+  FormControlLabel,
+  Button
 } from '@mui/material';
-import PersonOffIcon from '@mui/icons-material/PersonOff';
 import PersonIcon from '@mui/icons-material/Person';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import { useIsAdmin, addAdmin, removeAdmin } from '../utils/adminUtils';
@@ -30,6 +23,7 @@ const AdminManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [notification, setNotification] = useState({ open: false, message: '', severity: 'success' });
+  const [userChanges, setUserChanges] = useState({});
   
   const auth = getAuth();
   const currentUser = auth.currentUser;
@@ -80,84 +74,76 @@ const AdminManagement = () => {
     }
   }, [userIsAdmin]);
 
-  // Function to toggle admin status
-  const handleToggleAdmin = async (user) => {
-    try {
-      if (user.email === currentUser.email) {
-        setNotification({
-          open: true,
-          message: "You cannot remove admin privileges from yourself!",
-          severity: "error"
-        });
-        return;
+  // Handle checkbox changes
+  const handleCheckboxChange = (userId, field, value) => {
+    setUserChanges(prev => ({
+      ...prev,
+      [userId]: {
+        ...(prev[userId] || {}),
+        [field]: value
       }
-
-      let success = false;
-      if (user.isAdmin) {
-        // Remove admin status using adminUtils
-        success = await removeAdmin(user.email);
-      } else {
-        // Add admin status using adminUtils
-        success = await addAdmin(user.email);
-      }
-
-      if (!success) {
-        throw new Error("Failed to update admin status");
-      }
-
-      // Update state
-      setUsers(users.map(u => 
-        u.id === user.id ? { ...u, isAdmin: !u.isAdmin } : u
-      ));
-
-      setNotification({
-        open: true,
-        message: `Admin ${user.isAdmin ? 'removed from' : 'granted to'} ${user.displayName || user.email}`,
-        severity: "success"
-      });
-    } catch (err) {
-      console.error("Error toggling admin status:", err);
-      setNotification({
-        open: true,
-        message: "Failed to update admin status. Please try again.",
-        severity: "error"
-      });
-    }
+    }));
   };
 
-  // Function to toggle enabled status
-  const handleToggleEnabled = async (user) => {
+  // Function to save user changes
+  const handleSaveUser = async (user) => {
     try {
       if (user.email === currentUser.email) {
         setNotification({
           open: true,
-          message: "You cannot disable your own account!",
+          message: "You cannot modify your own permissions!",
           severity: "error"
         });
         return;
       }
 
-      // Update user document with new isEnabled status
-      const userRef = doc(db, 'users', user.id);
-      await updateDoc(userRef, {
-        isEnabled: !user.isEnabled
-      });
+      const changes = userChanges[user.id] || {};
+      const newIsAdmin = changes.hasOwnProperty('isAdmin') ? changes.isAdmin : user.isAdmin;
+      const newIsEnabled = changes.hasOwnProperty('isEnabled') ? changes.isEnabled : user.isEnabled;
+
+      // Update admin status if changed
+      if (newIsAdmin !== user.isAdmin) {
+        let success = false;
+        if (newIsAdmin) {
+          success = await addAdmin(user.email);
+        } else {
+          success = await removeAdmin(user.email);
+        }
+        if (!success) {
+          throw new Error("Failed to update admin status");
+        }
+      }
+
+      // Update enabled status if changed
+      if (newIsEnabled !== user.isEnabled) {
+        const userRef = doc(db, 'users', user.id);
+        await updateDoc(userRef, {
+          isEnabled: newIsEnabled
+        });
+      }
 
       // Update state
       setUsers(users.map(u => 
-        u.id === user.id ? { ...u, isEnabled: !u.isEnabled } : u
+        u.id === user.id ? { ...u, isAdmin: newIsAdmin, isEnabled: newIsEnabled } : u
       ));
+
+      // Clear changes for this user
+      setUserChanges(prev => {
+        const newChanges = { ...prev };
+        delete newChanges[user.id];
+        return newChanges;
+      });
 
       setNotification({
         open: true,
-        message: `${user.displayName || user.email} is now ${!user.isEnabled ? 'enabled' : 'disabled'}`,
+        message: `Changes saved for ${user.displayName || user.email}`,
         severity: "success"
       });
     } catch (err) {
-      console.error("Error toggling enabled status:", err);
+      console.error("Error saving user changes:", err);
       setNotification({
         open: true,
-        message: "Failed to update user status. Please try again.",
+        message: "Failed to save changes. Please try again.",
         severity: "error"
       });
     }
@@ -199,79 +185,85 @@ const AdminManagement = () => {
           {users.length === 0 ? (
             <Alert severity="info">No users found in the system.</Alert>
           ) : (
-            <List>
-              {users.map((user) => (
-                <ListItem 
-                  key={user.id} 
-                  divider
-                  sx={{ 
-                    backgroundColor: user.isEnabled ? 'inherit' : 'rgba(0, 0, 0, 0.04)',
-                    opacity: user.isEnabled ? 1 : 0.7
-                  }}
-                >
-                  <ListItemText 
-                    primary={
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        {user.displayName}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {users.map((user) => {
+                const changes = userChanges[user.id] || {};
+                const currentIsAdmin = changes.hasOwnProperty('isAdmin') ? changes.isAdmin : user.isAdmin;
+                const currentIsEnabled = changes.hasOwnProperty('isEnabled') ? changes.isEnabled : user.isEnabled;
+                const hasChanges = Object.keys(changes).length > 0;
+                
+                return (
+                  <Paper 
+                    key={user.id}
+                    elevation={2}
+                    sx={{ 
+                      p: 2,
+                      backgroundColor: currentIsEnabled ? 'inherit' : 'rgba(0, 0, 0, 0.04)',
+                      opacity: currentIsEnabled ? 1 : 0.7
+                    }}
+                  >
+                    {/* User Info - One Line */}
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="subtitle1" fontWeight="bold">
+                        {user.displayName} - {user.email}
                         {user.email === currentUser.email && (
-                          <Tooltip title="This is you">
-                            <Typography variant="caption" sx={{ ml: 1, color: 'primary.main' }}>
-                              (You)
-                            </Typography>
-                          </Tooltip>
+                          <Chip label="You" size="small" color="primary" sx={{ ml: 1 }} />
                         )}
-                      </Box>
-                    }
-                    secondary={user.email} 
-                  />
-                  <ListItemSecondaryAction sx={{ display: 'flex', gap: 2 }}>
-                    <FormControlLabel
-                      control={
-                        <Switch 
-                          checked={user.isAdmin} 
-                          onChange={() => handleToggleAdmin(user)}
-                          color="primary"
-                          disabled={user.email === currentUser.email} // Can't remove own admin rights
-                        />
-                      }
-                      label={
-                        <Tooltip title={user.isAdmin ? "Remove admin privileges" : "Grant admin privileges"}>
+                      </Typography>
+                    </Box>
+                    
+                    {/* Checkboxes - Stacked vertically on mobile */}
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
+                      <FormControlLabel
+                        control={
+                          <Checkbox 
+                            checked={currentIsAdmin}
+                            onChange={(e) => handleCheckboxChange(user.id, 'isAdmin', e.target.checked)}
+                            disabled={user.email === currentUser.email}
+                            color="primary"
+                          />
+                        }
+                        label={
                           <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <AdminPanelSettingsIcon fontSize="small" sx={{ mr: 0.5 }} />
-                            Admin
+                            <Typography variant="body2">Admin Role</Typography>
                           </Box>
-                        </Tooltip>
-                      }
-                      labelPlacement="start"
-                    />
-                    
-                    <FormControlLabel
-                      control={
-                        <Switch 
-                          checked={user.isEnabled} 
-                          onChange={() => handleToggleEnabled(user)}
-                          color="secondary"
-                          disabled={user.email === currentUser.email} // Can't disable own account
-                        />
-                      }
-                      label={
-                        <Tooltip title={user.isEnabled ? "Disable user account" : "Enable user account"}>
+                        }
+                      />
+                      
+                      <FormControlLabel
+                        control={
+                          <Checkbox 
+                            checked={currentIsEnabled}
+                            onChange={(e) => handleCheckboxChange(user.id, 'isEnabled', e.target.checked)}
+                            disabled={user.email === currentUser.email}
+                            color="success"
+                          />
+                        }
+                        label={
                           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            {user.isEnabled ? (
-                              <PersonIcon fontSize="small" sx={{ mr: 0.5 }} />
-                            ) : (
-                              <PersonOffIcon fontSize="small" sx={{ mr: 0.5 }} />
-                            )}
-                            {user.isEnabled ? "Enabled" : "Disabled"}
+                            <PersonIcon fontSize="small" sx={{ mr: 0.5 }} />
+                            <Typography variant="body2">Account Enabled</Typography>
                           </Box>
-                        </Tooltip>
-                      }
-                      labelPlacement="start"
-                    />
-                  </ListItemSecondaryAction>
-                </ListItem>
-              ))}
-            </List>
+                        }
+                      />
+                    </Box>
+                    
+                    {/* Save Button */}
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      size="small"
+                      onClick={() => handleSaveUser(user)}
+                      disabled={!hasChanges || user.email === currentUser.email}
+                      fullWidth
+                    >
+                      Save Changes
+                    </Button>
+                  </Paper>
+                );
+              })}
+            </Box>
           )}
         </Paper>
       )}

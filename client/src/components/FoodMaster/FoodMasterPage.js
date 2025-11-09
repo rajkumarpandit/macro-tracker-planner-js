@@ -17,16 +17,13 @@ import {
   ListItemSecondaryAction,
   Divider,
   CircularProgress,
-  Snackbar,
-  FormControlLabel,
-  Switch
+  Snackbar
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { collection, addDoc, getDocs, doc, deleteDoc, updateDoc, query, where } from 'firebase/firestore';
 import { db } from '../../firebase/firebase';
 import { useAuth } from '../Auth/AuthContext';
-import { useIsAdmin } from '../../utils/adminUtils';
 
 function FoodMasterPage() {
   const [foods, setFoods] = useState([]);
@@ -35,17 +32,15 @@ function FoodMasterPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { currentUser } = useAuth();
-  const [isPublic, setIsPublic] = useState(false);
-  const { isAdmin: userIsAdmin, loading: adminCheckLoading } = useIsAdmin(currentUser);
   
   const [formData, setFormData] = useState({
     food_name: '',
     measuring_unit: '',
-    measuring_quantity: 1,
-    calories_in_gms: 0,
-    Protien_in_gms: 0,
-    carb_in_gms: 0,
-    fat_in_gms: 0
+    measuring_quantity: '',
+    calories_in_gms: '',
+    Protien_in_gms: '',
+    carb_in_gms: '',
+    fat_in_gms: ''
   });
   
   const [editing, setEditing] = useState(false);
@@ -57,64 +52,33 @@ function FoodMasterPage() {
     
     setLoading(true);
     try {
-      let foodsToDisplay = [];
+      // Users can only see their own food items
+      const userQuery = query(
+        collection(db, 'food_calorie_master'),
+        where('userId', '==', currentUser.uid)
+      );
       
-      if (userIsAdmin) {
-        // Admin can see all food items
-        const allFoodsSnapshot = await getDocs(collection(db, 'food_calorie_master'));
-        foodsToDisplay = allFoodsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          isEditable: true // Admins can edit all food items
-        }));
-      } else {
-        // Regular users can only see public foods and their own foods
-        const publicQuery = query(
-          collection(db, 'food_calorie_master'),
-          where('isPublic', '==', true)
-        );
-        
-        const userQuery = query(
-          collection(db, 'food_calorie_master'),
-          where('userId', '==', currentUser.uid)
-        );
-        
-        // Get both sets of foods
-        const [publicSnapshot, userSnapshot] = await Promise.all([
-          getDocs(publicQuery),
-          getDocs(userQuery)
-        ]);
-        
-        // Combine results with isEditable flag
-        const publicFoods = publicSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          isEditable: doc.data().userId === currentUser.uid
-        }));
-        
-        const userFoods = userSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          isEditable: true
-        }));
-        
-        // Merge and remove duplicates
-        const foodMap = new Map();
-        [...publicFoods, ...userFoods].forEach(food => {
-          foodMap.set(food.id, food);
-        });
-        
-        foodsToDisplay = Array.from(foodMap.values());
-      }
+      const userSnapshot = await getDocs(userQuery);
       
-      setFoods(foodsToDisplay);
+      const foodsToDisplay = userSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        isEditable: true // Users can edit their own items
+      }));
+      
+      // Sort alphabetically by food_name
+      const sortedFoods = foodsToDisplay.sort((a, b) => 
+        a.food_name.localeCompare(b.food_name)
+      );
+      
+      setFoods(sortedFoods);
     } catch (error) {
       console.error("Error fetching foods: ", error);
       setMessage({ text: 'Failed to load food items', type: 'error' });
     } finally {
       setLoading(false);
     }
-  }, [currentUser, userIsAdmin]);
+  }, [currentUser]);
 
   // Load food items on component mount
   useEffect(() => {
@@ -123,9 +87,10 @@ function FoodMasterPage() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    // Allow empty string for number fields, convert to empty string if user clears
     setFormData({
       ...formData,
-      [name]: name === 'food_name' || name === 'measuring_unit' ? value : Number(value)
+      [name]: value
     });
   };
 
@@ -133,11 +98,11 @@ function FoodMasterPage() {
     setFormData({
       food_name: '',
       measuring_unit: '',
-      measuring_quantity: 1,
-      calories_in_gms: 0,
-      Protien_in_gms: 0,
-      carb_in_gms: 0,
-      fat_in_gms: 0
+      measuring_quantity: '',
+      calories_in_gms: '',
+      Protien_in_gms: '',
+      carb_in_gms: '',
+      fat_in_gms: ''
     });
     setEditing(false);
     setCurrentId('');
@@ -151,31 +116,53 @@ function FoodMasterPage() {
       return;
     }
     
+    // Validation: Check if all numeric fields have valid values
+    const quantity = Number(formData.measuring_quantity);
+    const calories = Number(formData.calories_in_gms);
+    const protein = Number(formData.Protien_in_gms);
+    const carbs = Number(formData.carb_in_gms);
+    const fats = Number(formData.fat_in_gms);
+    
+    if (!formData.food_name || !formData.measuring_unit) {
+      setMessage({ text: 'Please fill in food name and measuring unit', type: 'error' });
+      return;
+    }
+    
+    if (isNaN(quantity) || quantity <= 0) {
+      setMessage({ text: 'Please enter a valid quantity greater than 0', type: 'error' });
+      return;
+    }
+    
+    if (isNaN(calories) || calories < 0 || isNaN(protein) || protein < 0 || 
+        isNaN(carbs) || carbs < 0 || isNaN(fats) || fats < 0) {
+      setMessage({ text: 'Please enter valid numeric values (0 or greater) for all nutrition fields', type: 'error' });
+      return;
+    }
+    
     try {
+      const dataToSave = {
+        food_name: formData.food_name,
+        measuring_unit: formData.measuring_unit,
+        measuring_quantity: quantity,
+        calories_in_gms: calories,
+        Protien_in_gms: protein,
+        carb_in_gms: carbs,
+        fat_in_gms: fats
+      };
+      
       if (editing) {
-        // Get the food item to check ownership
-        const foodToEdit = foods.find(f => f.id === currentId);
-        
-        if (!foodToEdit.isEditable) {
-          setMessage({ text: 'You cannot edit this food item', type: 'error' });
-          return;
-        }
-        
         // Update existing food
         const foodRef = doc(db, 'food_calorie_master', currentId);
         await updateDoc(foodRef, {
-          ...formData,
-          isPublic,
-          lastUpdatedBy: currentUser.uid,
+          ...dataToSave,
           lastUpdatedAt: new Date().toISOString()
         });
         setMessage({ text: 'Food item updated!', type: 'success' });
       } else {
         // Add new food
         await addDoc(collection(db, 'food_calorie_master'), {
-          ...formData,
+          ...dataToSave,
           userId: currentUser.uid,
-          isPublic,
           createdAt: new Date().toISOString()
         });
         setMessage({ text: 'Food item added!', type: 'success' });
@@ -209,14 +196,6 @@ function FoodMasterPage() {
     }
     
     try {
-      // Find the food to check if user can delete it
-      const foodToDelete = foods.find(f => f.id === id);
-      
-      if (!foodToDelete.isEditable) {
-        setMessage({ text: 'You cannot delete this food item', type: 'error' });
-        return;
-      }
-      
       await deleteDoc(doc(db, 'food_calorie_master', id));
       setMessage({ text: 'Food item deleted!', type: 'success' });
       fetchFoods();
@@ -234,11 +213,8 @@ function FoodMasterPage() {
     <div>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h5" component="h1">
-          Food Database
+          My Food Database
         </Typography>
-        {userIsAdmin && (
-          <Alert severity="info" sx={{ py: 0 }}>Admin Access</Alert>
-        )}
       </Box>
       
       <Snackbar 
@@ -301,18 +277,6 @@ function FoodMasterPage() {
                 variant="outlined"
                 size="small"
                 InputProps={{ inputProps: { min: 0, step: "0.01" } }}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={isPublic}
-                    onChange={(e) => setIsPublic(e.target.checked)}
-                    color="primary"
-                  />
-                }
-                label="Share this food with all users"
               />
             </Grid>
             <Grid item xs={6} sm={3}>
