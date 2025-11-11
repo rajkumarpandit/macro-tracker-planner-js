@@ -1,5 +1,6 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
+import { APP_INFO } from '../../config/constants';
 
 function Footer() {
   const currentYear = new Date().getFullYear();
@@ -18,7 +19,7 @@ function Footer() {
       }}
     >
       <Typography variant="body2" color="text.secondary">
-        © {currentYear} Raj Kumar Pandit. All rights reserved.
+        © {currentYear} {APP_INFO.AUTHOR}. All rights reserved.
       </Typography>
     </Box>
   );

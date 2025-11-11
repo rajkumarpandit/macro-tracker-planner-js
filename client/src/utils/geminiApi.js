@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GEMINI_CONFIG } from '../config/constants';
 
 // Initialize the Gemini API
 const genAI = new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_API_KEY);
@@ -10,7 +11,7 @@ const genAI = new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_API_KEY);
  */
 export async function parseFoodFromText(text) {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    const model = genAI.getGenerativeModel({ model: GEMINI_CONFIG.MODEL_NAME });
     
     const prompt = `You are a food parsing assistant. Parse the following text and extract ONLY ONE food item with its quantity.
 If multiple food items are mentioned, return an error.
@@ -84,7 +85,7 @@ Rules:
  */
 export async function getMacrosFromGemini(foodName, unit) {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    const model = genAI.getGenerativeModel({ model: GEMINI_CONFIG.MODEL_NAME });
     
     const prompt = `You are a nutrition information assistant. Provide macro nutrition information for the following food item.
 
@@ -149,7 +150,7 @@ Rules:
  */
 export async function areFoodsSimilar(foodName1, foodName2) {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    const model = genAI.getGenerativeModel({ model: GEMINI_CONFIG.MODEL_NAME });
     
     const prompt = `Are these two food items essentially the same thing? Consider synonyms, different word orders, and common variations.
 

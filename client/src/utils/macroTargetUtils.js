@@ -1,5 +1,6 @@
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase/firebase';
+import { DEFAULT_MACRO_TARGETS, FIREBASE_COLLECTIONS } from '../config/constants';
 
 /**
  * Fetch user's macro targets from Firestore
@@ -13,7 +14,7 @@ export async function fetchUserMacroTargets(userId) {
 
   try {
     const q = query(
-      collection(db, 'macro_targets'),
+      collection(db, FIREBASE_COLLECTIONS.MACRO_TARGETS),
       where('userId', '==', userId)
     );
     const querySnapshot = await getDocs(q);
@@ -21,10 +22,10 @@ export async function fetchUserMacroTargets(userId) {
     if (!querySnapshot.empty) {
       const data = querySnapshot.docs[0].data();
       return {
-        calories: data.calories || 2000,
-        protein: data.protein || 140,
-        carbs: data.carbs || 200,
-        fat: data.fat || 100
+        calories: data.calories || DEFAULT_MACRO_TARGETS.calories,
+        protein: data.protein || DEFAULT_MACRO_TARGETS.protein,
+        carbs: data.carbs || DEFAULT_MACRO_TARGETS.carbs,
+        fat: data.fat || DEFAULT_MACRO_TARGETS.fat
       };
     }
 
@@ -41,10 +42,5 @@ export async function fetchUserMacroTargets(userId) {
  * @returns {Object} - Default macro targets
  */
 function getDefaultTargets() {
-  return {
-    calories: 2000,
-    protein: 140,
-    carbs: 200,
-    fat: 100
-  };
+  return { ...DEFAULT_MACRO_TARGETS };
 }

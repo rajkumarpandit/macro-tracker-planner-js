@@ -39,6 +39,7 @@ import { format } from 'date-fns';
 import { useAuth } from '../Auth/AuthContext';
 import { parseFoodFromText, getMacrosFromGemini, areFoodsSimilar } from '../../utils/geminiApi';
 import Footer from '../Common/Footer';
+import { SEARCH_CONFIG } from '../../config/constants';
 
 function DailyLogPage() {
   const [foods, setFoods] = useState([]);
@@ -279,7 +280,7 @@ function DailyLogPage() {
           if (candidates.length > 0) {
             existingFood = candidates[0];
             console.log('Found word-match food:', existingFood.food_name);
-          } else if (candidates.length === 0 && foods.length <= 5) {
+          } else if (candidates.length === 0 && foods.length <= SEARCH_CONFIG.MAX_ITEMS_FOR_SEMANTIC_SEARCH) {
             // Only use semantic search if database is small (to avoid rate limits)
             console.log('Trying semantic search for small database...');
             for (const food of foods) {
@@ -508,8 +509,8 @@ function DailyLogPage() {
           onChange={(e, newValue) => setTabValue(newValue)}
           sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}
         >
-          <Tab label="On your existing food list" />
-          <Tab label="Using Natural Language" />
+          <Tab label="My List" />
+          <Tab label="New" />
         </Tabs>
 
         {/* Tab 1: Existing Food List */}
@@ -790,21 +791,6 @@ function DailyLogPage() {
                   </Grid>
                 </Grid>
 
-                {/* Data Source Information */}
-                <Box sx={{ mt: 2, p: 1.5, bgcolor: dataSource === 'database' ? '#e8f5e9' : '#e3f2fd', borderRadius: 1 }}>
-                  <Typography variant="caption" color="textSecondary" sx={{ display: 'flex', alignItems: 'center' }}>
-                    {dataSource === 'database' ? (
-                      <>
-                        ℹ️ Information fetched from your food database
-                      </>
-                    ) : (
-                      <>
-                        ℹ️ Gemini API used to fetch the food macro information
-                      </>
-                    )}
-                  </Typography>
-                </Box>
-
                 <Box sx={{ mt: 3, mb: 2 }}>
                   <FormControlLabel
                     control={
@@ -818,22 +804,41 @@ function DailyLogPage() {
                   />
                 </Box>
 
-                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                  <Button 
-                    onClick={handleCancelNl} 
-                    variant="outlined"
-                    size="small"
-                  >
-                    Cancel
-                  </Button>
-                  <Button 
-                    onClick={handleSaveNlFood} 
-                    variant="contained" 
-                    color="primary" 
-                    size="small"
-                  >
-                    Add Food
-                  </Button>
+                {/* Buttons and Data Source Information - Arranged horizontally */}
+                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                  {/* Data Source Information */}
+                  <Box sx={{ p: 1.5, bgcolor: dataSource === 'database' ? '#e8f5e9' : '#e3f2fd', borderRadius: 1, flex: '1 1 auto' }}>
+                    <Typography variant="caption" color="textSecondary" sx={{ display: 'flex', alignItems: 'center' }}>
+                      {dataSource === 'database' ? (
+                        <>
+                          ℹ️ Information fetched from your food database
+                        </>
+                      ) : (
+                        <>
+                          ℹ️ Gemini API used to fetch the food macro information
+                        </>
+                      )}
+                    </Typography>
+                  </Box>
+
+                  {/* Action Buttons */}
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Button 
+                      onClick={handleCancelNl} 
+                      variant="outlined"
+                      size="small"
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={handleSaveNlFood} 
+                      variant="contained" 
+                      color="primary" 
+                      size="small"
+                    >
+                      Add Food
+                    </Button>
+                  </Box>
                 </Box>
               </Box>
             )}

@@ -1,5 +1,5 @@
 import React, { useState, lazy, Suspense, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { useIsAdmin } from './utils/adminUtils';
 import { 
@@ -23,6 +23,7 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import HomeIcon from '@mui/icons-material/Home';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
+import PersonIcon from '@mui/icons-material/Person';
 import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 import MonitorWeightIcon from '@mui/icons-material/MonitorWeight';
 import TrackChangesIcon from '@mui/icons-material/TrackChanges';
@@ -46,6 +47,7 @@ const AdminManagement = lazy(() => import('./components/Admin/AdminManagement'))
 const InitializeAdminCollection = lazy(() => import('./components/InitializeAdminCollection'));
 const TestFirestorePermissions = lazy(() => import('./components/TestFirestorePermissions'));
 const DataDebugger = lazy(() => import('./components/DataDebugger'));
+const MyProfilePage = lazy(() => import('./components/Profile/MyProfilePage'));
 
 // Create a theme optimized for faster rendering
 const theme = createTheme({
@@ -88,7 +90,7 @@ const LoadingFallback = () => (
 function UserMenu() {
   const { currentUser, userDetails, logout } = useAuth();
   const [anchorEl, setAnchorEl] = useState(null);
-  const navigate = useLocation();
+  const navigate = useNavigate();
   
   // Get the display name with proper fallbacks
   const getUserName = () => {
@@ -111,6 +113,11 @@ function UserMenu() {
     setAnchorEl(null);
   };
   
+  const handleMyProfile = () => {
+    handleMenuClose();
+    navigate('/my-profile');
+  };
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -151,6 +158,10 @@ function UserMenu() {
           horizontal: 'right',
         }}
       >
+        <MenuItem onClick={handleMyProfile}>
+          <PersonIcon fontSize="small" sx={{ mr: 1 }} />
+          My Profile
+        </MenuItem>
         <MenuItem onClick={handleLogout}>
           <LogoutIcon fontSize="small" sx={{ mr: 1 }} />
           Logout
@@ -184,6 +195,11 @@ function NavigationBar() {
     }
   }, [location]);
   
+  // Hide navigation on My Profile page
+  if (location.pathname === '/my-profile') {
+    return null;
+  }
+  
   return (
     <Paper 
       sx={{ 
@@ -206,47 +222,45 @@ function NavigationBar() {
           icon={<HomeIcon />} 
           component={Link} 
           to="/dashboard"
-          sx={{ minWidth: userIsAdmin ? '20%' : '25%' }}
+          sx={{ minWidth: userIsAdmin ? '14.29%' : '16.67%' }}
         />
         <BottomNavigationAction 
           icon={<RestaurantMenuIcon />} 
           component={Link} 
           to="/daily-log"
-          sx={{ minWidth: userIsAdmin ? '16.67%' : '20%' }}
+          sx={{ minWidth: userIsAdmin ? '14.29%' : '16.67%' }}
         />
         <BottomNavigationAction 
           icon={<MonitorWeightIcon />} 
           component={Link} 
           to="/weight-log"
-          sx={{ minWidth: userIsAdmin ? '16.67%' : '20%' }}
+          sx={{ minWidth: userIsAdmin ? '14.29%' : '16.67%' }}
         />
         <BottomNavigationAction 
           icon={<BarChartIcon />} 
           component={Link} 
           to="/reports"
-          sx={{ minWidth: userIsAdmin ? '14.29%' : '20%' }}
+          sx={{ minWidth: userIsAdmin ? '14.29%' : '16.67%' }}
         />
         <BottomNavigationAction 
           icon={<TrackChangesIcon />} 
           component={Link} 
           to="/macro-target"
-          sx={{ minWidth: userIsAdmin ? '14.29%' : '20%' }}
+          sx={{ minWidth: userIsAdmin ? '14.29%' : '16.67%' }}
+        />
+        <BottomNavigationAction 
+          icon={<MenuBookIcon />} 
+          component={Link} 
+          to="/food-master"
+          sx={{ minWidth: userIsAdmin ? '14.29%' : '16.67%' }}
         />
         {userIsAdmin && (
-          <>
-            <BottomNavigationAction 
-              icon={<MenuBookIcon />} 
-              component={Link} 
-              to="/food-master"
-              sx={{ minWidth: '14.29%' }}
-            />
-            <BottomNavigationAction 
-              icon={<SupervisorAccountIcon />} 
-              component={Link} 
-              to="/admin"
-              sx={{ minWidth: '14.29%' }}
-            />
-          </>
+          <BottomNavigationAction 
+            icon={<SupervisorAccountIcon />} 
+            component={Link} 
+            to="/admin"
+            sx={{ minWidth: '14.29%' }}
+          />
         )}
       </BottomNavigation>
     </Paper>
@@ -310,7 +324,7 @@ function AppContent() {
                 </PrivateRoute>
               } />
               <Route path="/food-master" element={
-                <PrivateRoute requireAdmin={true}>
+                <PrivateRoute>
                   <FoodMasterPage />
                 </PrivateRoute>
               } />
@@ -332,6 +346,11 @@ function AppContent() {
               <Route path="/macro-target" element={
                 <PrivateRoute>
                   <MacroTargetPage />
+                </PrivateRoute>
+              } />
+              <Route path="/my-profile" element={
+                <PrivateRoute>
+                  <MyProfilePage />
                 </PrivateRoute>
               } />
               <Route path="/admin" element={
