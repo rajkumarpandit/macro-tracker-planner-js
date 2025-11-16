@@ -20,6 +20,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import PersonIcon from '@mui/icons-material/Person';
 import { useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase/firebase';
@@ -236,26 +237,41 @@ function MyProfilePage() {
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <CircularProgress />
+        <CircularProgress sx={{ color: '#667eea' }} />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f5f5', py: 3 }}>
-      <Paper sx={{ maxWidth: 800, mx: 'auto', p: 3, position: 'relative' }}>
-        {/* Close Button */}
-        <IconButton
-          onClick={handleClose}
-          sx={{ position: 'absolute', top: 16, right: 16 }}
-          aria-label="close"
-        >
-          <CloseIcon />
-        </IconButton>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f7fa', pb: 2 }}>
+      <Box sx={{ p: { xs: 2, sm: 3 } }}>
+        {/* Header */}
+        <Box sx={{ 
+          background: 'linear-gradient(135deg, #66bb6a 0%, #4caf50 100%)',
+          p: { xs: 2, sm: 2.5 },
+          mb: 2,
+          borderRadius: 2,
+          boxShadow: '0 4px 12px rgba(102, 187, 106, 0.25)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          position: 'relative'
+        }}>
+          <PersonIcon sx={{ fontSize: { xs: 28, sm: 36 }, color: 'white' }} />
+          <Typography variant="h5" component="h1" sx={{ color: 'white', fontWeight: 600, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
+            My Profile
+          </Typography>
+          {/* Close Button */}
+          <IconButton
+            onClick={handleClose}
+            sx={{ position: 'absolute', right: { xs: 8, sm: 16 }, color: 'white' }}
+            aria-label="close"
+          >
+            <CloseIcon />
+          </IconButton>
+        </Box>
 
-        <Typography variant="h5" component="h1" gutterBottom sx={{ mb: 3 }}>
-          My Profile
-        </Typography>
+      <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
 
         <Grid container spacing={3}>
           {/* Name - Required */}
@@ -274,11 +290,19 @@ function MyProfilePage() {
           {/* Sex - Optional */}
           <Grid item xs={12}>
             <FormControl component="fieldset">
-              <FormLabel component="legend">Sex (Optional)</FormLabel>
+              <FormLabel component="legend" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, color: '#667eea', fontWeight: 500 }}>Sex (Optional)</FormLabel>
               <RadioGroup
                 row
                 value={sex}
                 onChange={(e) => setSex(e.target.value)}
+                sx={{
+                  '& .MuiFormControlLabel-label': {
+                    fontSize: { xs: '0.85rem', sm: '0.95rem' }
+                  },
+                  '& .MuiRadio-root.Mui-checked': {
+                    color: '#667eea'
+                  }
+                }}
               >
                 <FormControlLabel value="male" control={<Radio />} label="Male" />
                 <FormControlLabel value="female" control={<Radio />} label="Female" />
@@ -296,7 +320,15 @@ function MyProfilePage() {
               value={dateOfBirth}
               onChange={(e) => setDateOfBirth(e.target.value)}
               fullWidth
+              size="small"
               InputLabelProps={{ shrink: true }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 1.5,
+                  '&:hover fieldset': { borderColor: '#667eea' },
+                  '&.Mui-focused fieldset': { borderColor: '#667eea' }
+                }
+              }}
             />
           </Grid>
 
@@ -306,33 +338,61 @@ function MyProfilePage() {
               label="Age"
               value={age}
               fullWidth
+              size="small"
               InputProps={{ readOnly: true }}
               disabled
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 1.5
+                }
+              }}
             />
           </Grid>
 
           {/* Height in Feet & Inches - Optional */}
           <Grid item xs={6} sm={3}>
             <TextField
-              label="Height (Feet) (Optional)"
+              label="Height(ft)"
               type="number"
               value={heightFeet}
               onChange={(e) => setHeightFeet(e.target.value)}
               fullWidth
+              size="small"
               inputProps={{ min: 0, max: 8, step: 1 }}
-              helperText="Max: 8 feet"
+              helperText="Max: 8 ft"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 1.5,
+                  '&:hover fieldset': { borderColor: '#667eea' },
+                  '&.Mui-focused fieldset': { borderColor: '#667eea' }
+                },
+                '& .MuiFormHelperText-root': {
+                  fontSize: { xs: '0.65rem', sm: '0.75rem' }
+                }
+              }}
             />
           </Grid>
 
           <Grid item xs={6} sm={3}>
             <TextField
-              label="Height (Inches) (Optional)"
+              label="Height(inch)"
               type="number"
               value={heightInches}
               onChange={(e) => setHeightInches(e.target.value)}
               fullWidth
+              size="small"
               inputProps={{ min: 0, max: 11, step: 0.1 }}
-              helperText="Max: 11 inches"
+              helperText="Max: 11 in"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 1.5,
+                  '&:hover fieldset': { borderColor: '#667eea' },
+                  '&.Mui-focused fieldset': { borderColor: '#667eea' }
+                },
+                '& .MuiFormHelperText-root': {
+                  fontSize: { xs: '0.65rem', sm: '0.75rem' }
+                }
+              }}
             />
           </Grid>
 
@@ -342,8 +402,14 @@ function MyProfilePage() {
               label="Height (cm)"
               value={heightCm}
               fullWidth
+              size="small"
               InputProps={{ readOnly: true }}
               disabled
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 1.5
+                }
+              }}
             />
           </Grid>
 
@@ -355,8 +421,19 @@ function MyProfilePage() {
               value={weightKg}
               onChange={(e) => setWeightKg(e.target.value)}
               fullWidth
+              size="small"
               inputProps={{ min: 0, max: 150, step: 0.1 }}
               helperText="Max: 150 kg"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 1.5,
+                  '&:hover fieldset': { borderColor: '#667eea' },
+                  '&.Mui-focused fieldset': { borderColor: '#667eea' }
+                },
+                '& .MuiFormHelperText-root': {
+                  fontSize: { xs: '0.65rem', sm: '0.75rem' }
+                }
+              }}
             />
           </Grid>
 
@@ -366,14 +443,20 @@ function MyProfilePage() {
               label="Weight (lbs)"
               value={weightLbs}
               fullWidth
+              size="small"
               InputProps={{ readOnly: true }}
               disabled
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 1.5
+                }
+              }}
             />
           </Grid>
 
           {/* Change Password Section */}
           <Grid item xs={12}>
-            <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
+            <Typography variant="body2" fontWeight="600" color="#667eea" sx={{ mt: 1.5, mb: 0.5, fontSize: { xs: '0.95rem', sm: '1.1rem' } }}>
               Change Password
             </Typography>
           </Grid>
@@ -385,19 +468,31 @@ function MyProfilePage() {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               fullWidth
+              size="small"
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
                     <IconButton
                       onClick={() => setShowNewPassword(!showNewPassword)}
                       edge="end"
+                      size="small"
                     >
-                      {showNewPassword ? <VisibilityOff /> : <Visibility />}
+                      {showNewPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
                     </IconButton>
                   </InputAdornment>
                 )
               }}
               helperText="Leave blank to keep current password"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 1.5,
+                  '&:hover fieldset': { borderColor: '#667eea' },
+                  '&.Mui-focused fieldset': { borderColor: '#667eea' }
+                },
+                '& .MuiFormHelperText-root': {
+                  fontSize: { xs: '0.65rem', sm: '0.75rem' }
+                }
+              }}
             />
           </Grid>
 
@@ -408,14 +503,16 @@ function MyProfilePage() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               fullWidth
+              size="small"
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
                     <IconButton
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       edge="end"
+                      size="small"
                     >
-                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                      {showConfirmPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
                     </IconButton>
                   </InputAdornment>
                 )
@@ -426,31 +523,66 @@ function MyProfilePage() {
                   ? 'Passwords do not match'
                   : ''
               }
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 1.5,
+                  '&:hover fieldset': { borderColor: '#667eea' },
+                  '&.Mui-focused fieldset': { borderColor: '#667eea' }
+                },
+                '& .MuiFormHelperText-root': {
+                  fontSize: { xs: '0.65rem', sm: '0.75rem' }
+                }
+              }}
             />
           </Grid>
 
           {/* Action Buttons */}
           <Grid item xs={12}>
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mt: 1 }}>
               <Button
                 onClick={handleCancel}
                 variant="outlined"
                 disabled={saving}
+                sx={{
+                  textTransform: 'none',
+                  borderRadius: 2,
+                  px: 3,
+                  fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                  borderColor: '#9e9e9e',
+                  color: '#616161',
+                  '&:hover': {
+                    borderColor: '#757575',
+                    bgcolor: 'rgba(0,0,0,0.04)'
+                  }
+                }}
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleSave}
                 variant="contained"
-                color="primary"
                 disabled={saving || !name.trim()}
+                sx={{
+                  textTransform: 'none',
+                  borderRadius: 2,
+                  px: 3,
+                  fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #5568d3 0%, #633d8a 100%)',
+                  },
+                  '&:disabled': {
+                    background: '#e0e0e0'
+                  }
+                }}
               >
-                {saving ? <CircularProgress size={24} /> : 'Save'}
+                {saving ? <CircularProgress size={20} sx={{ color: 'white' }} /> : 'Save'}
               </Button>
             </Box>
           </Grid>
         </Grid>
       </Paper>
+      </Box>
 
       {/* Snackbar for messages */}
       <Snackbar

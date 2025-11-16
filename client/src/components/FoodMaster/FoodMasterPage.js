@@ -21,6 +21,7 @@ import {
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
 import { collection, addDoc, getDocs, doc, deleteDoc, updateDoc, query, where } from 'firebase/firestore';
 import { db } from '../../firebase/firebase';
 import { useAuth } from '../Auth/AuthContext';
@@ -211,17 +212,34 @@ function FoodMasterPage() {
   };
 
   return (
-    <div>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h5" component="h1">
-          My Food Database
-        </Typography>
-      </Box>
+    <Box sx={{ 
+      minHeight: '100vh',
+      bgcolor: '#f5f7fa',
+      pb: 2
+    }}>
+      <Box sx={{ p: { xs: 2, sm: 3 } }}>
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 1.5, 
+          mb: 2,
+          background: 'linear-gradient(135deg, #66bb6a 0%, #4caf50 100%)',
+          color: 'white',
+          p: { xs: 2, sm: 2.5 },
+          borderRadius: 2,
+          boxShadow: '0 4px 12px rgba(102, 187, 106, 0.25)'
+        }}>
+          <MenuBookIcon sx={{ fontSize: { xs: 28, sm: 36 } }} />
+          <Typography variant="h6" component="h1" fontWeight="600" sx={{ fontSize: { xs: '1.1rem', sm: '1.5rem' } }}>
+            My Food Database
+          </Typography>
+        </Box>
       
       <Snackbar 
         open={!!message.text} 
         autoHideDuration={3000} 
         onClose={handleCloseMessage}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
         <Alert 
           severity={message.type} 
@@ -232,13 +250,18 @@ function FoodMasterPage() {
         </Alert>
       </Snackbar>
 
-      <Paper elevation={1} sx={{ p: 2, mb: 3 }}>
-        <Typography variant="subtitle1" component="h2" gutterBottom>
+      <Paper elevation={0} sx={{ 
+        p: { xs: 2, sm: 3 }, 
+        mb: 2,
+        borderRadius: 2,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+      }}>
+        <Typography variant="body2" component="h2" gutterBottom fontWeight="600" color="#667eea" sx={{ mb: 2, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
           {editing ? 'Edit Food Item' : 'Add New Food Item'}
         </Typography>
         
         <form onSubmit={handleSubmit}>
-          <Grid container spacing={2}>
+          <Grid container spacing={1.5}>
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
@@ -247,9 +270,19 @@ function FoodMasterPage() {
                 value={formData.food_name}
                 onChange={handleInputChange}
                 required
-                margin="dense"
                 variant="outlined"
                 size="small"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 1.5,
+                    '&:hover fieldset': {
+                      borderColor: '#667eea'
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#667eea'
+                    }
+                  }
+                }}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -260,9 +293,19 @@ function FoodMasterPage() {
                 value={formData.measuring_unit}
                 onChange={handleInputChange}
                 required
-                margin="dense"
                 variant="outlined"
                 size="small"
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 1.5,
+                    '&:hover fieldset': {
+                      borderColor: '#667eea'
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#667eea'
+                    }
+                  }
+                }}
               />
             </Grid>
             <Grid item xs={6} sm={3}>
@@ -274,10 +317,20 @@ function FoodMasterPage() {
                 value={formData.measuring_quantity}
                 onChange={handleInputChange}
                 required
-                margin="dense"
                 variant="outlined"
                 size="small"
                 InputProps={{ inputProps: { min: 0, step: "0.01" } }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 1.5,
+                    '&:hover fieldset': {
+                      borderColor: '#667eea'
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#667eea'
+                    }
+                  }
+                }}
               />
             </Grid>
             <Grid item xs={6} sm={3}>
@@ -289,12 +342,22 @@ function FoodMasterPage() {
                 value={formData.calories_in_gms}
                 onChange={handleInputChange}
                 required
-                margin="dense"
                 variant="outlined"
                 size="small"
                 InputProps={{ 
                   inputProps: { min: 0, step: "0.1" },
                   endAdornment: <InputAdornment position="end">cal</InputAdornment>
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 1.5,
+                    '&:hover fieldset': {
+                      borderColor: '#667eea'
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#667eea'
+                    }
+                  }
                 }}
               />
             </Grid>
@@ -307,12 +370,22 @@ function FoodMasterPage() {
                 value={formData.Protien_in_gms}
                 onChange={handleInputChange}
                 required
-                margin="dense"
                 variant="outlined"
                 size="small"
                 InputProps={{ 
                   inputProps: { min: 0, step: "0.1" },
                   endAdornment: <InputAdornment position="end">g</InputAdornment>
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 1.5,
+                    '&:hover fieldset': {
+                      borderColor: '#667eea'
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#667eea'
+                    }
+                  }
                 }}
               />
             </Grid>
@@ -325,12 +398,22 @@ function FoodMasterPage() {
                 value={formData.carb_in_gms}
                 onChange={handleInputChange}
                 required
-                margin="dense"
                 variant="outlined"
                 size="small"
                 InputProps={{ 
                   inputProps: { min: 0, step: "0.1" },
                   endAdornment: <InputAdornment position="end">g</InputAdornment>
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 1.5,
+                    '&:hover fieldset': {
+                      borderColor: '#667eea'
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#667eea'
+                    }
+                  }
                 }}
               />
             </Grid>
@@ -343,32 +426,58 @@ function FoodMasterPage() {
                 value={formData.fat_in_gms}
                 onChange={handleInputChange}
                 required
-                margin="dense"
                 variant="outlined"
                 size="small"
                 InputProps={{ 
                   inputProps: { min: 0, step: "0.1" },
                   endAdornment: <InputAdornment position="end">g</InputAdornment>
                 }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 1.5,
+                    '&:hover fieldset': {
+                      borderColor: '#667eea'
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#667eea'
+                    }
+                  }
+                }}
               />
             </Grid>
           </Grid>
 
-          <Box sx={{ mt: 2, display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+          <Box sx={{ mt: 2, display: 'flex', gap: 1.5, justifyContent: 'flex-end' }}>
             <Button 
               type="submit" 
               variant="contained" 
-              color="primary" 
-              size="small"
+              size="medium"
+              sx={{
+                borderRadius: 2,
+                px: 3,
+                textTransform: 'none',
+                fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)'
+                }
+              }}
             >
               {editing ? 'Update' : 'Add'}
             </Button>
             {editing && (
               <Button 
                 variant="outlined" 
-                color="secondary" 
                 onClick={resetForm}
-                size="small"
+                size="medium"
+                sx={{
+                  borderRadius: 2,
+                  px: 3,
+                  textTransform: 'none',
+                  fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                  borderColor: '#ccc',
+                  color: '#666'
+                }}
               >
                 Cancel
               </Button>
@@ -383,18 +492,28 @@ function FoodMasterPage() {
         </Box>
       ) : (
         <>
-          <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
-            Food Items ({foods.length})
-          </Typography>
+          <Box sx={{ 
+            p: { xs: 1.5, sm: 2 }, 
+            bgcolor: 'white', 
+            borderRadius: 2,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+          }}>
+            <Typography variant="body2" fontWeight="600" color="#667eea" gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, mb: 1.5 }}>
+              Food Items ({foods.length})
+            </Typography>
           
           {isMobile ? (
             // Mobile view - List
-            <List sx={{ bgcolor: 'background.paper' }} component={Paper}>
+            <List sx={{ bgcolor: 'transparent', p: 0 }}>
               {foods.map((food) => (
                 <React.Fragment key={food.id}>
-                  <ListItem>
+                  <ListItem sx={{ px: 0 }}>
                     <ListItemText
                       primary={food.food_name}
+                      primaryTypographyProps={{
+                        fontWeight: 600,
+                        fontSize: { xs: '0.9rem', sm: '1rem' }
+                      }}
                       secondary={
                         <>
                           {`${food.measuring_quantity} ${food.measuring_unit} | ${food.calories_in_gms} cal`}
@@ -402,12 +521,15 @@ function FoodMasterPage() {
                           {`P: ${food.Protien_in_gms}g | C: ${food.carb_in_gms}g | F: ${food.fat_in_gms}g`}
                         </>
                       }
+                      secondaryTypographyProps={{
+                        fontSize: { xs: '0.75rem', sm: '0.85rem' }
+                      }}
                     />
                     <ListItemSecondaryAction>
-                      <IconButton edge="end" size="small" onClick={() => handleEdit(food)}>
+                      <IconButton edge="end" size="small" onClick={() => handleEdit(food)} sx={{ color: '#667eea' }}>
                         <EditIcon fontSize="small" />
                       </IconButton>
-                      <IconButton edge="end" size="small" onClick={() => handleDelete(food.id)}>
+                      <IconButton edge="end" size="small" onClick={() => handleDelete(food.id)} sx={{ color: '#ef5350' }}>
                         <DeleteIcon fontSize="small" />
                       </IconButton>
                     </ListItemSecondaryAction>
@@ -416,53 +538,64 @@ function FoodMasterPage() {
                 </React.Fragment>
               ))}
               {foods.length === 0 && (
-                <ListItem>
+                <ListItem sx={{ px: 0 }}>
                   <ListItemText primary="No food items found. Add some!" />
                 </ListItem>
               )}
             </List>
           ) : (
             // Desktop view - Grid
-            <Grid container spacing={2}>
+            <Grid container spacing={1.5}>
               {foods.map((food) => (
                 <Grid item xs={12} sm={6} md={4} key={food.id}>
-                  <Paper sx={{ p: 2 }}>
-                    <Typography variant="subtitle1" component="div">
+                  <Box sx={{ 
+                    p: 2, 
+                    bgcolor: '#f9f9f9', 
+                    borderRadius: 1.5,
+                    border: '1px solid #e0e0e0',
+                    '&:hover': {
+                      boxShadow: '0 2px 8px rgba(102, 126, 234, 0.15)',
+                      borderColor: '#667eea'
+                    }
+                  }}>
+                    <Typography variant="subtitle2" component="div" fontWeight="600" sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}>
                       {food.food_name}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem' } }}>
                       {`${food.measuring_quantity} ${food.measuring_unit}`}
                     </Typography>
-                    <Typography variant="body1" sx={{ mt: 1 }}>
+                    <Typography variant="body2" sx={{ mt: 1, fontSize: { xs: '0.9rem', sm: '0.95rem' } }}>
                       {`${food.calories_in_gms} calories`}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem' } }}>
                       {`P: ${food.Protien_in_gms}g | C: ${food.carb_in_gms}g | F: ${food.fat_in_gms}g`}
                     </Typography>
-                    <Box sx={{ mt: 1, display: 'flex', justifyContent: 'flex-end' }}>
-                      <IconButton size="small" onClick={() => handleEdit(food)}>
+                    <Box sx={{ mt: 1.5, display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
+                      <IconButton size="small" onClick={() => handleEdit(food)} sx={{ color: '#667eea' }}>
                         <EditIcon fontSize="small" />
                       </IconButton>
-                      <IconButton size="small" color="error" onClick={() => handleDelete(food.id)}>
+                      <IconButton size="small" onClick={() => handleDelete(food.id)} sx={{ color: '#ef5350' }}>
                         <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Box>
-                  </Paper>
+                  </Box>
                 </Grid>
               ))}
               {foods.length === 0 && (
                 <Grid item xs={12}>
-                  <Paper sx={{ p: 2, textAlign: 'center' }}>
-                    <Typography>No food items found. Add some!</Typography>
-                  </Paper>
+                  <Box sx={{ p: 2, textAlign: 'center', bgcolor: '#f9f9f9', borderRadius: 1.5 }}>
+                    <Typography variant="body2" color="text.secondary">No food items found. Add some!</Typography>
+                  </Box>
                 </Grid>
               )}
             </Grid>
           )}
+          </Box>
         </>
       )}
+      </Box>
       <Footer />
-    </div>
+    </Box>
   );
 }
 

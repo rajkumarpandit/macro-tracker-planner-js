@@ -14,6 +14,7 @@ import {
 import { Link as RouterLink } from 'react-router-dom';
 import PersonIcon from '@mui/icons-material/Person';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 import { useIsAdmin, addAdmin, removeAdmin } from '../../utils/adminUtils';
 import { getAuth } from 'firebase/auth';
 import { db } from '../../firebase/firebase';
@@ -194,8 +195,8 @@ const AdminManagement = () => {
 
   if (!userIsAdmin) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Alert severity="error">
+      <Box sx={{ minHeight: '100vh', bgcolor: '#f5f7fa', p: { xs: 2, sm: 3 } }}>
+        <Alert severity="error" sx={{ borderRadius: 2 }}>
           You don't have permission to access this page.
         </Alert>
       </Box>
@@ -203,27 +204,41 @@ const AdminManagement = () => {
   }
 
   return (
-    <Box sx={{ p: 3, maxWidth: 800, mx: 'auto' }}>
-      <Typography variant="h4" gutterBottom>
-        User Management
-      </Typography>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f7fa', pb: 2 }}>
+      <Box sx={{ p: { xs: 2, sm: 3 } }}>
+        {/* Header */}
+        <Box sx={{ 
+          background: 'linear-gradient(135deg, #66bb6a 0%, #4caf50 100%)',
+          p: { xs: 2, sm: 2.5 },
+          mb: 2,
+          borderRadius: 2,
+          boxShadow: '0 4px 12px rgba(102, 187, 106, 0.25)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5
+        }}>
+          <SupervisorAccountIcon sx={{ fontSize: { xs: 28, sm: 36 }, color: 'white' }} />
+          <Typography variant="h5" component="h1" sx={{ color: 'white', fontWeight: 600, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
+            User Management
+          </Typography>
+        </Box>
       
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-          <CircularProgress />
+          <CircularProgress sx={{ color: '#667eea' }} />
         </Box>
       ) : error ? (
-        <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>
+        <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
       ) : (
-        <Paper sx={{ p: 3, mb: 3 }}>
-          <Typography variant="h6" gutterBottom>
+        <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, mb: 2, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+          <Typography variant="body2" fontWeight="600" color="#667eea" gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' }, mb: 1.5 }}>
             Manage Users and Permissions
           </Typography>
           
           {users.length === 0 ? (
-            <Alert severity="info">No users found in the system.</Alert>
+            <Alert severity="info" sx={{ borderRadius: 1.5 }}>No users found in the system.</Alert>
           ) : (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               {users.map((user) => {
                 const changes = userChanges[user.id] || {};
                 const currentIsAdmin = changes.hasOwnProperty('isAdmin') ? changes.isAdmin : user.isAdmin;
@@ -233,38 +248,51 @@ const AdminManagement = () => {
                 return (
                   <Paper 
                     key={user.id}
-                    elevation={2}
+                    elevation={0}
                     sx={{ 
-                      p: 2,
-                      backgroundColor: currentIsEnabled ? 'inherit' : 'rgba(0, 0, 0, 0.04)',
-                      opacity: currentIsEnabled ? 1 : 0.7
+                      p: { xs: 1.5, sm: 2 },
+                      borderRadius: 2,
+                      border: '1px solid',
+                      borderColor: hasChanges ? '#667eea' : '#e0e0e0',
+                      backgroundColor: currentIsEnabled ? 'white' : 'rgba(0, 0, 0, 0.04)',
+                      opacity: currentIsEnabled ? 1 : 0.7,
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        boxShadow: '0 2px 8px rgba(102, 126, 234, 0.15)'
+                      }
                     }}
                   >
                     {/* User Info - One Line */}
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="subtitle1" fontWeight="bold">
+                    <Box sx={{ mb: 1.5 }}>
+                      <Typography variant="subtitle2" fontWeight="600" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                         {user.displayName} - {user.email}
                         {user.email === currentUser.email && (
-                          <Chip label="You" size="small" color="primary" sx={{ ml: 1 }} />
+                          <Chip label="You" size="small" sx={{ ml: 1, bgcolor: '#667eea', color: 'white', fontSize: '0.7rem' }} />
                         )}
                       </Typography>
                     </Box>
                     
                     {/* Checkboxes - Stacked vertically on mobile */}
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mb: 1.5 }}>
                       <FormControlLabel
                         control={
                           <Checkbox 
                             checked={currentIsAdmin}
                             onChange={(e) => handleCheckboxChange(user.id, 'isAdmin', e.target.checked)}
                             disabled={user.email === currentUser.email}
-                            color="primary"
+                            size="small"
+                            sx={{
+                              color: '#667eea',
+                              '&.Mui-checked': {
+                                color: '#667eea'
+                              }
+                            }}
                           />
                         }
                         label={
                           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <AdminPanelSettingsIcon fontSize="small" sx={{ mr: 0.5 }} />
-                            <Typography variant="body2">Admin Role</Typography>
+                            <AdminPanelSettingsIcon fontSize="small" sx={{ mr: 0.5, fontSize: { xs: '1rem', sm: '1.25rem' } }} />
+                            <Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>Admin Role</Typography>
                           </Box>
                         }
                       />
@@ -275,13 +303,19 @@ const AdminManagement = () => {
                             checked={currentIsEnabled}
                             onChange={(e) => handleCheckboxChange(user.id, 'isEnabled', e.target.checked)}
                             disabled={user.email === currentUser.email}
-                            color="success"
+                            size="small"
+                            sx={{
+                              color: '#4caf50',
+                              '&.Mui-checked': {
+                                color: '#4caf50'
+                              }
+                            }}
                           />
                         }
                         label={
                           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <PersonIcon fontSize="small" sx={{ mr: 0.5 }} />
-                            <Typography variant="body2">Account Enabled</Typography>
+                            <PersonIcon fontSize="small" sx={{ mr: 0.5, fontSize: { xs: '1rem', sm: '1.25rem' } }} />
+                            <Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>Account Enabled</Typography>
                           </Box>
                         }
                       />
@@ -290,11 +324,25 @@ const AdminManagement = () => {
                     {/* Save Button */}
                     <Button
                       variant="contained"
-                      color="primary"
                       size="small"
                       onClick={() => handleSaveUser(user)}
                       disabled={!hasChanges || user.email === currentUser.email}
                       fullWidth
+                      sx={{
+                        textTransform: 'none',
+                        borderRadius: 1.5,
+                        py: 1,
+                        fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                        fontWeight: 600,
+                        background: hasChanges ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : undefined,
+                        '&:hover': {
+                          background: hasChanges ? 'linear-gradient(135deg, #5568d3 0%, #633d8a 100%)' : undefined,
+                        },
+                        '&:disabled': {
+                          background: '#e0e0e0',
+                          color: '#9e9e9e'
+                        }
+                      }}
                     >
                       Save Changes
                     </Button>
@@ -306,43 +354,44 @@ const AdminManagement = () => {
         </Paper>
       )}
       
-      <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
+      <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, mb: 2, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+        <Typography variant="body2" fontWeight="600" color="#667eea" gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' }, mb: 1.5 }}>
           User Management Help
         </Typography>
-        <Typography variant="body1" paragraph>
+        <Typography variant="body2" paragraph sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' }, mb: 1 }}>
           <strong>Admin Access:</strong> Users with admin access can manage other users and access special features.
         </Typography>
-        <Typography variant="body1" paragraph>
+        <Typography variant="body2" paragraph sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' }, mb: 1 }}>
           <strong>Disable User:</strong> Disabled users cannot log in to the application.
         </Typography>
-        <Typography variant="body1">
+        <Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>
           <strong>Note:</strong> You cannot remove your own admin access or disable your own account.
         </Typography>
       </Paper>
       
       {error && error.includes("permission") && (
-        <Paper sx={{ p: 3, bgcolor: 'error.light' }}>
-          <Typography variant="h6" gutterBottom color="error">
+        <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: '#ffebee', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+          <Typography variant="body2" fontWeight="600" color="error" gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' } }}>
             Permission Error
           </Typography>
-          <Typography variant="body1" paragraph>
+          <Typography variant="body2" paragraph sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>
             There was an error accessing the admin_users collection. This is likely because the Firebase security rules need to be updated.
           </Typography>
-          <Typography variant="body1">
+          <Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' }, mb: 1 }}>
             To fix this issue:
           </Typography>
-          <ol>
+          <Box component="ol" sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' }, pl: 2.5 }}>
             <li>Run the <strong>deploy-firestore-rules.bat</strong> file in your project root</li>
             <li>Or manually deploy using: <code>firebase deploy --only firestore:rules</code></li>
             <li>After deployment, refresh this page</li>
-          </ol>
+          </Box>
           
-          <Typography variant="body2" sx={{ mt: 2, fontStyle: 'italic' }}>
-            You can visit <RouterLink to="/admin/initialize">Initialize Admin Collection</RouterLink> for more information.
+          <Typography variant="caption" sx={{ mt: 1.5, fontStyle: 'italic', display: 'block', fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>
+            You can visit <RouterLink to="/admin/initialize" style={{ color: '#667eea' }}>Initialize Admin Collection</RouterLink> for more information.
           </Typography>
         </Paper>
       )}
+      </Box>
       
       {/* Notification snackbar */}
       <Snackbar 

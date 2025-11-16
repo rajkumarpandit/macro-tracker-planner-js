@@ -7,10 +7,7 @@ import {
   Grid,
   Box,
   Alert,
-  Container,
   InputAdornment,
-  Card,
-  CardContent,
   IconButton,
   List,
   ListItem,
@@ -19,6 +16,7 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -271,6 +269,7 @@ const WeightLogPage = () => {
 
   const handleEdit = (weightEntry) => {
     setWeight(weightEntry.weight.toString());
+    setSelectedDate(weightEntry.date);
     setStatus({
       type: 'info',
       message: 'Editing entry. Click Save to update or Cancel to discard changes.'
@@ -278,30 +277,57 @@ const WeightLogPage = () => {
   };
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Weight Log
-      </Typography>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f7fa', pb: 2 }}>
+      <Box sx={{ p: { xs: 2, sm: 3 } }}>
+        {/* Header */}
+        <Box sx={{ 
+          background: 'linear-gradient(135deg, #66bb6a 0%, #4caf50 100%)',
+          p: { xs: 2, sm: 2.5 },
+          mb: 2,
+          borderRadius: 2,
+          boxShadow: '0 4px 12px rgba(102, 187, 106, 0.25)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5
+        }}>
+          <FitnessCenterIcon sx={{ fontSize: { xs: 28, sm: 36 }, color: 'white' }} />
+          <Typography variant="h5" component="h1" sx={{ color: 'white', fontWeight: 600, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
+            Weight Log
+          </Typography>
+        </Box>
 
-      <Paper sx={{ p: 3, mb: 4 }}>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
+      <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, mb: 2, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+        <Grid container spacing={1.5}>
+          <Grid item xs={12} sm={6}>
             <LocalizationProvider dateAdapter={AdapterDateFns}>
               <DatePicker
                 label="Date"
                 value={selectedDate}
                 onChange={handleDateChange}
-                slotProps={{ textField: { fullWidth: true } }}
+                slotProps={{ 
+                  textField: { 
+                    fullWidth: true,
+                    size: 'small',
+                    sx: {
+                      borderRadius: 1.5,
+                      '& .MuiOutlinedInput-root': {
+                        '&:hover fieldset': { borderColor: '#667eea' },
+                        '&.Mui-focused fieldset': { borderColor: '#667eea' }
+                      }
+                    }
+                  } 
+                }}
               />
             </LocalizationProvider>
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} sm={6}>
             <TextField
               label="Weight"
               type="number"
               value={weight}
               onChange={handleWeightChange}
               fullWidth
+              size="small"
               InputProps={{
                 endAdornment: <InputAdornment position="end">kg</InputAdornment>,
               }}
@@ -309,27 +335,54 @@ const WeightLogPage = () => {
                 step: 0.01,
                 min: 0
               }}
+              sx={{
+                borderRadius: 1.5,
+                '& .MuiOutlinedInput-root': {
+                  '&:hover fieldset': { borderColor: '#667eea' },
+                  '&.Mui-focused fieldset': { borderColor: '#667eea' }
+                }
+              }}
             />
           </Grid>
           <Grid item xs={12}>
             {status.message && (
-              <Alert severity={status.type} sx={{ mb: 2 }}>
+              <Alert severity={status.type} sx={{ mb: 1.5, borderRadius: 1.5, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                 {status.message}
               </Alert>
             )}
-            <Box display="flex" justifyContent="flex-end" gap={2}>
+            <Box display="flex" justifyContent="flex-end" gap={1.5}>
               <Button
                 variant="outlined"
-                color="secondary"
                 onClick={handleCancel}
+                sx={{
+                  textTransform: 'none',
+                  borderRadius: 2,
+                  px: 3,
+                  fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                  borderColor: '#9e9e9e',
+                  color: '#616161',
+                  '&:hover': {
+                    borderColor: '#757575',
+                    bgcolor: 'rgba(0,0,0,0.04)'
+                  }
+                }}
               >
                 Cancel
               </Button>
               <Button
                 variant="contained"
-                color="primary"
                 onClick={handleSave}
                 disabled={isLoading}
+                sx={{
+                  textTransform: 'none',
+                  borderRadius: 2,
+                  px: 3,
+                  fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #5568d3 0%, #633d8a 100%)',
+                  }
+                }}
               >
                 Save
               </Button>
@@ -339,63 +392,66 @@ const WeightLogPage = () => {
       </Paper>
 
       {savedWeights.length > 0 && (
-        <Card sx={{ mb: 4 }}>
-          <CardContent>
-            <Typography variant="h6" component="h2" gutterBottom>
-              Weight History - Last 7 Days
-            </Typography>
-            <List>
-              {savedWeights.map((entry, index) => (
-                <React.Fragment key={entry.id}>
-                  <ListItem
-                    secondaryAction={
-                      <Box sx={{ display: 'flex', gap: 1 }}>
-                        <IconButton 
-                          edge="end" 
-                          aria-label="edit"
-                          onClick={() => handleEdit(entry)}
-                          color="primary"
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton 
-                          edge="end" 
-                          aria-label="delete"
-                          onClick={() => handleDelete(entry.id)}
-                          color="error"
-                        >
-                          <DeleteIcon />
-                        </IconButton>
+        <Box sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'white', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', mb: 2 }}>
+          <Typography variant="body2" fontWeight="600" color="#667eea" gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, mb: 1.5 }}>
+            Weight History - Last 7 Days
+          </Typography>
+          <List sx={{ p: 0 }}>
+            {savedWeights.map((entry, index) => (
+              <React.Fragment key={entry.id}>
+                <ListItem
+                  sx={{ px: 0 }}
+                  secondaryAction={
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      <IconButton 
+                        size="small"
+                        aria-label="edit"
+                        onClick={() => handleEdit(entry)}
+                        sx={{ color: '#667eea' }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton 
+                        size="small"
+                        aria-label="delete"
+                        onClick={() => handleDelete(entry.id)}
+                        sx={{ color: '#ef5350' }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  }
+                >
+                  <ListItemText
+                    primary={
+                      <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
+                        <Typography variant="h6" component="span" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' }, fontWeight: 600, color: '#667eea' }}>
+                          {entry.weight.toFixed(2)} kg
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+                          {format(entry.date, 'MMM d, yyyy')}
+                        </Typography>
                       </Box>
                     }
-                  >
-                    <ListItemText
-                      primary={
-                        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
-                          <Typography variant="h6" component="span">
-                            {entry.weight.toFixed(2)} kg
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {format(entry.date, 'MMM d, yyyy')}
-                          </Typography>
-                        </Box>
-                      }
-                      secondary={format(entry.date, 'h:mm a')}
-                    />
-                  </ListItem>
-                  {index < savedWeights.length - 1 && <Divider />}
-                </React.Fragment>
-              ))}
-            </List>
-          </CardContent>
-        </Card>
+                    secondary={format(entry.date, 'h:mm a')}
+                    secondaryTypographyProps={{
+                      fontSize: { xs: '0.75rem', sm: '0.85rem' }
+                    }}
+                  />
+                </ListItem>
+                {index < savedWeights.length - 1 && <Divider />}
+              </React.Fragment>
+            ))}
+          </List>
+        </Box>
       )}
 
-      <Typography variant="body2" color="textSecondary" sx={{ mt: 2 }}>
+      <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' }, mt: 1 }}>
         Track your weight progress over time. Your data will be displayed on the Reports page.
       </Typography>
+      </Box>
       <Footer />
-    </Container>
+    </Box>
   );
 };
 

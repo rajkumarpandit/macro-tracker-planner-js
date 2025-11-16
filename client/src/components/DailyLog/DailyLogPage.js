@@ -10,8 +10,6 @@ import {
   Select,
   MenuItem,
   Box,
-  Card,
-  CardContent,
   Alert,
   InputAdornment,
   LinearProgress,
@@ -28,11 +26,14 @@ import {
   Tabs,
   Tab,
   FormControlLabel,
-  Switch
+  Switch,
+  Tooltip
 } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import DeleteIcon from '@mui/icons-material/Delete';
+import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { collection, addDoc, getDocs, query, where, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../firebase/firebase';
 import { format } from 'date-fns';
@@ -484,15 +485,34 @@ function DailyLogPage() {
   const targets = { calories: 2000, protein: 150, carbs: 250, fat: 70 };
 
   return (
-    <div>
-      <Typography variant="h5" component="h1" gutterBottom>
-        Daily Food Log
-      </Typography>
+    <Box sx={{ 
+      minHeight: '100vh',
+      bgcolor: '#f5f7fa',
+      pb: 2
+    }}>
+      <Box sx={{ p: { xs: 2, sm: 3 } }}>
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 1.5, 
+          mb: 2,
+          background: 'linear-gradient(135deg, #66bb6a 0%, #4caf50 100%)',
+          color: 'white',
+          p: { xs: 2, sm: 2.5 },
+          borderRadius: 2,
+          boxShadow: '0 4px 12px rgba(102, 187, 106, 0.25)'
+        }}>
+          <RestaurantMenuIcon sx={{ fontSize: { xs: 28, sm: 36 } }} />
+          <Typography variant="h6" component="h1" fontWeight="600" sx={{ fontSize: { xs: '1.1rem', sm: '1.5rem' } }}>
+            Daily Food Log
+          </Typography>
+        </Box>
 
       <Snackbar 
         open={!!message.text} 
         autoHideDuration={3000} 
         onClose={handleCloseMessage}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
         <Alert 
           severity={message.type} 
@@ -503,11 +523,33 @@ function DailyLogPage() {
         </Alert>
       </Snackbar>
 
-      <Paper elevation={1} sx={{ p: 2, mb: 3 }}>
+      <Paper elevation={0} sx={{ 
+        borderRadius: 2,
+        overflow: 'hidden',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        mb: 2
+      }}>
         <Tabs 
           value={tabValue} 
           onChange={(e, newValue) => setTabValue(newValue)}
-          sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}
+          variant="fullWidth"
+          sx={{
+            borderBottom: 1, 
+            borderColor: 'divider',
+            '& .MuiTab-root': {
+              fontSize: { xs: '0.85rem', sm: '0.95rem' },
+              fontWeight: 500,
+              textTransform: 'none',
+              minHeight: { xs: 48, sm: 56 }
+            },
+            '& .Mui-selected': {
+              color: '#667eea !important'
+            },
+            '& .MuiTabs-indicator': {
+              height: 3,
+              background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)'
+            }
+          }}
         >
           <Tab label="My List" />
           <Tab label="New" />
@@ -515,26 +557,91 @@ function DailyLogPage() {
 
         {/* Tab 1: Existing Food List */}
         {tabValue === 0 && (
-          <>
-            <Grid container spacing={2}>
+          <Box sx={{ p: { xs: 2, sm: 3 }, bgcolor: 'white' }}>
+            <Grid container spacing={1.5}>
               <Grid item xs={12}>
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
-                  <DatePicker
-                    label="Date"
-                    value={selectedDate}
-                    onChange={(newValue) => {
-                      setSelectedDate(newValue);
-                      setCalculatedMacros(null); // Clear calculations on date change
-                    }}
-                    renderInput={(params) => 
-                      <TextField {...params} fullWidth size="small" margin="dense" />
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ flex: 1 }}>
+                    <LocalizationProvider dateAdapter={AdapterDateFns}>
+                      <DatePicker
+                        label="Date"
+                        value={selectedDate}
+                        onChange={(newValue) => {
+                          setSelectedDate(newValue);
+                          setCalculatedMacros(null); // Clear calculations on date change
+                        }}
+                        renderInput={(params) => 
+                          <TextField {...params} fullWidth size="small" />
+                        }
+                        slotProps={{
+                          textField: {
+                            size: 'small',
+                            sx: {
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                '&:hover fieldset': {
+                                  borderColor: '#667eea'
+                                },
+                                '&.Mui-focused fieldset': {
+                                  borderColor: '#667eea'
+                                }
+                              }
+                            }
+                          }
+                        }}
+                      />
+                    </LocalizationProvider>
+                  </Box>
+                  <Tooltip 
+                    title={
+                      <Box sx={{ p: 0.5 }}>
+                        <Typography variant="body2" gutterBottom sx={{ fontWeight: 600 }}>
+                          How to Use:
+                        </Typography>
+                        <Typography variant="caption" display="block" sx={{ mb: 0.5 }}>
+                          • <strong>My List:</strong> Select from your personal food database that you maintain.
+                        </Typography>
+                        <Typography variant="caption" display="block" sx={{ mb: 0.5 }}>
+                          • <strong>New:</strong> Use this tab if you don't have the food in your list. It fetches nutrition data from the internet.
+                        </Typography>
+                        <Typography variant="caption" display="block" sx={{ fontStyle: 'italic', mt: 1 }}>
+                          Tip: Manage your food database from the menu at the bottom.
+                        </Typography>
+                      </Box>
                     }
-                  />
-                </LocalizationProvider>
+                    arrow
+                    placement="right"
+                    enterDelay={200}
+                    leaveDelay={200}
+                    sx={{
+                      '& .MuiTooltip-tooltip': {
+                        bgcolor: 'rgba(0, 0, 0, 0.9)',
+                        maxWidth: 300,
+                        fontSize: '0.75rem',
+                        p: 1.5
+                      },
+                      '& .MuiTooltip-arrow': {
+                        color: 'rgba(0, 0, 0, 0.9)'
+                      }
+                    }}
+                  >
+                    <IconButton 
+                      size="small" 
+                      sx={{ 
+                        color: '#667eea',
+                        '&:hover': { 
+                          bgcolor: 'rgba(102, 126, 234, 0.1)' 
+                        }
+                      }}
+                    >
+                      <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
               </Grid>
 
               <Grid item xs={12} sm={6}>
-                <FormControl fullWidth size="small" margin="dense">
+                <FormControl fullWidth size="small">
                   <InputLabel id="food-select-label">Select Food</InputLabel>
                   <Select
                     labelId="food-select-label"
@@ -543,9 +650,18 @@ function DailyLogPage() {
                     label="Select Food"
                     onChange={(e) => {
                       handleFoodChange(e);
-                      setCalculatedMacros(null); // Clear calculations on food change
+                      setCalculatedMacros(null); // Clear calculations on date change
                     }}
                     disabled={foodsLoading}
+                    sx={{
+                      borderRadius: 1.5,
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#667eea'
+                      },
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#667eea'
+                      }
+                    }}
                   >
                     {foods.map((food) => (
                       <MenuItem key={food.id} value={food.id}>
@@ -565,7 +681,6 @@ function DailyLogPage() {
                   onChange={handleQuantityChange}
                   placeholder="Enter quantity"
                   size="small"
-                  margin="dense"
                   InputProps={{ 
                     inputProps: { min: 0.1, step: "0.1" },
                     endAdornment: selectedFood && (
@@ -573,6 +688,17 @@ function DailyLogPage() {
                         {foods.find(f => f.id === selectedFood)?.measuring_unit || 'units'}
                       </InputAdornment>
                     )
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 1.5,
+                      '&:hover fieldset': {
+                        borderColor: '#667eea'
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#667eea'
+                      }
+                    }
                   }}
                 />
               </Grid>
@@ -582,8 +708,19 @@ function DailyLogPage() {
               <Button 
                 onClick={calculateMacros} 
                 variant="outlined" 
-                color="primary" 
-                size="small"
+                size="medium"
+                sx={{
+                  borderRadius: 2,
+                  px: 3,
+                  textTransform: 'none',
+                  fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                  borderColor: '#667eea',
+                  color: '#667eea',
+                  '&:hover': {
+                    borderColor: '#667eea',
+                    bgcolor: '#f0f4ff'
+                  }
+                }}
               >
                 Calculate Macros
               </Button>
@@ -591,75 +728,163 @@ function DailyLogPage() {
             
             {/* Show calculated macros before saving */}
             {calculatedMacros && (
-              <Box sx={{ mt: 3, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
-                <Typography variant="subtitle2" gutterBottom>
+              <Box sx={{ 
+                mt: 2, 
+                p: { xs: 1.5, sm: 2 }, 
+                bgcolor: '#f0f4ff', 
+                borderRadius: 2,
+                border: '1px solid #667eea'
+              }}>
+                <Typography variant="body2" gutterBottom fontWeight="600" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>
                   Calculated Nutrition for {calculatedMacros.quantity} {calculatedMacros.unit} of {calculatedMacros.food_name}:
                 </Typography>
                 
-                <Grid container spacing={2} sx={{ mt: 1 }}>
+                <Grid container spacing={1.5} sx={{ mt: 0.5 }}>
                   <Grid item xs={3}>
-                    <Typography variant="body2" color="textSecondary">Calories</Typography>
-                    <Typography variant="body1" fontWeight="bold">
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>Calories</Typography>
+                    <Typography variant="body2" fontWeight="600" sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}>
                       {calculatedMacros.calories.toFixed(1)}
                     </Typography>
                   </Grid>
                   <Grid item xs={3}>
-                    <Typography variant="body2" color="textSecondary">Protein</Typography>
-                    <Typography variant="body1" fontWeight="bold">
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>Protein</Typography>
+                    <Typography variant="body2" fontWeight="600" sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}>
                       {calculatedMacros.protein.toFixed(1)}g
                     </Typography>
                   </Grid>
                   <Grid item xs={3}>
-                    <Typography variant="body2" color="textSecondary">Carbs</Typography>
-                    <Typography variant="body1" fontWeight="bold">
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>Carbs</Typography>
+                    <Typography variant="body2" fontWeight="600" sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}>
                       {calculatedMacros.carbs.toFixed(1)}g
                     </Typography>
                   </Grid>
                   <Grid item xs={3}>
-                    <Typography variant="body2" color="textSecondary">Fat</Typography>
-                    <Typography variant="body1" fontWeight="bold">
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>Fat</Typography>
+                    <Typography variant="body2" fontWeight="600" sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}>
                       {calculatedMacros.fat.toFixed(1)}g
                     </Typography>
                   </Grid>
                 </Grid>
                 
-                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 1.5 }}>
                   <Button 
                     onClick={() => setCalculatedMacros(null)} 
                     variant="outlined"
-                    size="small"
+                    size="medium"
+                    sx={{
+                      borderRadius: 2,
+                      px: 3,
+                      textTransform: 'none',
+                      fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                      borderColor: '#ccc',
+                      color: '#666'
+                    }}
                   >
                     Cancel
                   </Button>
                   <Button 
                     onClick={handleAddLog} 
                     variant="contained" 
-                    color="primary" 
-                    size="small"
+                    size="medium"
+                    sx={{
+                      borderRadius: 2,
+                      px: 3,
+                      textTransform: 'none',
+                      fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)'
+                      }
+                    }}
                   >
                     Add Food
                   </Button>
                 </Box>
               </Box>
             )}
-          </>
+          </Box>
         )}
 
         {/* Tab 2: Natural Language */}
         {tabValue === 1 && (
-          <>
-            <Grid container spacing={2}>
+          <Box sx={{ p: { xs: 2, sm: 3 }, bgcolor: 'white' }}>
+            <Grid container spacing={1.5}>
               <Grid item xs={12}>
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
-                  <DatePicker
-                    label="Date"
-                    value={selectedDate}
-                    onChange={(newValue) => setSelectedDate(newValue)}
-                    renderInput={(params) => 
-                      <TextField {...params} fullWidth size="small" margin="dense" />
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ flex: 1 }}>
+                    <LocalizationProvider dateAdapter={AdapterDateFns}>
+                      <DatePicker
+                        label="Date"
+                        value={selectedDate}
+                        onChange={(newValue) => setSelectedDate(newValue)}
+                        renderInput={(params) => 
+                          <TextField {...params} fullWidth size="small" />
+                        }
+                        slotProps={{
+                          textField: {
+                            size: 'small',
+                            sx: {
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                '&:hover fieldset': {
+                                  borderColor: '#667eea'
+                                },
+                                '&.Mui-focused fieldset': {
+                                  borderColor: '#667eea'
+                                }
+                              }
+                            }
+                          }
+                        }}
+                      />
+                    </LocalizationProvider>
+                  </Box>
+                  <Tooltip 
+                    title={
+                      <Box sx={{ p: 0.5 }}>
+                        <Typography variant="body2" gutterBottom sx={{ fontWeight: 600 }}>
+                          ⚠️ Important:
+                        </Typography>
+                        <Typography variant="caption" display="block" sx={{ mb: 0.5 }}>
+                          Use this tab only if your food item is <strong>not already in your Food Database</strong>.
+                        </Typography>
+                        <Typography variant="caption" display="block" sx={{ mb: 0.5 }}>
+                          This feature relies on internet data, which may not always precisely match your specific food item's macro information.
+                        </Typography>
+                        <Typography variant="caption" display="block" sx={{ fontStyle: 'italic', mt: 1, color: '#4caf50' }}>
+                          💡 For accuracy, add frequently eaten foods to your Food Database first.
+                        </Typography>
+                      </Box>
                     }
-                  />
-                </LocalizationProvider>
+                    arrow
+                    placement="right"
+                    enterDelay={200}
+                    leaveDelay={200}
+                    sx={{
+                      '& .MuiTooltip-tooltip': {
+                        bgcolor: 'rgba(0, 0, 0, 0.9)',
+                        maxWidth: 320,
+                        fontSize: '0.75rem',
+                        p: 1.5
+                      },
+                      '& .MuiTooltip-arrow': {
+                        color: 'rgba(0, 0, 0, 0.9)'
+                      }
+                    }}
+                  >
+                    <IconButton 
+                      size="small" 
+                      sx={{ 
+                        color: '#ff9800',
+                        '&:hover': { 
+                          bgcolor: 'rgba(255, 152, 0, 0.1)' 
+                        }
+                      }}
+                    >
+                      <InfoOutlinedIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
               </Grid>
 
               <Grid item xs={12}>
@@ -670,9 +895,19 @@ function DailyLogPage() {
                   value={nlText}
                   onChange={(e) => setNlText(e.target.value)}
                   size="small"
-                  margin="dense"
                   multiline
                   rows={2}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 1.5,
+                      '&:hover fieldset': {
+                        borderColor: '#667eea'
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#667eea'
+                      }
+                    }
+                  }}
                 />
               </Grid>
             </Grid>
@@ -681,9 +916,20 @@ function DailyLogPage() {
               <Button 
                 onClick={handleParseFood} 
                 variant="outlined" 
-                color="primary" 
-                size="small"
+                size="medium"
                 disabled={nlLoading || !nlText.trim()}
+                sx={{
+                  borderRadius: 2,
+                  px: 3,
+                  textTransform: 'none',
+                  fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                  borderColor: '#667eea',
+                  color: '#667eea',
+                  '&:hover': {
+                    borderColor: '#667eea',
+                    bgcolor: '#f0f4ff'
+                  }
+                }}
               >
                 {nlLoading ? 'Processing...' : 'Parse Food'}
               </Button>
@@ -691,36 +937,59 @@ function DailyLogPage() {
 
             {/* Show parsed food */}
             {parsedFood && (
-              <Box sx={{ mt: 3, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
-                <Typography variant="subtitle2" gutterBottom>
+              <Box sx={{ 
+                mt: 2, 
+                p: { xs: 1.5, sm: 2 }, 
+                bgcolor: '#f0f4ff', 
+                borderRadius: 2,
+                border: '1px solid #667eea'
+              }}>
+                <Typography variant="body2" gutterBottom fontWeight="600" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>
                   Parsed Food Item:
                 </Typography>
-                <Typography variant="body1">
+                <Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>
                   <strong>Food:</strong> {parsedFood.foodName}
                 </Typography>
-                <Typography variant="body1">
+                <Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>
                   <strong>Quantity:</strong> {parsedFood.quantity} {parsedFood.unit}
                 </Typography>
 
-                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ mt: 2, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'flex-end', alignItems: { xs: 'stretch', sm: 'center' }, gap: 1.5 }}>
                   <FormControlLabel
                     control={
                       <Switch
                         checked={searchUserDatabase}
                         onChange={(e) => setSearchUserDatabase(e.target.checked)}
-                        color="primary"
                         size="small"
+                        sx={{ 
+                          '& .MuiSwitch-switchBase.Mui-checked': {
+                            color: '#667eea',
+                          },
+                          '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                            backgroundColor: '#667eea',
+                          }
+                        }}
                       />
                     }
-                    label="Search my food database first"
-                    sx={{ mr: 1 }}
+                    label={<Typography variant="caption" sx={{ fontSize: { xs: '0.8rem', sm: '0.85rem' } }}>Search my food database first</Typography>}
                   />
                   <Button 
                     onClick={handleFetchMacros} 
                     variant="outlined" 
-                    color="primary" 
-                    size="small"
+                    size="medium"
                     disabled={nlLoading}
+                    sx={{
+                      borderRadius: 2,
+                      px: 3,
+                      textTransform: 'none',
+                      fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                      borderColor: '#667eea',
+                      color: '#667eea',
+                      '&:hover': {
+                        borderColor: '#667eea',
+                        bgcolor: '#f0f4ff'
+                      }
+                    }}
                   >
                     {nlLoading ? 'Fetching...' : 'Fetch Macro Info'}
                   </Button>
@@ -730,210 +999,264 @@ function DailyLogPage() {
 
             {/* Show fetched macros and calculated values */}
             {fetchedMacros && calculatedNlMacros && (
-              <Box sx={{ mt: 3, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
-                <Typography variant="subtitle2" gutterBottom>
+              <Box sx={{ 
+                mt: 2, 
+                p: { xs: 1.5, sm: 2 }, 
+                bgcolor: '#f0f4ff', 
+                borderRadius: 2,
+                border: '1px solid #667eea'
+              }}>
+                <Typography variant="body2" gutterBottom fontWeight="600" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>
                   Nutrition Information (per {fetchedMacros.servingSize}):
                 </Typography>
-                <Grid container spacing={2} sx={{ mt: 1 }}>
+                <Grid container spacing={1.5} sx={{ mt: 0.5 }}>
                   <Grid item xs={3}>
-                    <Typography variant="body2" color="textSecondary">Calories</Typography>
-                    <Typography variant="body2">
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>Calories</Typography>
+                    <Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>
                       {fetchedMacros.calories.toFixed(1)}
                     </Typography>
                   </Grid>
                   <Grid item xs={3}>
-                    <Typography variant="body2" color="textSecondary">Protein</Typography>
-                    <Typography variant="body2">
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>Protein</Typography>
+                    <Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>
                       {fetchedMacros.protein.toFixed(1)}g
                     </Typography>
                   </Grid>
                   <Grid item xs={3}>
-                    <Typography variant="body2" color="textSecondary">Carbs</Typography>
-                    <Typography variant="body2">
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>Carbs</Typography>
+                    <Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>
                       {fetchedMacros.carbs.toFixed(1)}g
                     </Typography>
                   </Grid>
                   <Grid item xs={3}>
-                    <Typography variant="body2" color="textSecondary">Fats</Typography>
-                    <Typography variant="body2">
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>Fats</Typography>
+                    <Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>
                       {fetchedMacros.fats.toFixed(1)}g
                     </Typography>
                   </Grid>
                 </Grid>
 
-                <Typography variant="subtitle2" gutterBottom sx={{ mt: 3 }}>
+                <Typography variant="body2" gutterBottom fontWeight="600" sx={{ mt: 2, fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>
                   Your Total ({parsedFood.quantity} {parsedFood.unit}):
                 </Typography>
-                <Grid container spacing={2} sx={{ mt: 1 }}>
+                <Grid container spacing={1.5} sx={{ mt: 0.5 }}>
                   <Grid item xs={3}>
-                    <Typography variant="body2" color="textSecondary">Calories</Typography>
-                    <Typography variant="body1" fontWeight="bold">
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>Calories</Typography>
+                    <Typography variant="body2" fontWeight="600" sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}>
                       {calculatedNlMacros.calories}
                     </Typography>
                   </Grid>
                   <Grid item xs={3}>
-                    <Typography variant="body2" color="textSecondary">Protein</Typography>
-                    <Typography variant="body1" fontWeight="bold">
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>Protein</Typography>
+                    <Typography variant="body2" fontWeight="600" sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}>
                       {calculatedNlMacros.protein}g
                     </Typography>
                   </Grid>
                   <Grid item xs={3}>
-                    <Typography variant="body2" color="textSecondary">Carbs</Typography>
-                    <Typography variant="body1" fontWeight="bold">
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>Carbs</Typography>
+                    <Typography variant="body2" fontWeight="600" sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}>
                       {calculatedNlMacros.carbs}g
                     </Typography>
                   </Grid>
                   <Grid item xs={3}>
-                    <Typography variant="body2" color="textSecondary">Fat</Typography>
-                    <Typography variant="body1" fontWeight="bold">
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>Fat</Typography>
+                    <Typography variant="body2" fontWeight="600" sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}>
                       {calculatedNlMacros.fat}g
                     </Typography>
                   </Grid>
                 </Grid>
 
-                <Box sx={{ mt: 3, mb: 2 }}>
+                <Box sx={{ mt: 2 }}>
                   <FormControlLabel
                     control={
                       <Switch
                         checked={saveToFoodDatabase}
                         onChange={(e) => setSaveToFoodDatabase(e.target.checked)}
-                        color="primary"
+                        size="small"
+                        sx={{ 
+                          '& .MuiSwitch-switchBase.Mui-checked': {
+                            color: '#667eea',
+                          },
+                          '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                            backgroundColor: '#667eea',
+                          }
+                        }}
                       />
                     }
-                    label="Also save to my food database for future use"
+                    label={<Typography variant="caption" sx={{ fontSize: { xs: '0.8rem', sm: '0.85rem' } }}>Also save to my food database for future use</Typography>}
                   />
                 </Box>
 
-                {/* Buttons and Data Source Information - Arranged horizontally */}
-                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-                  {/* Data Source Information */}
-                  <Box sx={{ p: 1.5, bgcolor: dataSource === 'database' ? '#e8f5e9' : '#e3f2fd', borderRadius: 1, flex: '1 1 auto' }}>
-                    <Typography variant="caption" color="textSecondary" sx={{ display: 'flex', alignItems: 'center' }}>
-                      {dataSource === 'database' ? (
-                        <>
-                          ℹ️ Information fetched from your food database
-                        </>
-                      ) : (
-                        <>
-                          ℹ️ Gemini API used to fetch the food macro information
-                        </>
-                      )}
-                    </Typography>
-                  </Box>
+                {/* Data Source Information */}
+                <Box sx={{ 
+                  mt: 2, 
+                  p: 1.5, 
+                  bgcolor: dataSource === 'database' ? '#e8f5e9' : '#e3f2fd', 
+                  borderRadius: 1.5,
+                  border: `1px solid ${dataSource === 'database' ? '#66bb6a' : '#42a5f5'}`
+                }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem' } }}>
+                    {dataSource === 'database' ? (
+                      <>
+                        ℹ️ Information fetched from your food database
+                      </>
+                    ) : (
+                      <>
+                        ℹ️ Gemini API used to fetch the food macro information
+                      </>
+                    )}
+                  </Typography>
+                </Box>
 
-                  {/* Action Buttons */}
-                  <Box sx={{ display: 'flex', gap: 2 }}>
-                    <Button 
-                      onClick={handleCancelNl} 
-                      variant="outlined"
-                      size="small"
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      onClick={handleSaveNlFood} 
-                      variant="contained" 
-                      color="primary" 
-                      size="small"
-                    >
-                      Add Food
-                    </Button>
-                  </Box>
+                {/* Action Buttons */}
+                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 1.5 }}>
+                  <Button 
+                    onClick={handleCancelNl} 
+                    variant="outlined"
+                    size="medium"
+                    sx={{
+                      borderRadius: 2,
+                      px: 3,
+                      textTransform: 'none',
+                      fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                      borderColor: '#ccc',
+                      color: '#666'
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleSaveNlFood} 
+                    variant="contained" 
+                    size="medium"
+                    sx={{
+                      borderRadius: 2,
+                      px: 3,
+                      textTransform: 'none',
+                      fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)'
+                      }
+                    }}
+                  >
+                    Add Food
+                  </Button>
                 </Box>
               </Box>
             )}
-          </>
+          </Box>
         )}
       </Paper>
 
       {/* Summary Cards - Simplified for mobile */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent sx={{ p: 2 }}>
-          <Grid container spacing={1}>
-            <Grid item xs={6} sm={3}>
-              <Typography variant="subtitle2" color="textSecondary">
-                Calories
-              </Typography>
-              <Typography variant={isMobile ? "h6" : "h5"}>
-                {dailySummary.calories.toFixed(0)}
-              </Typography>
-              <LinearProgress 
-                variant="determinate" 
-                value={Math.min((dailySummary.calories / targets.calories) * 100, 100)} 
-                sx={{ mt: 1 }}
-              />
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <Typography variant="subtitle2" color="textSecondary">
-                Protein
-              </Typography>
-              <Typography variant={isMobile ? "h6" : "h5"}>
-                {dailySummary.protein.toFixed(1)}g
-              </Typography>
-              <LinearProgress 
-                variant="determinate" 
-                value={Math.min((dailySummary.protein / targets.protein) * 100, 100)}
-                color="success" 
-                sx={{ mt: 1 }}
-              />
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <Typography variant="subtitle2" color="textSecondary">
-                Carbs
-              </Typography>
-              <Typography variant={isMobile ? "h6" : "h5"}>
-                {dailySummary.carbs.toFixed(1)}g
-              </Typography>
-              <LinearProgress 
-                variant="determinate" 
-                value={Math.min((dailySummary.carbs / targets.carbs) * 100, 100)}
-                color="warning" 
-                sx={{ mt: 1 }}
-              />
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <Typography variant="subtitle2" color="textSecondary">
-                Fat
-              </Typography>
-              <Typography variant={isMobile ? "h6" : "h5"}>
-                {dailySummary.fat.toFixed(1)}g
-              </Typography>
-              <LinearProgress 
-                variant="determinate" 
-                value={Math.min((dailySummary.fat / targets.fat) * 100, 100)}
-                color="error" 
-                sx={{ mt: 1 }}
-              />
-            </Grid>
+      <Box sx={{ 
+        mb: 2,
+        p: { xs: 1.5, sm: 2 },
+        bgcolor: 'white',
+        borderRadius: 2,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+      }}>
+        <Typography variant="body2" fontWeight="600" color="#667eea" gutterBottom sx={{ mb: 1.5, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
+          Today's Summary
+        </Typography>
+        <Grid container spacing={1.5}>
+          <Grid item xs={6} sm={3}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+              Calories
+            </Typography>
+            <Typography variant="body1" fontWeight="600" sx={{ fontSize: { xs: '1.1rem', sm: '1.3rem' } }}>
+              {dailySummary.calories.toFixed(0)}
+            </Typography>
+            <LinearProgress 
+              variant="determinate" 
+              value={Math.min((dailySummary.calories / targets.calories) * 100, 100)} 
+              sx={{ mt: 0.5, height: 6, borderRadius: 1 }}
+            />
           </Grid>
-        </CardContent>
-      </Card>
+          <Grid item xs={6} sm={3}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+              Protein
+            </Typography>
+            <Typography variant="body1" fontWeight="600" sx={{ fontSize: { xs: '1.1rem', sm: '1.3rem' } }}>
+              {dailySummary.protein.toFixed(1)}g
+            </Typography>
+            <LinearProgress 
+              variant="determinate" 
+              value={Math.min((dailySummary.protein / targets.protein) * 100, 100)}
+              color="success" 
+              sx={{ mt: 0.5, height: 6, borderRadius: 1 }}
+            />
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+              Carbs
+            </Typography>
+            <Typography variant="body1" fontWeight="600" sx={{ fontSize: { xs: '1.1rem', sm: '1.3rem' } }}>
+              {dailySummary.carbs.toFixed(1)}g
+            </Typography>
+            <LinearProgress 
+              variant="determinate" 
+              value={Math.min((dailySummary.carbs / targets.carbs) * 100, 100)}
+              color="warning" 
+              sx={{ mt: 0.5, height: 6, borderRadius: 1 }}
+            />
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+              Fat
+            </Typography>
+            <Typography variant="body1" fontWeight="600" sx={{ fontSize: { xs: '1.1rem', sm: '1.3rem' } }}>
+              {dailySummary.fat.toFixed(1)}g
+            </Typography>
+            <LinearProgress 
+              variant="determinate" 
+              value={Math.min((dailySummary.fat / targets.fat) * 100, 100)}
+              color="error" 
+              sx={{ mt: 0.5, height: 6, borderRadius: 1 }}
+            />
+          </Grid>
+        </Grid>
+      </Box>
 
       {/* Food Log List */}
-      <Typography variant="subtitle1" gutterBottom>
-        Today's Food Log
-      </Typography>
+      <Box sx={{ 
+        p: { xs: 1.5, sm: 2 }, 
+        bgcolor: 'white', 
+        borderRadius: 2,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+      }}>
+        <Typography variant="body2" fontWeight="600" color="#667eea" gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, mb: 1.5 }}>
+          Today's Food Log
+        </Typography>
         
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
           <CircularProgress size={30} />
         </Box>
       ) : (
-        <List sx={{ bgcolor: 'background.paper' }} component={Paper}>
+        <List sx={{ bgcolor: 'transparent', p: 0 }}>
           {dailyLogs.map((log) => (
             <React.Fragment key={log.id}>
-              <ListItem>
+              <ListItem sx={{ px: 0 }}>
                 <ListItemText
                   primary={log.food_name}
+                  primaryTypographyProps={{
+                    fontWeight: 600,
+                    fontSize: { xs: '0.9rem', sm: '1rem' }
+                  }}
                   secondary={
                     isMobile 
                       ? `${log.quantity} ${log.unit} | ${log.calories.toFixed(0)} cal | P:${log.protein.toFixed(1)}g | C:${log.carbs.toFixed(1)}g | F:${log.fat.toFixed(1)}g` 
                       : `${log.quantity} ${log.unit} | Calories: ${log.calories.toFixed(0)}`
                   }
+                  secondaryTypographyProps={{
+                    fontSize: { xs: '0.75rem', sm: '0.85rem' }
+                  }}
                 />
                 {!isMobile && (
                   <Box sx={{ flex: 1, mx: 2 }}>
-                    <Typography variant="body2">
+                    <Typography variant="body2" sx={{ fontSize: { xs: '0.8rem', sm: '0.85rem' } }}>
                       P: {log.protein.toFixed(1)}g | C: {log.carbs.toFixed(1)}g | F: {log.fat.toFixed(1)}g
                     </Typography>
                   </Box>
@@ -948,14 +1271,16 @@ function DailyLogPage() {
             </React.Fragment>
           ))}
           {dailyLogs.length === 0 && (
-            <ListItem>
+            <ListItem sx={{ px: 0 }}>
               <ListItemText primary="No food logged for today." />
             </ListItem>
           )}
         </List>
       )}
+      </Box>
+      </Box>
       <Footer />
-    </div>
+    </Box>
   );
 }
 

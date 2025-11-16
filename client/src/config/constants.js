@@ -63,7 +63,8 @@ export const FIREBASE_COLLECTIONS = {
   WEIGHTS: 'weights',
   MACRO_TARGETS: 'macro_targets',
   USERS: 'users',
-  ADMIN_USERS: 'admin_users'
+  ADMIN_USERS: 'admin_users',
+  CALORIES_BURNT_LOG: 'calories_burnt_log'
 };
 
 // ===== DATE FORMATS =====

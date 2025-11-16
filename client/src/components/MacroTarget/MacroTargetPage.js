@@ -17,6 +17,7 @@ import {
   Tab,
   Divider
 } from '@mui/material';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import { collection, addDoc, getDocs, query, where, updateDoc, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase/firebase';
 import { useAuth } from '../Auth/AuthContext';
@@ -394,127 +395,389 @@ function MacroTargetPage() {
   }
 
   return (
-    <div>
-      <Typography variant="h5" component="h1" gutterBottom>
-        Set Your Daily Macro Target
-      </Typography>
+    <Box sx={{ 
+      minHeight: '100vh',
+      bgcolor: '#f5f7fa',
+      pb: 2
+    }}>
+      <Box sx={{ p: { xs: 2, sm: 3 } }}>
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 1.5, 
+          mb: 2,
+          background: 'linear-gradient(135deg, #66bb6a 0%, #4caf50 100%)',
+          color: 'white',
+          p: { xs: 2, sm: 2.5 },
+          borderRadius: 2,
+          boxShadow: '0 4px 12px rgba(102, 187, 106, 0.25)'
+        }}>
+          <FitnessCenterIcon sx={{ fontSize: { xs: 28, sm: 36 } }} />
+          <Typography variant="h6" component="h1" fontWeight="600" sx={{ fontSize: { xs: '1.1rem', sm: '1.5rem' } }}>
+            Daily Macro Target
+          </Typography>
+        </Box>
 
-      <Snackbar 
-        open={!!message.text} 
-        autoHideDuration={3000} 
-        onClose={handleCloseMessage}
-      >
-        <Alert 
-          severity={message.type} 
-          sx={{ width: '100%' }}
+        <Snackbar 
+          open={!!message.text} 
+          autoHideDuration={3000} 
           onClose={handleCloseMessage}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
         >
-          {message.text}
-        </Alert>
-      </Snackbar>
+          <Alert 
+            severity={message.type} 
+            sx={{ width: '100%' }}
+            onClose={handleCloseMessage}
+          >
+            {message.text}
+          </Alert>
+        </Snackbar>
 
-      <Paper elevation={1} sx={{ p: 3, mt: 2 }}>
-        <Tabs 
-          value={tabValue} 
-          onChange={(e, newValue) => setTabValue(newValue)}
-          sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}
+        <Paper 
+          elevation={0} 
+          sx={{ 
+            borderRadius: 2,
+            overflow: 'hidden',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+          }}
         >
-          <Tab label="Set Target" />
-          <Tab label="Calculate Macro Target" />
-        </Tabs>
+          <Tabs 
+            value={tabValue} 
+            onChange={(e, newValue) => setTabValue(newValue)}
+            variant="fullWidth"
+            sx={{ 
+              bgcolor: 'white',
+              '& .MuiTab-root': {
+                fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                fontWeight: 600,
+                py: { xs: 1.5, sm: 2 },
+                textTransform: 'none',
+                minHeight: { xs: 48, sm: 56 }
+              },
+              '& .Mui-selected': {
+                color: '#667eea !important'
+              },
+              '& .MuiTabs-indicator': {
+                height: 3,
+                background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)'
+              }
+            }}
+          >
+            <Tab 
+              label="Set Target" 
+            />
+            <Tab 
+              label="Calculate" 
+            />
+          </Tabs>
 
-        {/* Tab 1: Set Target */}
-        {tabValue === 0 && (
-          <Box>
-            <FormControl component="fieldset" sx={{ mb: 3 }}>
-              <FormLabel component="legend">Select Your Goal</FormLabel>
-              <RadioGroup
-                row
-                value={targetType}
-                onChange={handleTargetTypeChange}
-              >
-                <FormControlLabel value="deficit" control={<Radio />} label="Deficit" />
-                <FormControlLabel value="maintenance" control={<Radio />} label="Maintenance" />
-                <FormControlLabel value="bulking" control={<Radio />} label="Bulking" />
-              </RadioGroup>
-            </FormControl>
+          {/* Tab 1: Set Target */}
+          {tabValue === 0 && (
+            <Box sx={{ p: { xs: 2, sm: 3 }, bgcolor: 'white' }}>
+              <FormControl component="fieldset" sx={{ mb: 3, width: '100%' }}>
+                <FormLabel 
+                  component="legend" 
+                  sx={{ 
+                    fontSize: { xs: '0.95rem', sm: '1rem' },
+                    fontWeight: 600, 
+                    mb: 1.5,
+                    color: '#667eea'
+                  }}
+                >
+                  Select Your Goal
+                </FormLabel>
+                <RadioGroup
+                  value={targetType}
+                  onChange={handleTargetTypeChange}
+                  sx={{ 
+                    display: 'flex',
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    gap: 1.5
+                  }}
+                >
+                  <Box
+                    onClick={() => handleTargetTypeChange({ target: { value: 'deficit' }})}
+                    sx={{ 
+                      flex: 1,
+                      cursor: 'pointer',
+                      border: targetType === 'deficit' ? '2px solid #667eea' : '1px solid #e0e0e0',
+                      bgcolor: targetType === 'deficit' ? '#f0f4ff' : 'white',
+                      p: { xs: 1.5, sm: 2 },
+                      borderRadius: 2,
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      '&:active': {
+                        transform: 'scale(0.98)'
+                      }
+                    }}
+                  >
+                    <Radio 
+                      checked={targetType === 'deficit'} 
+                      value="deficit"
+                      sx={{ 
+                        p: 0,
+                        '&.Mui-checked': { color: '#667eea' }
+                      }}
+                    />
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="body1" fontWeight="600" sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}>
+                        Deficit
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Weight Loss
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  <Box
+                    onClick={() => handleTargetTypeChange({ target: { value: 'maintenance' }})}
+                    sx={{ 
+                      flex: 1,
+                      cursor: 'pointer',
+                      border: targetType === 'maintenance' ? '2px solid #667eea' : '1px solid #e0e0e0',
+                      bgcolor: targetType === 'maintenance' ? '#f0f4ff' : 'white',
+                      p: { xs: 1.5, sm: 2 },
+                      borderRadius: 2,
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      '&:active': {
+                        transform: 'scale(0.98)'
+                      }
+                    }}
+                  >
+                    <Radio 
+                      checked={targetType === 'maintenance'} 
+                      value="maintenance"
+                      sx={{ 
+                        p: 0,
+                        '&.Mui-checked': { color: '#667eea' }
+                      }}
+                    />
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="body1" fontWeight="600" sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}>
+                        Maintenance
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Maintain Weight
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  <Box
+                    onClick={() => handleTargetTypeChange({ target: { value: 'bulking' }})}
+                    sx={{ 
+                      flex: 1,
+                      cursor: 'pointer',
+                      border: targetType === 'bulking' ? '2px solid #667eea' : '1px solid #e0e0e0',
+                      bgcolor: targetType === 'bulking' ? '#f0f4ff' : 'white',
+                      p: { xs: 1.5, sm: 2 },
+                      borderRadius: 2,
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      '&:active': {
+                        transform: 'scale(0.98)'
+                      }
+                    }}
+                  >
+                    <Radio 
+                      checked={targetType === 'bulking'} 
+                      value="bulking"
+                      sx={{ 
+                        p: 0,
+                        '&.Mui-checked': { color: '#667eea' }
+                      }}
+                    />
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="body1" fontWeight="600" sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}>
+                        Bulking
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Muscle Gain
+                      </Typography>
+                    </Box>
+                  </Box>
+                </RadioGroup>
+              </FormControl>
 
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={6} sm={6}>
                 <TextField
                   fullWidth
-                  label="Calories (kcal)"
+                  label="Calories"
                   type="number"
                   value={calories}
                   onChange={handleInputChange(setCalories)}
-                  placeholder="Enter daily calorie target"
+                  placeholder="kcal"
                   inputProps={{ min: 0, step: 10 }}
+                  size="small"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 1.5,
+                      '&:hover fieldset': {
+                        borderColor: '#667eea'
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#667eea'
+                      }
+                    }
+                  }}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={6} sm={6}>
                 <TextField
                   fullWidth
-                  label="Protein (g)"
+                  label="Protein"
                   type="number"
                   value={protein}
                   onChange={handleInputChange(setProtein)}
-                  placeholder="Enter protein target"
+                  placeholder="grams"
                   inputProps={{ min: 0, step: 1 }}
+                  size="small"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 1.5,
+                      '&:hover fieldset': {
+                        borderColor: '#667eea'
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#667eea'
+                      }
+                    }
+                  }}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={6} sm={6}>
                 <TextField
                   fullWidth
-                  label="Carbs (g)"
+                  label="Carbs"
                   type="number"
                   value={carbs}
                   onChange={handleInputChange(setCarbs)}
-                  placeholder="Enter carbs target"
+                  placeholder="grams"
                   inputProps={{ min: 0, step: 1 }}
+                  size="small"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 1.5,
+                      '&:hover fieldset': {
+                        borderColor: '#667eea'
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#667eea'
+                      }
+                    }
+                  }}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={6} sm={6}>
                 <TextField
                   fullWidth
-                  label="Fat (g)"
+                  label="Fat"
                   type="number"
                   value={fat}
                   onChange={handleInputChange(setFat)}
-                  placeholder="Enter fat target"
+                  placeholder="grams"
                   inputProps={{ min: 0, step: 1 }}
+                  size="small"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 1.5,
+                      '&:hover fieldset': {
+                        borderColor: '#667eea'
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#667eea'
+                      }
+                    }
+                  }}
                 />
               </Grid>
             </Grid>
 
-            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+            <Box sx={{ mt: 3, display: 'flex', gap: 1.5, justifyContent: 'flex-end' }}>
               <Button 
                 variant="outlined" 
                 onClick={handleCancel}
-                size="large"
+                size="medium"
+                sx={{
+                  borderRadius: 2,
+                  px: 3,
+                  textTransform: 'none',
+                  fontSize: { xs: '0.9rem', sm: '0.95rem' },
+                  borderColor: '#667eea',
+                  color: '#667eea',
+                  '&:hover': {
+                    borderColor: '#764ba2',
+                    bgcolor: '#f0f4ff'
+                  }
+                }}
               >
                 Cancel
               </Button>
               <Button 
                 variant="contained" 
-                color="primary" 
                 onClick={handleSave}
-                size="large"
+                size="medium"
+                sx={{
+                  borderRadius: 2,
+                  px: 3,
+                  textTransform: 'none',
+                  fontSize: { xs: '0.9rem', sm: '0.95rem' },
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
+                    boxShadow: '0 3px 12px rgba(102, 126, 234, 0.4)'
+                  }
+                }}
               >
-                Save Targets
+                Save
               </Button>
             </Box>
 
             {savedTargets && (
-              <Box sx={{ mt: 3, p: 2, bgcolor: '#e8f5e9', borderRadius: 1 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Saved Target Summary:
+              <Box 
+                sx={{ 
+                  mt: 3,
+                  p: 2,
+                  background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
+                  border: '2px solid #66bb6a',
+                  borderRadius: 2
+                }}
+              >
+                <Typography variant="body2" gutterBottom fontWeight="600" color="#2e7d32">
+                  ✓ Saved Target
                 </Typography>
-                <Typography variant="body2">
-                  <strong>Goal:</strong> {savedTargets.targetType.charAt(0).toUpperCase() + savedTargets.targetType.slice(1)}
-                </Typography>
-                <Typography variant="body2">
-                  <strong>Daily Targets:</strong> {savedTargets.calories} cal | {savedTargets.protein}g protein | {savedTargets.carbs}g carbs | {savedTargets.fat}g fat
-                </Typography>
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1.5, mt: 1.5 }}>
+                  <Box sx={{ bgcolor: 'white', p: 1.5, borderRadius: 1 }}>
+                    <Typography variant="caption" color="text.secondary">Goal</Typography>
+                    <Typography variant="body2" fontWeight="600">
+                      {savedTargets.targetType.charAt(0).toUpperCase() + savedTargets.targetType.slice(1)}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ bgcolor: 'white', p: 1.5, borderRadius: 1 }}>
+                    <Typography variant="caption" color="text.secondary">Calories</Typography>
+                    <Typography variant="body2" fontWeight="600">{savedTargets.calories}</Typography>
+                  </Box>
+                  <Box sx={{ bgcolor: 'white', p: 1.5, borderRadius: 1 }}>
+                    <Typography variant="caption" color="text.secondary">Protein</Typography>
+                    <Typography variant="body2" fontWeight="600">{savedTargets.protein}g</Typography>
+                  </Box>
+                  <Box sx={{ bgcolor: 'white', p: 1.5, borderRadius: 1 }}>
+                    <Typography variant="caption" color="text.secondary">Carbs</Typography>
+                    <Typography variant="body2" fontWeight="600">{savedTargets.carbs}g</Typography>
+                  </Box>
+                  <Box sx={{ bgcolor: 'white', p: 1.5, borderRadius: 1 }}>
+                    <Typography variant="caption" color="text.secondary">Fat</Typography>
+                    <Typography variant="body2" fontWeight="600">{savedTargets.fat}g</Typography>
+                  </Box>
+                </Box>
               </Box>
             )}
           </Box>
@@ -522,100 +785,193 @@ function MacroTargetPage() {
 
         {/* Tab 2: Calculate Macro Target */}
         {tabValue === 1 && (
-          <Box>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Calculate your daily calorie and macro needs based on your body metrics and activity level.
-            </Typography>
+          <Box sx={{ p: { xs: 2, sm: 3 }, bgcolor: 'white' }}>
+            <Box sx={{ 
+              mb: 2, 
+              p: { xs: 1.5, sm: 2 }, 
+              bgcolor: '#f0f4ff', 
+              borderRadius: 2,
+              borderLeft: '3px solid #667eea'
+            }}>
+              <Typography variant="body2" fontWeight="600" color="#667eea" gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
+                BMR Calculator
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem' } }}>
+                Calculate your daily needs using Harris-Benedict formula
+              </Typography>
+            </Box>
 
             {calcError && (
-              <Alert severity="warning" sx={{ mb: 2 }}>
+              <Alert 
+                severity="warning" 
+                sx={{ 
+                  mb: 2,
+                  borderRadius: 1.5,
+                  fontSize: { xs: '0.85rem', sm: '0.9rem' }
+                }}
+              >
                 {calcError}
               </Alert>
             )}
 
-            <Grid container spacing={2}>
+            <Grid container spacing={1.5}>
               {/* Weight in kg (editable) */}
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={5} sm={6}>
                 <TextField
                   fullWidth
                   label="Weight (kg)"
                   type="number"
                   value={calcWeight}
                   onChange={(e) => setCalcWeight(e.target.value)}
-                  placeholder="Enter weight in kg"
+                  placeholder="kg"
                   inputProps={{ min: 0, step: 0.1 }}
+                  size="small"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 1.5,
+                      '&:hover fieldset': {
+                        borderColor: '#667eea'
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#667eea'
+                      }
+                    }
+                  }}
                 />
               </Grid>
 
               {/* Weight in lbs (calculated display) */}
-              <Grid item xs={12} sm={6}>
-                <Box sx={{ pt: 1 }}>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Weight (lbs)
+              <Grid item xs={7} sm={6}>
+                <Box sx={{ 
+                  p: 1.5,
+                  bgcolor: '#f5f5f5',
+                  borderRadius: 1.5,
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 1
+                }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', whiteSpace: 'nowrap' }}>
+                    Weight (lbs):
                   </Typography>
-                  <Typography variant="h6">
+                  <Typography variant="body2" color="#667eea" fontWeight="600">
                     {calcWeightLbs || '-'}
                   </Typography>
                 </Box>
               </Grid>
 
               {/* Height Feet */}
-              <Grid item xs={6} sm={3}>
+              <Grid item xs={3} sm={4}>
                 <TextField
                   fullWidth
-                  label="Height (feet)"
+                  label="Height (ft)"
                   type="number"
                   value={calcHeightFeet}
                   onChange={(e) => setCalcHeightFeet(e.target.value)}
-                  placeholder="Feet"
+                  placeholder="ft"
                   inputProps={{ min: 0, max: 8, step: 1 }}
+                  size="small"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 1.5,
+                      '&:hover fieldset': {
+                        borderColor: '#667eea'
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#667eea'
+                      }
+                    }
+                  }}
                 />
               </Grid>
 
               {/* Height Inches */}
-              <Grid item xs={6} sm={3}>
+              <Grid item xs={3} sm={4}>
                 <TextField
                   fullWidth
-                  label="Height (inches)"
+                  label="Height (inch)"
                   type="number"
                   value={calcHeightInches}
                   onChange={(e) => setCalcHeightInches(e.target.value)}
-                  placeholder="Inches"
+                  placeholder="in"
                   inputProps={{ min: 0, max: 11.9, step: 0.1 }}
+                  size="small"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 1.5,
+                      '&:hover fieldset': {
+                        borderColor: '#667eea'
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#667eea'
+                      }
+                    }
+                  }}
                 />
               </Grid>
 
               {/* Height in cm (calculated display) */}
-              <Grid item xs={12} sm={6}>
-                <Box sx={{ pt: 1 }}>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Height (cm)
+              <Grid item xs={6} sm={4}>
+                <Box sx={{ 
+                  p: 1.5,
+                  bgcolor: '#f5f5f5',
+                  borderRadius: 1.5,
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 1
+                }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', whiteSpace: 'nowrap' }}>
+                    Height (cm):
                   </Typography>
-                  <Typography variant="h6">
+                  <Typography variant="body2" color="#667eea" fontWeight="600">
                     {calcHeightCm || '-'}
                   </Typography>
                 </Box>
               </Grid>
 
               {/* Date of Birth */}
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={5} sm={6}>
                 <TextField
                   fullWidth
-                  label="Date of Birth"
+                  label="DoB"
                   type="date"
                   value={calcDOB}
                   onChange={(e) => setCalcDOB(e.target.value)}
                   InputLabelProps={{ shrink: true }}
+                  size="small"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 1.5,
+                      '&:hover fieldset': {
+                        borderColor: '#667eea'
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#667eea'
+                      }
+                    }
+                  }}
                 />
               </Grid>
 
               {/* Age (calculated display) */}
-              <Grid item xs={12} sm={6}>
-                <Box sx={{ pt: 1 }}>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Age (years)
+              <Grid item xs={7} sm={6}>
+                <Box sx={{ 
+                  p: 1.5,
+                  bgcolor: '#f5f5f5',
+                  borderRadius: 1.5,
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 1
+                }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', whiteSpace: 'nowrap' }}>
+                    Age (years):
                   </Typography>
-                  <Typography variant="h6">
+                  <Typography variant="body2" color="#667eea" fontWeight="600">
                     {calcAge || '-'}
                   </Typography>
                 </Box>
@@ -623,120 +979,241 @@ function MacroTargetPage() {
 
               {/* Sex */}
               <Grid item xs={12}>
-                <FormControl component="fieldset">
-                  <FormLabel component="legend">Sex</FormLabel>
+                <FormControl component="fieldset" sx={{ width: '100%' }}>
+                  <FormLabel component="legend" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' }, mb: 1 }}>Sex</FormLabel>
                   <RadioGroup
                     row
                     value={calcSex}
                     onChange={(e) => setCalcSex(e.target.value)}
+                    sx={{ gap: 1 }}
                   >
-                    <FormControlLabel value="male" control={<Radio />} label="Male" />
-                    <FormControlLabel value="female" control={<Radio />} label="Female" />
+                    <Box
+                      onClick={() => setCalcSex('male')}
+                      sx={{
+                        flex: 1,
+                        cursor: 'pointer',
+                        border: calcSex === 'male' ? '2px solid #667eea' : '1px solid #e0e0e0',
+                        bgcolor: calcSex === 'male' ? '#f0f4ff' : 'white',
+                        p: 1,
+                        borderRadius: 1.5,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 0.5,
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <Radio 
+                        checked={calcSex === 'male'} 
+                        value="male"
+                        size="small"
+                        sx={{ p: 0, '&.Mui-checked': { color: '#667eea' } }}
+                      />
+                      <Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Male</Typography>
+                    </Box>
+                    <Box
+                      onClick={() => setCalcSex('female')}
+                      sx={{
+                        flex: 1,
+                        cursor: 'pointer',
+                        border: calcSex === 'female' ? '2px solid #667eea' : '1px solid #e0e0e0',
+                        bgcolor: calcSex === 'female' ? '#f0f4ff' : 'white',
+                        p: 1,
+                        borderRadius: 1.5,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 0.5,
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <Radio 
+                        checked={calcSex === 'female'} 
+                        value="female"
+                        size="small"
+                        sx={{ p: 0, '&.Mui-checked': { color: '#667eea' } }}
+                      />
+                      <Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Female</Typography>
+                    </Box>
                   </RadioGroup>
                 </FormControl>
               </Grid>
             </Grid>
 
-            <Divider sx={{ my: 3 }} />
+            <Divider sx={{ my: 2 }} />
 
             {/* BMR Display */}
             {calcBMR && (
-              <Box sx={{ mb: 3, p: 2, bgcolor: '#e3f2fd', borderRadius: 1 }}>
-                <Typography variant="subtitle1" gutterBottom>
-                  <strong>Basal Metabolic Rate (BMR): {calcBMR} calories/day</strong>
+              <Box 
+                sx={{ 
+                  mb: 2, 
+                  p: { xs: 1.5, sm: 2 },
+                  background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
+                  border: '2px solid #42a5f5',
+                  borderRadius: 2
+                }}
+              >
+                <Typography variant="body1" gutterBottom fontWeight="600" color="#1976d2" sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' } }}>
+                  BMR: {calcBMR} cal/day
                 </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {calcSex === 'male' 
-                    ? 'Formula: (13.397 × weight kg) + (4.799 × height cm) - (5.677 × age) + 88.362'
-                    : 'Formula: (9.247 × weight kg) + (3.098 × height cm) - (4.330 × age) + 447.593'}
-                </Typography>
+                <Box sx={{ mt: 1, p: 1.5, bgcolor: 'white', borderRadius: 1.5 }}>
+                  <Typography variant="caption" color="text.secondary" fontWeight="600" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+                    Formula:
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block', fontSize: { xs: '0.65rem', sm: '0.7rem' } }}>
+                    {calcSex === 'male' 
+                      ? '(13.397 × weight kg) + (4.799 × height cm) - (5.677 × age) + 88.362'
+                      : '(9.247 × weight kg) + (3.098 × height cm) - (4.330 × age) + 447.593'}
+                  </Typography>
+                </Box>
               </Box>
             )}
 
             {/* Activity Level */}
-            <Box sx={{ mb: 3 }}>
-              <FormControl component="fieldset">
-                <FormLabel component="legend">Activity Level</FormLabel>
+            <Box sx={{ mb: 2 }}>
+              <FormControl component="fieldset" sx={{ width: '100%' }}>
+                <FormLabel 
+                  component="legend" 
+                  sx={{ 
+                    fontSize: { xs: '0.95rem', sm: '1rem' },
+                    fontWeight: 600, 
+                    mb: 1.5,
+                    color: '#667eea'
+                  }}
+                >
+                  Activity Level
+                </FormLabel>
                 <RadioGroup
                   value={calcActivityLevel}
                   onChange={(e) => setCalcActivityLevel(e.target.value)}
+                  sx={{ gap: 0.5 }}
                 >
-                  <FormControlLabel value="1.2" control={<Radio />} label="Sedentary (little or no exercise)" />
-                  <FormControlLabel value="1.375" control={<Radio />} label="Lightly active (light exercise 1-3 days/week)" />
-                  <FormControlLabel value="1.55" control={<Radio />} label="Moderately active (moderate exercise 3-5 days/week)" />
-                  <FormControlLabel value="1.725" control={<Radio />} label="Active (hard exercise 6-7 days/week)" />
-                  <FormControlLabel value="1.9" control={<Radio />} label="Very active (very hard exercise & physical job)" />
+                  <FormControlLabel 
+                    value="1.2" 
+                    control={<Radio size="small" sx={{ '&.Mui-checked': { color: '#667eea' } }} />} 
+                    label={<Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Sedentary (little or no exercise)</Typography>}
+                    sx={{ mx: 0 }}
+                  />
+                  <FormControlLabel 
+                    value="1.375" 
+                    control={<Radio size="small" sx={{ '&.Mui-checked': { color: '#667eea' } }} />} 
+                    label={<Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Lightly active (exercise 1-3 days/week)</Typography>}
+                    sx={{ mx: 0 }}
+                  />
+                  <FormControlLabel 
+                    value="1.55" 
+                    control={<Radio size="small" sx={{ '&.Mui-checked': { color: '#667eea' } }} />} 
+                    label={<Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Moderately active (exercise 3-5 days/week)</Typography>}
+                    sx={{ mx: 0 }}
+                  />
+                  <FormControlLabel 
+                    value="1.725" 
+                    control={<Radio size="small" sx={{ '&.Mui-checked': { color: '#667eea' } }} />} 
+                    label={<Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Active (hard exercise 6-7 days/week)</Typography>}
+                    sx={{ mx: 0 }}
+                  />
+                  <FormControlLabel 
+                    value="1.9" 
+                    control={<Radio size="small" sx={{ '&.Mui-checked': { color: '#667eea' } }} />} 
+                    label={<Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Very active (very hard exercise & physical job)</Typography>}
+                    sx={{ mx: 0 }}
+                  />
                 </RadioGroup>
               </FormControl>
             </Box>
 
             {/* Maintenance Calories and Macro Breakdown */}
             {calcMaintenanceCalories && calcProtein && calcFat && calcCarbs && (
-              <Box sx={{ p: 2, bgcolor: '#e8f5e9', borderRadius: 1, mb: 2 }}>
-                <Typography variant="h6" gutterBottom>
-                  Daily Calorie Need for Maintenance: {calcMaintenanceCalories} cal
+              <Box 
+                sx={{ 
+                  background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
+                  border: '2px solid #66bb6a',
+                  borderRadius: 2,
+                  p: { xs: 1.5, sm: 2 },
+                  mt: 2
+                }}
+              >
+                <Typography variant="body1" gutterBottom fontWeight="600" color="#2e7d32" sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' } }}>
+                  Daily Maintenance: {calcMaintenanceCalories} cal
                 </Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  Based on your BMR and activity level
+                <Typography variant="caption" sx={{ mb: 1.5, display: 'block', fontSize: { xs: '0.75rem', sm: '0.8rem' } }} color="text.secondary">
+                  Based on BMR and activity level
                 </Typography>
-                <Box sx={{ bgcolor: '#fff', p: 1.5, borderRadius: 1, mb: 2 }}>
-                  <Typography variant="caption" color="text.secondary" component="div" gutterBottom>
-                    <strong>Activity Level Formulas:</strong>
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" component="div">
-                    • Sedentary (little or no exercise): BMR × 1.2
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" component="div">
-                    • Lightly active (exercise 1-3 days/week): BMR × 1.375
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" component="div">
-                    • Moderately active (exercise 3-5 days/week): BMR × 1.55
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" component="div">
-                    • Active (exercise 6-7 days/week): BMR × 1.725
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" component="div">
-                    • Very active (hard exercise/physical job): BMR × 1.9
+                
+                <Box sx={{ bgcolor: 'white', p: 1.5, borderRadius: 1.5, mb: 2 }}>
+                  <Typography variant="caption" color="text.secondary" fontWeight="600" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+                    Your Calculation:
                   </Typography>
                   {calcBMR && (
-                    <Typography variant="caption" color="primary" component="div" sx={{ mt: 1, fontWeight: 'bold' }}>
-                      Your calculation: {calcBMR} × {calcActivityLevel} = {calcMaintenanceCalories} cal
+                    <Typography variant="body2" color="#2e7d32" component="div" sx={{ mt: 0.5, fontWeight: '600', fontSize: { xs: '0.8rem', sm: '0.85rem' } }}>
+                      {calcBMR} cal × {calcActivityLevel} = {calcMaintenanceCalories} cal
                     </Typography>
                   )}
                 </Box>
 
-                <Divider sx={{ my: 2 }} />
+                <Divider sx={{ my: 1.5 }} />
 
-                <Typography variant="subtitle1" gutterBottom>
-                  <strong>Suggested Macro Breakdown:</strong>
+                <Typography variant="body2" gutterBottom fontWeight="600" color="#2e7d32" sx={{ mb: 1.5, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
+                  Macro Breakdown:
                 </Typography>
-                <Typography variant="body2">
-                  <strong>Protein:</strong> {calcProtein}g ({calcProtein * 4} cal) - 1.5 × body weight in kg
-                </Typography>
-                <Typography variant="body2">
-                  <strong>Fat:</strong> {calcFat}g ({calcFat * 9} cal) - ~27.5% of total calories
-                </Typography>
-                <Typography variant="body2">
-                  <strong>Carbs:</strong> {calcCarbs}g ({calcCarbs * 4} cal) - Remaining calories
-                </Typography>
+                
+                <Grid container spacing={1.5}>
+                  <Grid item xs={6} sm={4}>
+                    <Box sx={{ bgcolor: '#fff3e0', border: '2px solid #ff9800', textAlign: 'center', p: 1.5, borderRadius: 1.5 }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.7rem' } }}>PROTEIN</Typography>
+                      <Typography variant="h6" fontWeight="bold" color="#f57c00" sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem' } }}>{calcProtein}g</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.6rem', sm: '0.65rem' } }}>
+                        {calcProtein * 4} cal
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={6} sm={4}>
+                    <Box sx={{ bgcolor: '#fce4ec', border: '2px solid #ec407a', textAlign: 'center', p: 1.5, borderRadius: 1.5 }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.7rem' } }}>FAT</Typography>
+                      <Typography variant="h6" fontWeight="bold" color="#c2185b" sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem' } }}>{calcFat}g</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.6rem', sm: '0.65rem' } }}>
+                        {calcFat * 9} cal
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <Box sx={{ bgcolor: '#e1f5fe', border: '2px solid #03a9f4', textAlign: 'center', p: 1.5, borderRadius: 1.5 }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.7rem' } }}>CARBS</Typography>
+                      <Typography variant="h6" fontWeight="bold" color="#0277bd" sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem' } }}>{calcCarbs}g</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.6rem', sm: '0.65rem' } }}>
+                        {calcCarbs * 4} cal
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
 
-                <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
+                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
                   <Button 
                     variant="contained" 
-                    color="primary" 
                     onClick={handleUseCalculatedValues}
-                    size="large"
+                    size="medium"
+                    sx={{
+                      borderRadius: 2,
+                      px: 3,
+                      textTransform: 'none',
+                      fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      '&:hover': {
+                        background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)'
+                      }
+                    }}
                   >
-                    Use These Values in Set Target
+                    Use These Values
                   </Button>
                 </Box>
               </Box>
             )}
           </Box>
         )}
-      </Paper>
+        </Paper>
+      </Box>
       <Footer />
-    </div>
+    </Box>
   );
 }
 

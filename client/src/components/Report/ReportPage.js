@@ -3,8 +3,6 @@ import {
   Typography,
   Paper,
   Grid,
-  Card,
-  CardContent,
   Box,
   FormControl,
   InputLabel,
@@ -22,11 +20,12 @@ import {
   useTheme,
   Button
 } from '@mui/material';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { collection, query, where, getDocs, limit, addDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../../firebase/firebase';
-import { format, subDays, startOfWeek, endOfWeek } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { useAuth } from '../Auth/AuthContext';
 import Footer from '../Common/Footer';
 
@@ -495,19 +494,45 @@ function ReportPage() {
   }, [dailyData, isMobile]);
 
   return (
-    <div>
-      <Typography variant="h5" component="h1" gutterBottom>
-        Nutrition Reports
-      </Typography>
+    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f7fa', pb: 2 }}>
+      <Box sx={{ p: { xs: 2, sm: 3 } }}>
+        {/* Header */}
+        <Box sx={{ 
+          background: 'linear-gradient(135deg, #66bb6a 0%, #4caf50 100%)',
+          p: { xs: 2, sm: 2.5 },
+          mb: 2,
+          borderRadius: 2,
+          boxShadow: '0 4px 12px rgba(102, 187, 106, 0.25)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5
+        }}>
+          <AssessmentIcon sx={{ fontSize: { xs: 28, sm: 36 }, color: 'white' }} />
+          <Typography variant="h5" component="h1" sx={{ color: 'white', fontWeight: 600, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
+            Nutrition Reports
+          </Typography>
+        </Box>
 
-      <Paper elevation={1} sx={{ p: 2, mb: 3 }}>
-        <FormControl fullWidth size="small" margin="dense">
+        <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, mb: 2, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+        <FormControl fullWidth size="small">
           <InputLabel id="period-select-label">Time Period</InputLabel>
           <Select
             labelId="period-select-label"
             value={period}
             label="Time Period"
             onChange={handlePeriodChange}
+            sx={{
+              borderRadius: 1.5,
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#e0e0e0',
+              },
+              '&:hover .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#667eea',
+              },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#667eea',
+              },
+            }}
           >
             <MenuItem value="week">Last 7 Days</MenuItem>
             <MenuItem value="month">Last 30 Days</MenuItem>
@@ -516,16 +541,26 @@ function ReportPage() {
         </FormControl>
           
         {period === 'custom' && (
-          <Grid container spacing={2} sx={{ mt: 1 }}>
+          <Grid container spacing={1.5} sx={{ mt: 1 }}>
             <Grid item xs={6}>
               <LocalizationProvider dateAdapter={AdapterDateFns}>
                 <DatePicker
                   label="Start Date"
                   value={startDate}
                   onChange={setStartDate}
-                  renderInput={(params) => 
-                    <Box sx={{ width: '100%' }}>{params.input}</Box>
-                  }
+                  slotProps={{ 
+                    textField: { 
+                      size: 'small',
+                      fullWidth: true,
+                      sx: { 
+                        borderRadius: 1.5,
+                        '& .MuiOutlinedInput-root': {
+                          '&:hover fieldset': { borderColor: '#667eea' },
+                          '&.Mui-focused fieldset': { borderColor: '#667eea' }
+                        }
+                      }
+                    } 
+                  }}
                 />
               </LocalizationProvider>
             </Grid>
@@ -535,9 +570,19 @@ function ReportPage() {
                   label="End Date"
                   value={endDate}
                   onChange={setEndDate}
-                  renderInput={(params) => 
-                    <Box sx={{ width: '100%' }}>{params.input}</Box>
-                  }
+                  slotProps={{ 
+                    textField: { 
+                      size: 'small',
+                      fullWidth: true,
+                      sx: { 
+                        borderRadius: 1.5,
+                        '& .MuiOutlinedInput-root': {
+                          '&:hover fieldset': { borderColor: '#667eea' },
+                          '&.Mui-focused fieldset': { borderColor: '#667eea' }
+                        }
+                      }
+                    } 
+                  }}
                 />
               </LocalizationProvider>
             </Grid>
@@ -547,75 +592,106 @@ function ReportPage() {
 
       {!!error && (
         <Box sx={{ mb: 2 }}>
-          <Paper elevation={0} sx={{ p: 2, bgcolor: 'error.light' }}>
-            <Typography variant="body2" color="error.main">{error}</Typography>
+          <Paper elevation={0} sx={{ p: 1.5, bgcolor: '#ffebee', borderRadius: 1.5 }}>
+            <Typography variant="body2" color="error.main" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>{error}</Typography>
           </Paper>
         </Box>
       )}
 
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-          <CircularProgress size={30} />
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+          <CircularProgress size={30} sx={{ color: '#667eea' }} />
         </Box>
       ) : (
         <>
-          <Grid container spacing={2}>
+          <Grid container spacing={1.5}>
             <Grid item xs={6} sm={3}>
-              <Card>
-                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                  <Typography variant="subtitle2" color="textSecondary">
-                    Avg. Calories
-                  </Typography>
-                  <Typography variant={isMobile ? "h6" : "h5"} component="div">
-                    {averages.calories.toFixed(0)}
-                  </Typography>
-                </CardContent>
-              </Card>
+              <Box sx={{ 
+                p: { xs: 1.5, sm: 2 }, 
+                bgcolor: 'white', 
+                borderRadius: 1.5,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                textAlign: 'center'
+              }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+                  Avg. Calories
+                </Typography>
+                <Typography variant="h6" component="div" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' }, fontWeight: 600, color: '#667eea', mt: 0.5 }}>
+                  {averages.calories.toFixed(0)}
+                </Typography>
+              </Box>
             </Grid>
             <Grid item xs={6} sm={3}>
-              <Card>
-                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                  <Typography variant="subtitle2" color="textSecondary">
-                    Avg. Protein
-                  </Typography>
-                  <Typography variant={isMobile ? "h6" : "h5"} component="div">
-                    {averages.protein.toFixed(1)}g
-                  </Typography>
-                </CardContent>
-              </Card>
+              <Box sx={{ 
+                p: { xs: 1.5, sm: 2 }, 
+                bgcolor: 'white', 
+                borderRadius: 1.5,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                textAlign: 'center'
+              }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+                  Avg. Protein
+                </Typography>
+                <Typography variant="h6" component="div" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' }, fontWeight: 600, color: '#667eea', mt: 0.5 }}>
+                  {averages.protein.toFixed(1)}g
+                </Typography>
+              </Box>
             </Grid>
             <Grid item xs={6} sm={3}>
-              <Card>
-                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                  <Typography variant="subtitle2" color="textSecondary">
-                    Avg. Carbs
-                  </Typography>
-                  <Typography variant={isMobile ? "h6" : "h5"} component="div">
-                    {averages.carbs.toFixed(1)}g
-                  </Typography>
-                </CardContent>
-              </Card>
+              <Box sx={{ 
+                p: { xs: 1.5, sm: 2 }, 
+                bgcolor: 'white', 
+                borderRadius: 1.5,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                textAlign: 'center'
+              }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+                  Avg. Carbs
+                </Typography>
+                <Typography variant="h6" component="div" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' }, fontWeight: 600, color: '#667eea', mt: 0.5 }}>
+                  {averages.carbs.toFixed(1)}g
+                </Typography>
+              </Box>
             </Grid>
             <Grid item xs={6} sm={3}>
-              <Card>
-                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                  <Typography variant="subtitle2" color="textSecondary">
-                    Avg. Fat
-                  </Typography>
-                  <Typography variant={isMobile ? "h6" : "h5"} component="div">
-                    {averages.fat.toFixed(1)}g
-                  </Typography>
-                </CardContent>
-              </Card>
+              <Box sx={{ 
+                p: { xs: 1.5, sm: 2 }, 
+                bgcolor: 'white', 
+                borderRadius: 1.5,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                textAlign: 'center'
+              }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+                  Avg. Fat
+                </Typography>
+                <Typography variant="h6" component="div" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' }, fontWeight: 600, color: '#667eea', mt: 0.5 }}>
+                  {averages.fat.toFixed(1)}g
+                </Typography>
+              </Box>
             </Grid>
           </Grid>
 
-          <Box sx={{ mt: 3, mb: 2 }}>
+          <Box sx={{ mt: 2 }}>
+            <Paper elevation={0} sx={{ borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
             <Tabs 
               value={tabValue} 
               onChange={handleTabChange} 
               variant="fullWidth"
-              sx={{ borderBottom: 1, borderColor: 'divider' }}
+              sx={{ 
+                borderBottom: 1, 
+                borderColor: 'divider',
+                '& .MuiTab-root': {
+                  textTransform: 'none',
+                  fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                  fontWeight: 500
+                },
+                '& .Mui-selected': {
+                  color: '#667eea'
+                },
+                '& .MuiTabs-indicator': {
+                  backgroundColor: '#667eea'
+                }
+              }}
             >
               <Tab label="Calories" />
               <Tab label="Macros" />
@@ -623,7 +699,7 @@ function ReportPage() {
             </Tabs>
 
             {tabValue === 0 && chartData.length > 0 && (
-              <Box sx={{ mt: 2, height: 300 }}>
+              <Box sx={{ p: { xs: 1.5, sm: 2 }, height: 300 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
                     data={chartData}
@@ -658,7 +734,7 @@ function ReportPage() {
                     <Line 
                       type="monotone" 
                       dataKey="calories" 
-                      stroke="#8884d8" 
+                      stroke="#667eea" 
                       name="Calories" 
                       strokeWidth={2}
                       dot={{ r: 3 }}
@@ -669,7 +745,7 @@ function ReportPage() {
             )}
 
             {tabValue === 1 && chartData.length > 0 && (
-              <Box sx={{ mt: 2, height: 300 }}>
+              <Box sx={{ p: { xs: 1.5, sm: 2 }, height: 300 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={chartData}
@@ -704,8 +780,8 @@ function ReportPage() {
                       }}
                     />
                     <Legend />
-                    <Bar dataKey="protein" fill="#8884d8" name="Protein" />
-                    <Bar dataKey="carbs" fill="#82ca9d" name="Carbs" />
+                    <Bar dataKey="protein" fill="#667eea" name="Protein" />
+                    <Bar dataKey="carbs" fill="#4caf50" name="Carbs" />
                     <Bar dataKey="fat" fill="#ff8042" name="Fat" />
                   </BarChart>
                 </ResponsiveContainer>
@@ -713,39 +789,47 @@ function ReportPage() {
             )}
 
             {tabValue === 2 && (
-              <List sx={{ bgcolor: 'background.paper', mt: 2 }} component={Paper}>
+              <List sx={{ bgcolor: 'transparent', p: 0 }}>
                 {dailyData.map((day) => (
                   <React.Fragment key={day.date}>
-                    <ListItem>
+                    <ListItem sx={{ px: { xs: 1.5, sm: 2 } }}>
                       <ListItemText
                         primary={format(new Date(day.date), 'MMM d, yyyy')}
+                        primaryTypographyProps={{
+                          fontWeight: 600,
+                          fontSize: { xs: '0.9rem', sm: '1rem' }
+                        }}
                         secondary={
                           `Calories: ${Math.round(day.calories)} | P: ${Math.round(day.protein)}g | C: ${Math.round(day.carbs)}g | F: ${Math.round(day.fat)}g`
                         }
+                        secondaryTypographyProps={{
+                          fontSize: { xs: '0.75rem', sm: '0.85rem' }
+                        }}
                       />
                     </ListItem>
                     <Divider />
                   </React.Fragment>
                 ))}
                 {dailyData.length === 0 && (
-                  <ListItem>
+                  <ListItem sx={{ px: { xs: 1.5, sm: 2 } }}>
                     <ListItemText primary="No data for this period" />
                   </ListItem>
                 )}
               </List>
             )}
+            </Paper>
           </Box>
         </>
       )}
 
       {/* Weight Tracking Section */}
-      <Box sx={{ mt: 4 }}>
-        <Typography variant="h6" component="h2" gutterBottom>
+      <Box sx={{ mt: 3 }}>
+        <Typography variant="body2" fontWeight="600" color="#667eea" gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' }, mb: 1.5 }}>
           Weight Tracking
         </Typography>
 
-        <Paper elevation={1} sx={{ p: 2, mb: 3 }}>
-          {loading && <LinearProgress />}
+        <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+          {loading && <LinearProgress sx={{ mb: 2, '& .MuiLinearProgress-bar': { bgcolor: '#667eea' } }} />}
           
           {weightData.length > 0 ? (
             <>
@@ -753,7 +837,22 @@ function ReportPage() {
                 value={weightTabValue} 
                 onChange={handleWeightTabChange} 
                 variant="fullWidth"
-                sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}
+                sx={{ 
+                  borderBottom: 1, 
+                  borderColor: 'divider', 
+                  mb: 2,
+                  '& .MuiTab-root': {
+                    textTransform: 'none',
+                    fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                    fontWeight: 500
+                  },
+                  '& .Mui-selected': {
+                    color: '#667eea'
+                  },
+                  '& .MuiTabs-indicator': {
+                    backgroundColor: '#667eea'
+                  }
+                }}
               >
                 <Tab label="Chart" />
                 <Tab label="Data Table" />
@@ -761,13 +860,13 @@ function ReportPage() {
 
               {/* Tab 0: Chart View */}
               {weightTabValue === 0 && (
-                <Box sx={{ height: 300, pt: 2 }}>
+                <Box sx={{ height: 300, pt: 1 }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart
                       data={weightData.map(item => ({
                         date: item.formattedDate,
                         weight: item.weight,
-                        rawDate: item.date.toString() // For debugging
+                        rawDate: item.date.toString()
                       }))}
                       margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
                     >
@@ -805,7 +904,7 @@ function ReportPage() {
                       <Line 
                         type="monotone" 
                         dataKey="weight" 
-                        stroke="#ff5722" 
+                        stroke="#667eea" 
                         strokeWidth={2}
                         dot={{ r: 4 }}
                         activeDot={{ r: 6 }}
@@ -818,25 +917,25 @@ function ReportPage() {
 
               {/* Tab 1: Data Table */}
               {weightTabValue === 1 && (
-                <Box sx={{ mt: 2 }}>
-                  <List>
+                <Box sx={{ mt: 1 }}>
+                  <List sx={{ p: 0 }}>
                     {weightData.map((entry, index) => (
                       <React.Fragment key={entry.id}>
-                        <ListItem>
+                        <ListItem sx={{ px: 0 }}>
                           <ListItemText
                             primary={
                               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Typography variant="body1">
+                                <Typography variant="body2" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, fontWeight: 600 }}>
                                   {format(entry.date, 'EEEE, MMM d, yyyy')}
                                 </Typography>
-                                <Typography variant="h6" color="primary">
+                                <Typography variant="h6" sx={{ color: '#667eea', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
                                   {entry.weight.toFixed(2)} kg
                                 </Typography>
                               </Box>
                             }
                             secondary={
-                              <Box sx={{ mt: 1 }}>
-                                <Typography variant="body2" color="textSecondary">
+                              <Box sx={{ mt: 0.5 }}>
+                                <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>
                                   {format(entry.date, 'h:mm a')}
                                 </Typography>
                               </Box>
@@ -852,13 +951,13 @@ function ReportPage() {
             </>
           ) : (
             <Box sx={{ p: 2, textAlign: 'center' }}>
-              <Typography color="textSecondary">
+              <Typography color="text.secondary" sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>
                 No weight data available for this period. Add entries in the Weight Log.
               </Typography>
-              <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>
                 Current date range: {format(new Date(startDate), 'MMM d, yyyy')} - {format(new Date(endDate), 'MMM d, yyyy')}
               </Typography>
-              <Typography variant="body2" color="textSecondary" sx={{ mt: 0.5, fontSize: '0.75rem' }}>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, fontSize: { xs: '0.65rem', sm: '0.75rem' }, display: 'block' }}>
                 Date strings: {new Date(startDate).toISOString().split('T')[0]} to {new Date(endDate).toISOString().split('T')[0]}
               </Typography>
               
@@ -867,7 +966,6 @@ function ReportPage() {
                 <Box sx={{ mt: 2 }}>
                   <Button 
                     variant="outlined" 
-                    color="secondary"
                     size="small"
                     onClick={async () => {
                       try {
@@ -878,7 +976,7 @@ function ReportPage() {
                         
                         const weightData = {
                           userId: currentUser.uid,
-                          weight: 70 + Math.random() * 5, // Random weight between 70-75
+                          weight: 70 + Math.random() * 5,
                           date: Timestamp.fromDate(today),
                           dateStr: dateStr
                         };
@@ -887,10 +985,18 @@ function ReportPage() {
                         await addDoc(collection(db, 'weights'), weightData);
                         console.log('Added debug weight entry with dateStr:', dateStr);
                         
-                        // Refresh data
                         fetchReportData();
                       } catch (error) {
                         console.error('Error adding debug weight:', error);
+                      }
+                    }}
+                    sx={{
+                      textTransform: 'none',
+                      borderColor: '#667eea',
+                      color: '#667eea',
+                      '&:hover': {
+                        borderColor: '#667eea',
+                        bgcolor: 'rgba(102, 126, 234, 0.08)'
                       }
                     }}
                   >
@@ -902,8 +1008,9 @@ function ReportPage() {
           )}
         </Paper>
       </Box>
+      </Box>
       <Footer />
-    </div>
+    </Box>
   );
 }
 

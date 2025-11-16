@@ -115,5 +115,16 @@ service cloud.firestore {
                     && request.resource.data.userId == request.auth.uid;
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
+    
+    // Calories burnt log - users can only access their own activity data
+    match /calories_burnt_log/{logId} {
+      allow read: if isSignedIn();
+      
+      // For write operations, ensure user can only write their own data
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.userId;
+      allow update: if isSignedIn() && request.auth.uid == resource.data.userId 
+                    && request.auth.uid == request.resource.data.userId;
+      allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
+    }
   }
 }

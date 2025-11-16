@@ -27,6 +27,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 import MonitorWeightIcon from '@mui/icons-material/MonitorWeight';
 import TrackChangesIcon from '@mui/icons-material/TrackChanges';
+import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 
 // Import authentication components
 import { AuthProvider, useAuth } from './components/Auth/AuthContext';
@@ -48,6 +49,7 @@ const InitializeAdminCollection = lazy(() => import('./components/InitializeAdmi
 const TestFirestorePermissions = lazy(() => import('./components/TestFirestorePermissions'));
 const DataDebugger = lazy(() => import('./components/DataDebugger'));
 const MyProfilePage = lazy(() => import('./components/Profile/MyProfilePage'));
+const CaloriesBurntPage = lazy(() => import('./components/CaloriesBurnt/CaloriesBurntPage'));
 
 // Create a theme optimized for faster rendering
 const theme = createTheme({
@@ -184,14 +186,16 @@ function NavigationBar() {
       setValue(0);
     } else if (location.pathname === '/daily-log') {
       setValue(1);
-    } else if (location.pathname === '/weight-log') {
+    } else if (location.pathname === '/calories-burnt') {
       setValue(2);
-    } else if (location.pathname === '/reports') {
+    } else if (location.pathname === '/weight-log') {
       setValue(3);
-    } else if (location.pathname === '/macro-target') {
+    } else if (location.pathname === '/reports') {
       setValue(4);
-    } else if (location.pathname === '/food-master') {
+    } else if (location.pathname === '/macro-target') {
       setValue(5);
+    } else if (location.pathname === '/food-master') {
+      setValue(6);
     }
   }, [location]);
   
@@ -222,44 +226,50 @@ function NavigationBar() {
           icon={<HomeIcon />} 
           component={Link} 
           to="/dashboard"
-          sx={{ minWidth: userIsAdmin ? '14.29%' : '16.67%' }}
+          sx={{ minWidth: userIsAdmin ? '12.5%' : '14.29%' }}
         />
         <BottomNavigationAction 
           icon={<RestaurantMenuIcon />} 
           component={Link} 
           to="/daily-log"
-          sx={{ minWidth: userIsAdmin ? '14.29%' : '16.67%' }}
+          sx={{ minWidth: userIsAdmin ? '12.5%' : '14.29%' }}
+        />
+        <BottomNavigationAction 
+          icon={<LocalFireDepartmentIcon />} 
+          component={Link} 
+          to="/calories-burnt"
+          sx={{ minWidth: userIsAdmin ? '12.5%' : '14.29%' }}
         />
         <BottomNavigationAction 
           icon={<MonitorWeightIcon />} 
           component={Link} 
           to="/weight-log"
-          sx={{ minWidth: userIsAdmin ? '14.29%' : '16.67%' }}
+          sx={{ minWidth: userIsAdmin ? '12.5%' : '14.29%' }}
         />
         <BottomNavigationAction 
           icon={<BarChartIcon />} 
           component={Link} 
           to="/reports"
-          sx={{ minWidth: userIsAdmin ? '14.29%' : '16.67%' }}
+          sx={{ minWidth: userIsAdmin ? '12.5%' : '14.29%' }}
         />
         <BottomNavigationAction 
           icon={<TrackChangesIcon />} 
           component={Link} 
           to="/macro-target"
-          sx={{ minWidth: userIsAdmin ? '14.29%' : '16.67%' }}
+          sx={{ minWidth: userIsAdmin ? '12.5%' : '14.29%' }}
         />
         <BottomNavigationAction 
           icon={<MenuBookIcon />} 
           component={Link} 
           to="/food-master"
-          sx={{ minWidth: userIsAdmin ? '14.29%' : '16.67%' }}
+          sx={{ minWidth: userIsAdmin ? '12.5%' : '14.29%' }}
         />
         {userIsAdmin && (
           <BottomNavigationAction 
             icon={<SupervisorAccountIcon />} 
             component={Link} 
             to="/admin"
-            sx={{ minWidth: '14.29%' }}
+            sx={{ minWidth: '12.5%' }}
           />
         )}
       </BottomNavigation>
@@ -331,6 +341,11 @@ function AppContent() {
               <Route path="/daily-log" element={
                 <PrivateRoute>
                   <DailyLogPage />
+                </PrivateRoute>
+              } />
+              <Route path="/calories-burnt" element={
+                <PrivateRoute>
+                  <CaloriesBurntPage />
                 </PrivateRoute>
               } />
               <Route path="/weight-log" element={
