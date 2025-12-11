@@ -455,11 +455,11 @@ function MacroTargetPage() {
                 minHeight: { xs: 48, sm: 56 }
               },
               '& .Mui-selected': {
-                color: '#667eea !important'
+                color: '#4caf50 !important'
               },
               '& .MuiTabs-indicator': {
                 height: 3,
-                background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)'
+                background: 'linear-gradient(90deg, #4caf50 0%, #2e7d32 100%)'
               }
             }}
           >
@@ -481,7 +481,7 @@ function MacroTargetPage() {
                     fontSize: { xs: '0.95rem', sm: '1rem' },
                     fontWeight: 600, 
                     mb: 1.5,
-                    color: '#667eea'
+                    color: '#4caf50'
                   }}
                 >
                   Select Your Goal
@@ -500,8 +500,8 @@ function MacroTargetPage() {
                     sx={{ 
                       flex: 1,
                       cursor: 'pointer',
-                      border: targetType === 'deficit' ? '2px solid #667eea' : '1px solid #e0e0e0',
-                      bgcolor: targetType === 'deficit' ? '#f0f4ff' : 'white',
+                      border: targetType === 'deficit' ? '2px solid #4caf50' : '1px solid #e0e0e0',
+                      bgcolor: targetType === 'deficit' ? '#f1f8f4' : 'white',
                       p: { xs: 1.5, sm: 2 },
                       borderRadius: 2,
                       transition: 'all 0.2s',
@@ -518,7 +518,7 @@ function MacroTargetPage() {
                       value="deficit"
                       sx={{ 
                         p: 0,
-                        '&.Mui-checked': { color: '#667eea' }
+                        '&.Mui-checked': { color: '#4caf50' }
                       }}
                     />
                     <Box sx={{ flex: 1 }}>
@@ -536,8 +536,8 @@ function MacroTargetPage() {
                     sx={{ 
                       flex: 1,
                       cursor: 'pointer',
-                      border: targetType === 'maintenance' ? '2px solid #667eea' : '1px solid #e0e0e0',
-                      bgcolor: targetType === 'maintenance' ? '#f0f4ff' : 'white',
+                      border: targetType === 'maintenance' ? '2px solid #4caf50' : '1px solid #e0e0e0',
+                      bgcolor: targetType === 'maintenance' ? '#f1f8f4' : 'white',
                       p: { xs: 1.5, sm: 2 },
                       borderRadius: 2,
                       transition: 'all 0.2s',
@@ -554,7 +554,7 @@ function MacroTargetPage() {
                       value="maintenance"
                       sx={{ 
                         p: 0,
-                        '&.Mui-checked': { color: '#667eea' }
+                        '&.Mui-checked': { color: '#4caf50' }
                       }}
                     />
                     <Box sx={{ flex: 1 }}>
@@ -572,8 +572,8 @@ function MacroTargetPage() {
                     sx={{ 
                       flex: 1,
                       cursor: 'pointer',
-                      border: targetType === 'bulking' ? '2px solid #667eea' : '1px solid #e0e0e0',
-                      bgcolor: targetType === 'bulking' ? '#f0f4ff' : 'white',
+                      border: targetType === 'bulking' ? '2px solid #4caf50' : '1px solid #e0e0e0',
+                      bgcolor: targetType === 'bulking' ? '#f1f8f4' : 'white',
                       p: { xs: 1.5, sm: 2 },
                       borderRadius: 2,
                       transition: 'all 0.2s',
@@ -590,7 +590,7 @@ function MacroTargetPage() {
                       value="bulking"
                       sx={{ 
                         p: 0,
-                        '&.Mui-checked': { color: '#667eea' }
+                        '&.Mui-checked': { color: '#4caf50' }
                       }}
                     />
                     <Box sx={{ flex: 1 }}>
@@ -620,10 +620,10 @@ function MacroTargetPage() {
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 1.5,
                       '&:hover fieldset': {
-                        borderColor: '#667eea'
+                        borderColor: '#4caf50'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#667eea'
+                        borderColor: '#4caf50'
                       }
                     }
                   }}
@@ -643,10 +643,10 @@ function MacroTargetPage() {
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 1.5,
                       '&:hover fieldset': {
-                        borderColor: '#667eea'
+                        borderColor: '#4caf50'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#667eea'
+                        borderColor: '#4caf50'
                       }
                     }
                   }}
@@ -666,10 +666,10 @@ function MacroTargetPage() {
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 1.5,
                       '&:hover fieldset': {
-                        borderColor: '#667eea'
+                        borderColor: '#4caf50'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#667eea'
+                        borderColor: '#4caf50'
                       }
                     }
                   }}
@@ -689,10 +689,10 @@ function MacroTargetPage() {
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 1.5,
                       '&:hover fieldset': {
-                        borderColor: '#667eea'
+                        borderColor: '#4caf50'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#667eea'
+                        borderColor: '#4caf50'
                       }
                     }
                   }}
@@ -710,11 +710,11 @@ function MacroTargetPage() {
                   px: 3,
                   textTransform: 'none',
                   fontSize: { xs: '0.9rem', sm: '0.95rem' },
-                  borderColor: '#667eea',
-                  color: '#667eea',
+                  borderColor: '#4caf50',
+                  color: '#4caf50',
                   '&:hover': {
-                    borderColor: '#764ba2',
-                    bgcolor: '#f0f4ff'
+                    borderColor: '#2e7d32',
+                    bgcolor: '#f1f8f4'
                   }
                 }}
               >
@@ -729,10 +729,10 @@ function MacroTargetPage() {
                   px: 3,
                   textTransform: 'none',
                   fontSize: { xs: '0.9rem', sm: '0.95rem' },
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  background: 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)',
                   boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
                   '&:hover': {
-                    background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
+                    background: 'linear-gradient(135deg, #2e7d32 0%, #4caf50 100%)',
                     boxShadow: '0 3px 12px rgba(102, 126, 234, 0.4)'
                   }
                 }}
@@ -789,11 +789,11 @@ function MacroTargetPage() {
             <Box sx={{ 
               mb: 2, 
               p: { xs: 1.5, sm: 2 }, 
-              bgcolor: '#f0f4ff', 
+              bgcolor: '#f1f8f4', 
               borderRadius: 2,
-              borderLeft: '3px solid #667eea'
+              borderLeft: '3px solid #4caf50'
             }}>
-              <Typography variant="body2" fontWeight="600" color="#667eea" gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
+              <Typography variant="body2" fontWeight="600" color="#4caf50" gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                 BMR Calculator
               </Typography>
               <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem' } }}>
@@ -830,10 +830,10 @@ function MacroTargetPage() {
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 1.5,
                       '&:hover fieldset': {
-                        borderColor: '#667eea'
+                        borderColor: '#4caf50'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#667eea'
+                        borderColor: '#4caf50'
                       }
                     }
                   }}
@@ -855,7 +855,7 @@ function MacroTargetPage() {
                   <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', whiteSpace: 'nowrap' }}>
                     Weight (lbs):
                   </Typography>
-                  <Typography variant="body2" color="#667eea" fontWeight="600">
+                  <Typography variant="body2" color="#4caf50" fontWeight="600">
                     {calcWeightLbs || '-'}
                   </Typography>
                 </Box>
@@ -876,10 +876,10 @@ function MacroTargetPage() {
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 1.5,
                       '&:hover fieldset': {
-                        borderColor: '#667eea'
+                        borderColor: '#4caf50'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#667eea'
+                        borderColor: '#4caf50'
                       }
                     }
                   }}
@@ -901,10 +901,10 @@ function MacroTargetPage() {
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 1.5,
                       '&:hover fieldset': {
-                        borderColor: '#667eea'
+                        borderColor: '#4caf50'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#667eea'
+                        borderColor: '#4caf50'
                       }
                     }
                   }}
@@ -926,7 +926,7 @@ function MacroTargetPage() {
                   <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', whiteSpace: 'nowrap' }}>
                     Height (cm):
                   </Typography>
-                  <Typography variant="body2" color="#667eea" fontWeight="600">
+                  <Typography variant="body2" color="#4caf50" fontWeight="600">
                     {calcHeightCm || '-'}
                   </Typography>
                 </Box>
@@ -946,10 +946,10 @@ function MacroTargetPage() {
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 1.5,
                       '&:hover fieldset': {
-                        borderColor: '#667eea'
+                        borderColor: '#4caf50'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#667eea'
+                        borderColor: '#4caf50'
                       }
                     }
                   }}
@@ -971,7 +971,7 @@ function MacroTargetPage() {
                   <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', whiteSpace: 'nowrap' }}>
                     Age (years):
                   </Typography>
-                  <Typography variant="body2" color="#667eea" fontWeight="600">
+                  <Typography variant="body2" color="#4caf50" fontWeight="600">
                     {calcAge || '-'}
                   </Typography>
                 </Box>
@@ -992,8 +992,8 @@ function MacroTargetPage() {
                       sx={{
                         flex: 1,
                         cursor: 'pointer',
-                        border: calcSex === 'male' ? '2px solid #667eea' : '1px solid #e0e0e0',
-                        bgcolor: calcSex === 'male' ? '#f0f4ff' : 'white',
+                        border: calcSex === 'male' ? '2px solid #4caf50' : '1px solid #e0e0e0',
+                        bgcolor: calcSex === 'male' ? '#f1f8f4' : 'white',
                         p: 1,
                         borderRadius: 1.5,
                         display: 'flex',
@@ -1007,7 +1007,7 @@ function MacroTargetPage() {
                         checked={calcSex === 'male'} 
                         value="male"
                         size="small"
-                        sx={{ p: 0, '&.Mui-checked': { color: '#667eea' } }}
+                        sx={{ p: 0, '&.Mui-checked': { color: '#4caf50' } }}
                       />
                       <Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Male</Typography>
                     </Box>
@@ -1016,8 +1016,8 @@ function MacroTargetPage() {
                       sx={{
                         flex: 1,
                         cursor: 'pointer',
-                        border: calcSex === 'female' ? '2px solid #667eea' : '1px solid #e0e0e0',
-                        bgcolor: calcSex === 'female' ? '#f0f4ff' : 'white',
+                        border: calcSex === 'female' ? '2px solid #4caf50' : '1px solid #e0e0e0',
+                        bgcolor: calcSex === 'female' ? '#f1f8f4' : 'white',
                         p: 1,
                         borderRadius: 1.5,
                         display: 'flex',
@@ -1031,7 +1031,7 @@ function MacroTargetPage() {
                         checked={calcSex === 'female'} 
                         value="female"
                         size="small"
-                        sx={{ p: 0, '&.Mui-checked': { color: '#667eea' } }}
+                        sx={{ p: 0, '&.Mui-checked': { color: '#4caf50' } }}
                       />
                       <Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Female</Typography>
                     </Box>
@@ -1078,7 +1078,7 @@ function MacroTargetPage() {
                     fontSize: { xs: '0.95rem', sm: '1rem' },
                     fontWeight: 600, 
                     mb: 1.5,
-                    color: '#667eea'
+                    color: '#4caf50'
                   }}
                 >
                   Activity Level
@@ -1090,31 +1090,31 @@ function MacroTargetPage() {
                 >
                   <FormControlLabel 
                     value="1.2" 
-                    control={<Radio size="small" sx={{ '&.Mui-checked': { color: '#667eea' } }} />} 
+                    control={<Radio size="small" sx={{ '&.Mui-checked': { color: '#4caf50' } }} />} 
                     label={<Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Sedentary (little or no exercise)</Typography>}
                     sx={{ mx: 0 }}
                   />
                   <FormControlLabel 
                     value="1.375" 
-                    control={<Radio size="small" sx={{ '&.Mui-checked': { color: '#667eea' } }} />} 
+                    control={<Radio size="small" sx={{ '&.Mui-checked': { color: '#4caf50' } }} />} 
                     label={<Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Lightly active (exercise 1-3 days/week)</Typography>}
                     sx={{ mx: 0 }}
                   />
                   <FormControlLabel 
                     value="1.55" 
-                    control={<Radio size="small" sx={{ '&.Mui-checked': { color: '#667eea' } }} />} 
+                    control={<Radio size="small" sx={{ '&.Mui-checked': { color: '#4caf50' } }} />} 
                     label={<Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Moderately active (exercise 3-5 days/week)</Typography>}
                     sx={{ mx: 0 }}
                   />
                   <FormControlLabel 
                     value="1.725" 
-                    control={<Radio size="small" sx={{ '&.Mui-checked': { color: '#667eea' } }} />} 
+                    control={<Radio size="small" sx={{ '&.Mui-checked': { color: '#4caf50' } }} />} 
                     label={<Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Active (hard exercise 6-7 days/week)</Typography>}
                     sx={{ mx: 0 }}
                   />
                   <FormControlLabel 
                     value="1.9" 
-                    control={<Radio size="small" sx={{ '&.Mui-checked': { color: '#667eea' } }} />} 
+                    control={<Radio size="small" sx={{ '&.Mui-checked': { color: '#4caf50' } }} />} 
                     label={<Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Very active (very hard exercise & physical job)</Typography>}
                     sx={{ mx: 0 }}
                   />
@@ -1197,9 +1197,9 @@ function MacroTargetPage() {
                       px: 3,
                       textTransform: 'none',
                       fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      background: 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)',
                       '&:hover': {
-                        background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)'
+                        background: 'linear-gradient(135deg, #2e7d32 0%, #4caf50 100%)'
                       }
                     }}
                   >
@@ -1218,3 +1218,4 @@ function MacroTargetPage() {
 }
 
 export default MacroTargetPage;
+

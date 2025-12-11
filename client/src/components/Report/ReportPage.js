@@ -44,11 +44,19 @@ function ReportPage() {
   const [period, setPeriod] = useState('month'); // Changed default from 'week' to 'month'
   const [tabValue, setTabValue] = useState(0);
   const [weightTabValue, setWeightTabValue] = useState(0); // Separate tab state for weight tracking
+  const [bicepsTabValue, setBicepsTabValue] = useState(0); // Separate tab state for biceps tracking
+  const [waistTabValue, setWaistTabValue] = useState(0); // Separate tab state for waist tracking
+  const [chestTabValue, setChestTabValue] = useState(0); // Separate tab state for chest tracking
+  const [hipsTabValue, setHipsTabValue] = useState(0); // Separate tab state for hips tracking
   // Changed default to last 30 days instead of just current week
   const [startDate, setStartDate] = useState(subDays(new Date(), 30));
   const [endDate, setEndDate] = useState(new Date());
   const [dailyData, setDailyData] = useState([]);
   const [weightData, setWeightData] = useState([]);
+  const [bicepsData, setBicepsData] = useState([]);
+  const [waistData, setWaistData] = useState([]);
+  const [chestData, setChestData] = useState([]);
+  const [hipsData, setHipsData] = useState([]);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { currentUser } = useAuth();
@@ -362,6 +370,250 @@ function ReportPage() {
     }
   }, [startDate, endDate, currentUser, processResults]);
 
+  // Fetch biceps data
+  const fetchBicepsData = useCallback(async () => {
+    if (!currentUser) return;
+    
+    try {
+      console.log('Fetching biceps data for userId:', currentUser.uid);
+      
+      const bicepsCollection = collection(db, 'biceps');
+      const bicepsQuery = query(
+        bicepsCollection,
+        where('userId', '==', currentUser.uid)
+      );
+      
+      const bicepsSnapshot = await getDocs(bicepsQuery);
+      console.log(`Found ${bicepsSnapshot.size} biceps entries total`);
+      
+      const allBiceps = [];
+      bicepsSnapshot.forEach(doc => {
+        const data = doc.data();
+        let dateObj;
+        
+        try {
+          dateObj = data.date.toDate();
+        } catch (e) {
+          console.warn('Failed to convert biceps date:', data.date);
+          return;
+        }
+        
+        allBiceps.push({
+          id: doc.id,
+          value: data.value,
+          unit: data.unit || 'cm',
+          date: dateObj,
+          dateStr: data.dateStr,
+          formattedDate: format(dateObj, 'MMM d')
+        });
+      });
+      
+      // Filter by date range
+      const startDateStr = new Date(startDate).toISOString().split('T')[0];
+      const endDateStr = new Date(endDate).toISOString().split('T')[0];
+      
+      let filteredBiceps = allBiceps.filter(entry => {
+        if (entry.dateStr) {
+          const isInRange = entry.dateStr >= startDateStr && entry.dateStr <= endDateStr;
+          return isInRange;
+        }
+        return false;
+      });
+      
+      // Sort by date
+      filteredBiceps.sort((a, b) => a.date.getTime() - b.date.getTime());
+      
+      console.log(`Found ${filteredBiceps.length} biceps entries for selected date range`);
+      setBicepsData(filteredBiceps);
+    } catch (error) {
+      console.error("Error fetching biceps data: ", error);
+      console.error('Error details:', error.code, error.message);
+    }
+  }, [startDate, endDate, currentUser]);
+
+  // Fetch waist data
+  const fetchWaistData = useCallback(async () => {
+    if (!currentUser) return;
+    
+    try {
+      console.log('Fetching waist data for userId:', currentUser.uid);
+      
+      const waistCollection = collection(db, 'waist');
+      const waistQuery = query(
+        waistCollection,
+        where('userId', '==', currentUser.uid)
+      );
+      
+      const waistSnapshot = await getDocs(waistQuery);
+      console.log(`Found ${waistSnapshot.size} waist entries total`);
+      
+      const allWaist = [];
+      waistSnapshot.forEach(doc => {
+        const data = doc.data();
+        let dateObj;
+        
+        try {
+          dateObj = data.date.toDate();
+        } catch (e) {
+          console.warn('Failed to convert waist date:', data.date);
+          return;
+        }
+        
+        allWaist.push({
+          id: doc.id,
+          value: data.value,
+          unit: data.unit || 'cm',
+          date: dateObj,
+          dateStr: data.dateStr,
+          formattedDate: format(dateObj, 'MMM d')
+        });
+      });
+      
+      // Filter by date range
+      const startDateStr = new Date(startDate).toISOString().split('T')[0];
+      const endDateStr = new Date(endDate).toISOString().split('T')[0];
+      
+      let filteredWaist = allWaist.filter(entry => {
+        if (entry.dateStr) {
+          const isInRange = entry.dateStr >= startDateStr && entry.dateStr <= endDateStr;
+          return isInRange;
+        }
+        return false;
+      });
+      
+      // Sort by date
+      filteredWaist.sort((a, b) => a.date.getTime() - b.date.getTime());
+      
+      console.log(`Found ${filteredWaist.length} waist entries for selected date range`);
+      setWaistData(filteredWaist);
+    } catch (error) {
+      console.error("Error fetching waist data: ", error);
+      console.error('Error details:', error.code, error.message);
+    }
+  }, [startDate, endDate, currentUser]);
+
+  // Fetch chest data
+  const fetchChestData = useCallback(async () => {
+    if (!currentUser) return;
+    
+    try {
+      console.log('Fetching chest data for userId:', currentUser.uid);
+      
+      const chestCollection = collection(db, 'chest');
+      const chestQuery = query(
+        chestCollection,
+        where('userId', '==', currentUser.uid)
+      );
+      
+      const chestSnapshot = await getDocs(chestQuery);
+      console.log(`Found ${chestSnapshot.size} chest entries total`);
+      
+      const allChest = [];
+      chestSnapshot.forEach(doc => {
+        const data = doc.data();
+        let dateObj;
+        
+        try {
+          dateObj = data.date.toDate();
+        } catch (e) {
+          console.warn('Failed to convert chest date:', data.date);
+          return;
+        }
+        
+        allChest.push({
+          id: doc.id,
+          value: data.value,
+          unit: data.unit || 'inch',
+          date: dateObj,
+          dateStr: data.dateStr,
+          formattedDate: format(dateObj, 'MMM d')
+        });
+      });
+      
+      // Filter by date range
+      const startDateStr = new Date(startDate).toISOString().split('T')[0];
+      const endDateStr = new Date(endDate).toISOString().split('T')[0];
+      
+      let filteredChest = allChest.filter(entry => {
+        if (entry.dateStr) {
+          const isInRange = entry.dateStr >= startDateStr && entry.dateStr <= endDateStr;
+          return isInRange;
+        }
+        return false;
+      });
+      
+      // Sort by date
+      filteredChest.sort((a, b) => a.date.getTime() - b.date.getTime());
+      
+      console.log(`Found ${filteredChest.length} chest entries for selected date range`);
+      setChestData(filteredChest);
+    } catch (error) {
+      console.error("Error fetching chest data: ", error);
+      console.error('Error details:', error.code, error.message);
+    }
+  }, [startDate, endDate, currentUser]);
+
+  // Fetch hips data
+  const fetchHipsData = useCallback(async () => {
+    if (!currentUser) return;
+    
+    try {
+      console.log('Fetching hips data for userId:', currentUser.uid);
+      
+      const hipsCollection = collection(db, 'hips');
+      const hipsQuery = query(
+        hipsCollection,
+        where('userId', '==', currentUser.uid)
+      );
+      
+      const hipsSnapshot = await getDocs(hipsQuery);
+      console.log(`Found ${hipsSnapshot.size} hips entries total`);
+      
+      const allHips = [];
+      hipsSnapshot.forEach(doc => {
+        const data = doc.data();
+        let dateObj;
+        
+        try {
+          dateObj = data.date.toDate();
+        } catch (e) {
+          console.warn('Failed to convert hips date:', data.date);
+          return;
+        }
+        
+        allHips.push({
+          id: doc.id,
+          value: data.value,
+          unit: data.unit || 'inch',
+          date: dateObj,
+          dateStr: data.dateStr,
+          formattedDate: format(dateObj, 'MMM d')
+        });
+      });
+      
+      // Filter by date range
+      const startDateStr = new Date(startDate).toISOString().split('T')[0];
+      const endDateStr = new Date(endDate).toISOString().split('T')[0];
+      
+      let filteredHips = allHips.filter(entry => {
+        if (entry.dateStr) {
+          const isInRange = entry.dateStr >= startDateStr && entry.dateStr <= endDateStr;
+          return isInRange;
+        }
+        return false;
+      });
+      
+      // Sort by date
+      filteredHips.sort((a, b) => a.date.getTime() - b.date.getTime());
+      
+      console.log(`Found ${filteredHips.length} hips entries for selected date range`);
+      setHipsData(filteredHips);
+    } catch (error) {
+      console.error("Error fetching hips data: ", error);
+      console.error('Error details:', error.code, error.message);
+    }
+  }, [startDate, endDate, currentUser]);
+
   // Debug function to check all weight entries in the database
   const debugWeightData = useCallback(async () => {
     if (!currentUser) return;
@@ -435,7 +687,11 @@ function ReportPage() {
     fetchReportData();
     // Run debug function to check all weight entries
     debugWeightData();
-  }, [period, startDate, endDate, fetchReportData, currentUser, debugWeightData]);
+    fetchBicepsData();
+    fetchWaistData();
+    fetchChestData();
+    fetchHipsData();
+  }, [period, startDate, endDate, fetchReportData, currentUser, debugWeightData, fetchBicepsData, fetchWaistData, fetchChestData, fetchHipsData]);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
@@ -443,6 +699,22 @@ function ReportPage() {
 
   const handleWeightTabChange = (event, newValue) => {
     setWeightTabValue(newValue);
+  };
+
+  const handleBicepsTabChange = (event, newValue) => {
+    setBicepsTabValue(newValue);
+  };
+
+  const handleWaistTabChange = (event, newValue) => {
+    setWaistTabValue(newValue);
+  };
+
+  const handleChestTabChange = (event, newValue) => {
+    setChestTabValue(newValue);
+  };
+
+  const handleHipsTabChange = (event, newValue) => {
+    setHipsTabValue(newValue);
   };
 
   // Calculate averages - more efficient calculation
@@ -527,10 +799,10 @@ function ReportPage() {
                 borderColor: '#e0e0e0',
               },
               '&:hover .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#667eea',
+                borderColor: '#4caf50',
               },
               '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#667eea',
+                borderColor: '#4caf50',
               },
             }}
           >
@@ -555,8 +827,8 @@ function ReportPage() {
                       sx: { 
                         borderRadius: 1.5,
                         '& .MuiOutlinedInput-root': {
-                          '&:hover fieldset': { borderColor: '#667eea' },
-                          '&.Mui-focused fieldset': { borderColor: '#667eea' }
+                          '&:hover fieldset': { borderColor: '#4caf50' },
+                          '&.Mui-focused fieldset': { borderColor: '#4caf50' }
                         }
                       }
                     } 
@@ -577,8 +849,8 @@ function ReportPage() {
                       sx: { 
                         borderRadius: 1.5,
                         '& .MuiOutlinedInput-root': {
-                          '&:hover fieldset': { borderColor: '#667eea' },
-                          '&.Mui-focused fieldset': { borderColor: '#667eea' }
+                          '&:hover fieldset': { borderColor: '#4caf50' },
+                          '&.Mui-focused fieldset': { borderColor: '#4caf50' }
                         }
                       }
                     } 
@@ -600,7 +872,7 @@ function ReportPage() {
 
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-          <CircularProgress size={30} sx={{ color: '#667eea' }} />
+          <CircularProgress size={30} sx={{ color: '#4caf50' }} />
         </Box>
       ) : (
         <>
@@ -616,7 +888,7 @@ function ReportPage() {
                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                   Avg. Calories
                 </Typography>
-                <Typography variant="h6" component="div" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' }, fontWeight: 600, color: '#667eea', mt: 0.5 }}>
+                <Typography variant="h6" component="div" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' }, fontWeight: 600, color: '#4caf50', mt: 0.5 }}>
                   {averages.calories.toFixed(0)}
                 </Typography>
               </Box>
@@ -632,7 +904,7 @@ function ReportPage() {
                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                   Avg. Protein
                 </Typography>
-                <Typography variant="h6" component="div" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' }, fontWeight: 600, color: '#667eea', mt: 0.5 }}>
+                <Typography variant="h6" component="div" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' }, fontWeight: 600, color: '#4caf50', mt: 0.5 }}>
                   {averages.protein.toFixed(1)}g
                 </Typography>
               </Box>
@@ -648,7 +920,7 @@ function ReportPage() {
                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                   Avg. Carbs
                 </Typography>
-                <Typography variant="h6" component="div" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' }, fontWeight: 600, color: '#667eea', mt: 0.5 }}>
+                <Typography variant="h6" component="div" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' }, fontWeight: 600, color: '#4caf50', mt: 0.5 }}>
                   {averages.carbs.toFixed(1)}g
                 </Typography>
               </Box>
@@ -664,7 +936,7 @@ function ReportPage() {
                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                   Avg. Fat
                 </Typography>
-                <Typography variant="h6" component="div" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' }, fontWeight: 600, color: '#667eea', mt: 0.5 }}>
+                <Typography variant="h6" component="div" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' }, fontWeight: 600, color: '#4caf50', mt: 0.5 }}>
                   {averages.fat.toFixed(1)}g
                 </Typography>
               </Box>
@@ -686,10 +958,10 @@ function ReportPage() {
                   fontWeight: 500
                 },
                 '& .Mui-selected': {
-                  color: '#667eea'
+                  color: '#4caf50'
                 },
                 '& .MuiTabs-indicator': {
-                  backgroundColor: '#667eea'
+                  backgroundColor: '#4caf50'
                 }
               }}
             >
@@ -734,7 +1006,7 @@ function ReportPage() {
                     <Line 
                       type="monotone" 
                       dataKey="calories" 
-                      stroke="#667eea" 
+                      stroke="#4caf50" 
                       name="Calories" 
                       strokeWidth={2}
                       dot={{ r: 3 }}
@@ -780,7 +1052,7 @@ function ReportPage() {
                       }}
                     />
                     <Legend />
-                    <Bar dataKey="protein" fill="#667eea" name="Protein" />
+                    <Bar dataKey="protein" fill="#4caf50" name="Protein" />
                     <Bar dataKey="carbs" fill="#4caf50" name="Carbs" />
                     <Bar dataKey="fat" fill="#ff8042" name="Fat" />
                   </BarChart>
@@ -790,7 +1062,7 @@ function ReportPage() {
 
             {tabValue === 2 && (
               <List sx={{ bgcolor: 'transparent', p: 0 }}>
-                {dailyData.map((day) => (
+                {dailyData.slice(-15).map((day) => (
                   <React.Fragment key={day.date}>
                     <ListItem sx={{ px: { xs: 1.5, sm: 2 } }}>
                       <ListItemText
@@ -824,12 +1096,12 @@ function ReportPage() {
 
       {/* Weight Tracking Section */}
       <Box sx={{ mt: 3 }}>
-        <Typography variant="body2" fontWeight="600" color="#667eea" gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' }, mb: 1.5 }}>
+        <Typography variant="body2" fontWeight="600" color="#4caf50" gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' }, mb: 1.5 }}>
           Weight Tracking
         </Typography>
 
         <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-          {loading && <LinearProgress sx={{ mb: 2, '& .MuiLinearProgress-bar': { bgcolor: '#667eea' } }} />}
+          {loading && <LinearProgress sx={{ mb: 2, '& .MuiLinearProgress-bar': { bgcolor: '#4caf50' } }} />}
           
           {weightData.length > 0 ? (
             <>
@@ -847,10 +1119,10 @@ function ReportPage() {
                     fontWeight: 500
                   },
                   '& .Mui-selected': {
-                    color: '#667eea'
+                    color: '#4caf50'
                   },
                   '& .MuiTabs-indicator': {
-                    backgroundColor: '#667eea'
+                    backgroundColor: '#4caf50'
                   }
                 }}
               >
@@ -904,7 +1176,7 @@ function ReportPage() {
                       <Line 
                         type="monotone" 
                         dataKey="weight" 
-                        stroke="#667eea" 
+                        stroke="#4caf50" 
                         strokeWidth={2}
                         dot={{ r: 4 }}
                         activeDot={{ r: 6 }}
@@ -919,7 +1191,7 @@ function ReportPage() {
               {weightTabValue === 1 && (
                 <Box sx={{ mt: 1 }}>
                   <List sx={{ p: 0 }}>
-                    {weightData.map((entry, index) => (
+                    {weightData.slice(-15).map((entry, index) => (
                       <React.Fragment key={entry.id}>
                         <ListItem sx={{ px: 0 }}>
                           <ListItemText
@@ -928,7 +1200,7 @@ function ReportPage() {
                                 <Typography variant="body2" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, fontWeight: 600 }}>
                                   {format(entry.date, 'EEEE, MMM d, yyyy')}
                                 </Typography>
-                                <Typography variant="h6" sx={{ color: '#667eea', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+                                <Typography variant="h6" sx={{ color: '#4caf50', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
                                   {entry.weight.toFixed(2)} kg
                                 </Typography>
                               </Box>
@@ -992,10 +1264,10 @@ function ReportPage() {
                     }}
                     sx={{
                       textTransform: 'none',
-                      borderColor: '#667eea',
-                      color: '#667eea',
+                      borderColor: '#4caf50',
+                      color: '#4caf50',
                       '&:hover': {
-                        borderColor: '#667eea',
+                        borderColor: '#4caf50',
                         bgcolor: 'rgba(102, 126, 234, 0.08)'
                       }
                     }}
@@ -1008,6 +1280,546 @@ function ReportPage() {
           )}
         </Paper>
       </Box>
+
+      {/* Biceps Tracking Section */}
+      <Box sx={{ mt: 3 }}>
+        <Typography variant="body2" fontWeight="600" color="#4caf50" gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' }, mb: 1.5 }}>
+          Biceps Tracking
+        </Typography>
+
+        <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+          {loading && <LinearProgress sx={{ mb: 2, '& .MuiLinearProgress-bar': { bgcolor: '#4caf50' } }} />}
+          
+          {bicepsData.length > 0 ? (
+            <>
+              <Tabs 
+                value={bicepsTabValue} 
+                onChange={handleBicepsTabChange} 
+                variant="fullWidth"
+                sx={{ 
+                  borderBottom: 1, 
+                  borderColor: 'divider', 
+                  mb: 2,
+                  '& .MuiTab-root': {
+                    textTransform: 'none',
+                    fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                    fontWeight: 500
+                  },
+                  '& .Mui-selected': {
+                    color: '#4caf50'
+                  },
+                  '& .MuiTabs-indicator': {
+                    backgroundColor: '#4caf50'
+                  }
+                }}
+              >
+                <Tab label="Chart" />
+                <Tab label="Data Table" />
+              </Tabs>
+
+              {/* Tab 0: Chart View */}
+              {bicepsTabValue === 0 && (
+                <Box sx={{ height: 300, pt: 1 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={bicepsData.map(item => ({
+                        date: item.formattedDate,
+                        value: item.value,
+                        unit: item.unit,
+                        rawDate: item.date.toString()
+                      }))}
+                      margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                    >
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fontSize: 12 }}
+                        padding={{ left: 10, right: 10 }}
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 12 }}
+                        width={40}
+                        domain={['dataMin - 1', 'dataMax + 1']}
+                      />
+                      <Tooltip 
+                        formatter={(value, name, props) => {
+                          if (name === 'value') {
+                            const unit = props.payload.unit || 'cm';
+                            return [`${value.toFixed(2)} ${unit}`, 'Biceps'];
+                          }
+                          return [value, name];
+                        }}
+                        contentStyle={{ 
+                          fontSize: '12px',
+                          padding: '8px',
+                          borderRadius: '4px'
+                        }}
+                      />
+                      <Legend />
+                      <Line 
+                        type="monotone" 
+                        dataKey="value" 
+                        stroke="#2196f3" 
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
+                        name="Biceps"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              )}
+
+              {/* Tab 1: Data Table */}
+              {bicepsTabValue === 1 && (
+                <Box sx={{ mt: 1 }}>
+                  <List sx={{ p: 0 }}>
+                    {bicepsData.map((entry, index) => (
+                      <React.Fragment key={entry.id}>
+                        <ListItem sx={{ px: 0 }}>
+                          <ListItemText
+                            primary={
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Typography variant="body2" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, fontWeight: 600 }}>
+                                  {format(entry.date, 'EEEE, MMM d, yyyy')}
+                                </Typography>
+                                <Typography variant="h6" sx={{ color: '#2196f3', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+                                  {entry.value.toFixed(2)} {entry.unit}
+                                </Typography>
+                              </Box>
+                            }
+                            secondary={
+                              <Box sx={{ mt: 0.5 }}>
+                                <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>
+                                  {format(entry.date, 'h:mm a')}
+                                </Typography>
+                              </Box>
+                            }
+                          />
+                        </ListItem>
+                        {index < bicepsData.length - 1 && <Divider />}
+                      </React.Fragment>
+                    ))}
+                  </List>
+                </Box>
+              )}
+            </>
+          ) : (
+            <Box sx={{ p: 2, textAlign: 'center' }}>
+              <Typography color="text.secondary" sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>
+                No biceps data available for this period. Add entries in the Body Parameter Log.
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>
+                Current date range: {format(new Date(startDate), 'MMM d, yyyy')} - {format(new Date(endDate), 'MMM d, yyyy')}
+              </Typography>
+            </Box>
+          )}
+        </Paper>
+      </Box>
+
+      {/* Waist Tracking Section */}
+      <Box sx={{ mt: 3 }}>
+        <Typography variant="body2" fontWeight="600" color="#4caf50" gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' }, mb: 1.5 }}>
+          Waist Tracking
+        </Typography>
+
+        <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+          {loading && <LinearProgress sx={{ mb: 2, '& .MuiLinearProgress-bar': { bgcolor: '#4caf50' } }} />}
+          
+          {waistData.length > 0 ? (
+            <>
+              <Tabs 
+                value={waistTabValue} 
+                onChange={handleWaistTabChange} 
+                variant="fullWidth"
+                sx={{ 
+                  borderBottom: 1, 
+                  borderColor: 'divider', 
+                  mb: 2,
+                  '& .MuiTab-root': {
+                    textTransform: 'none',
+                    fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                    fontWeight: 500
+                  },
+                  '& .Mui-selected': {
+                    color: '#4caf50'
+                  },
+                  '& .MuiTabs-indicator': {
+                    backgroundColor: '#4caf50'
+                  }
+                }}
+              >
+                <Tab label="Chart" />
+                <Tab label="Data Table" />
+              </Tabs>
+
+              {/* Tab 0: Chart View */}
+              {waistTabValue === 0 && (
+                <Box sx={{ height: 300, pt: 1 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={waistData.map(item => ({
+                        date: item.formattedDate,
+                        value: item.value,
+                        unit: item.unit,
+                        rawDate: item.date.toString()
+                      }))}
+                      margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                    >
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fontSize: 12 }}
+                        padding={{ left: 10, right: 10 }}
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 12 }}
+                        width={40}
+                        domain={['dataMin - 1', 'dataMax + 1']}
+                      />
+                      <Tooltip 
+                        formatter={(value, name, props) => {
+                          if (name === 'value') {
+                            const unit = props.payload.unit || 'cm';
+                            return [`${value.toFixed(2)} ${unit}`, 'Waist'];
+                          }
+                          return [value, name];
+                        }}
+                        contentStyle={{ 
+                          fontSize: '12px',
+                          padding: '8px',
+                          borderRadius: '4px'
+                        }}
+                      />
+                      <Legend />
+                      <Line 
+                        type="monotone" 
+                        dataKey="value" 
+                        stroke="#ff9800" 
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
+                        name="Waist"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              )}
+
+              {/* Tab 1: Data Table */}
+              {waistTabValue === 1 && (
+                <Box sx={{ mt: 1 }}>
+                  <List sx={{ p: 0 }}>
+                    {waistData.map((entry, index) => (
+                      <React.Fragment key={entry.id}>
+                        <ListItem sx={{ px: 0 }}>
+                          <ListItemText
+                            primary={
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Typography variant="body2" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, fontWeight: 600 }}>
+                                  {format(entry.date, 'EEEE, MMM d, yyyy')}
+                                </Typography>
+                                <Typography variant="h6" sx={{ color: '#ff9800', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+                                  {entry.value.toFixed(2)} {entry.unit}
+                                </Typography>
+                              </Box>
+                            }
+                            secondary={
+                              <Box sx={{ mt: 0.5 }}>
+                                <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>
+                                  {format(entry.date, 'h:mm a')}
+                                </Typography>
+                              </Box>
+                            }
+                          />
+                        </ListItem>
+                        {index < waistData.length - 1 && <Divider />}
+                      </React.Fragment>
+                    ))}
+                  </List>
+                </Box>
+              )}
+            </>
+          ) : (
+            <Box sx={{ p: 2, textAlign: 'center' }}>
+              <Typography color="text.secondary" sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>
+                No waist data available for this period. Add entries in the Body Parameter Log.
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>
+                Current date range: {format(new Date(startDate), 'MMM d, yyyy')} - {format(new Date(endDate), 'MMM d, yyyy')}
+              </Typography>
+            </Box>
+          )}
+        </Paper>
+      </Box>
+
+      {/* Chest Tracking Section */}
+      <Box sx={{ mt: 3 }}>
+        <Typography variant="body2" fontWeight="600" color="#4caf50" gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' }, mb: 1.5 }}>
+          Chest Tracking
+        </Typography>
+
+        <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+          {loading && <LinearProgress sx={{ mb: 2, '& .MuiLinearProgress-bar': { bgcolor: '#4caf50' } }} />}
+          
+          {chestData.length > 0 ? (
+            <>
+              <Tabs 
+                value={chestTabValue} 
+                onChange={handleChestTabChange} 
+                variant="fullWidth"
+                sx={{ 
+                  borderBottom: 1, 
+                  borderColor: 'divider', 
+                  mb: 2,
+                  '& .MuiTab-root': {
+                    textTransform: 'none',
+                    fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                    fontWeight: 500
+                  },
+                  '& .Mui-selected': {
+                    color: '#4caf50'
+                  },
+                  '& .MuiTabs-indicator': {
+                    backgroundColor: '#4caf50'
+                  }
+                }}
+              >
+                <Tab label="Chart" />
+                <Tab label="Data Table" />
+              </Tabs>
+
+              {/* Tab 0: Chart View */}
+              {chestTabValue === 0 && (
+                <Box sx={{ height: 300, pt: 1 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={chestData.map(item => ({
+                        date: item.formattedDate,
+                        value: item.value,
+                        unit: item.unit,
+                        rawDate: item.date.toString()
+                      }))}
+                      margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                    >
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fontSize: 12 }}
+                        padding={{ left: 10, right: 10 }}
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 12 }}
+                        width={40}
+                        domain={['dataMin - 1', 'dataMax + 1']}
+                      />
+                      <Tooltip 
+                        formatter={(value, name, props) => {
+                          if (name === 'value') {
+                            const unit = props.payload.unit || 'inch';
+                            return [`${value.toFixed(2)} ${unit}`, 'Chest'];
+                          }
+                          return [value, name];
+                        }}
+                        contentStyle={{ 
+                          fontSize: '12px',
+                          padding: '8px',
+                          borderRadius: '4px'
+                        }}
+                      />
+                      <Legend />
+                      <Line 
+                        type="monotone" 
+                        dataKey="value" 
+                        stroke="#9c27b0" 
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
+                        name="Chest"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              )}
+
+              {/* Tab 1: Data Table */}
+              {chestTabValue === 1 && (
+                <Box sx={{ mt: 1 }}>
+                  <List sx={{ p: 0 }}>
+                    {chestData.map((entry, index) => (
+                      <React.Fragment key={entry.id}>
+                        <ListItem sx={{ px: 0 }}>
+                          <ListItemText
+                            primary={
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Typography variant="body2" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, fontWeight: 600 }}>
+                                  {format(entry.date, 'EEEE, MMM d, yyyy')}
+                                </Typography>
+                                <Typography variant="h6" sx={{ color: '#9c27b0', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+                                  {entry.value.toFixed(2)} {entry.unit}
+                                </Typography>
+                              </Box>
+                            }
+                            secondary={
+                              <Box sx={{ mt: 0.5 }}>
+                                <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>
+                                  {format(entry.date, 'h:mm a')}
+                                </Typography>
+                              </Box>
+                            }
+                          />
+                        </ListItem>
+                        {index < chestData.length - 1 && <Divider />}
+                      </React.Fragment>
+                    ))}
+                  </List>
+                </Box>
+              )}
+            </>
+          ) : (
+            <Box sx={{ p: 2, textAlign: 'center' }}>
+              <Typography color="text.secondary" sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>
+                No chest data available for this period. Add entries in the Body Parameter Log.
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>
+                Current date range: {format(new Date(startDate), 'MMM d, yyyy')} - {format(new Date(endDate), 'MMM d, yyyy')}
+              </Typography>
+            </Box>
+          )}
+        </Paper>
+      </Box>
+
+      {/* Hips Tracking Section */}
+      <Box sx={{ mt: 3 }}>
+        <Typography variant="body2" fontWeight="600" color="#4caf50" gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' }, mb: 1.5 }}>
+          Hips Tracking
+        </Typography>
+
+        <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+          {loading && <LinearProgress sx={{ mb: 2, '& .MuiLinearProgress-bar': { bgcolor: '#4caf50' } }} />}
+          
+          {hipsData.length > 0 ? (
+            <>
+              <Tabs 
+                value={hipsTabValue} 
+                onChange={handleHipsTabChange} 
+                variant="fullWidth"
+                sx={{ 
+                  borderBottom: 1, 
+                  borderColor: 'divider', 
+                  mb: 2,
+                  '& .MuiTab-root': {
+                    textTransform: 'none',
+                    fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                    fontWeight: 500
+                  },
+                  '& .Mui-selected': {
+                    color: '#4caf50'
+                  },
+                  '& .MuiTabs-indicator': {
+                    backgroundColor: '#4caf50'
+                  }
+                }}
+              >
+                <Tab label="Chart" />
+                <Tab label="Data Table" />
+              </Tabs>
+
+              {/* Tab 0: Chart View */}
+              {hipsTabValue === 0 && (
+                <Box sx={{ height: 300, pt: 1 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={hipsData.map(item => ({
+                        date: item.formattedDate,
+                        value: item.value,
+                        unit: item.unit,
+                        rawDate: item.date.toString()
+                      }))}
+                      margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                    >
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fontSize: 12 }}
+                        padding={{ left: 10, right: 10 }}
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 12 }}
+                        width={40}
+                        domain={['dataMin - 1', 'dataMax + 1']}
+                      />
+                      <Tooltip 
+                        formatter={(value, name, props) => {
+                          if (name === 'value') {
+                            const unit = props.payload.unit || 'inch';
+                            return [`${value.toFixed(2)} ${unit}`, 'Hips'];
+                          }
+                          return [value, name];
+                        }}
+                        contentStyle={{ 
+                          fontSize: '12px',
+                          padding: '8px',
+                          borderRadius: '4px'
+                        }}
+                      />
+                      <Legend />
+                      <Line 
+                        type="monotone" 
+                        dataKey="value" 
+                        stroke="#e91e63" 
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                        activeDot={{ r: 6 }}
+                        name="Hips"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+              )}
+
+              {/* Tab 1: Data Table */}
+              {hipsTabValue === 1 && (
+                <Box sx={{ mt: 1 }}>
+                  <List sx={{ p: 0 }}>
+                    {hipsData.map((entry, index) => (
+                      <React.Fragment key={entry.id}>
+                        <ListItem sx={{ px: 0 }}>
+                          <ListItemText
+                            primary={
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Typography variant="body2" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, fontWeight: 600 }}>
+                                  {format(entry.date, 'EEEE, MMM d, yyyy')}
+                                </Typography>
+                                <Typography variant="h6" sx={{ color: '#e91e63', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+                                  {entry.value.toFixed(2)} {entry.unit}
+                                </Typography>
+                              </Box>
+                            }
+                            secondary={
+                              <Box sx={{ mt: 0.5 }}>
+                                <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>
+                                  {format(entry.date, 'h:mm a')}
+                                </Typography>
+                              </Box>
+                            }
+                          />
+                        </ListItem>
+                        {index < hipsData.length - 1 && <Divider />}
+                      </React.Fragment>
+                    ))}
+                  </List>
+                </Box>
+              )}
+            </>
+          ) : (
+            <Box sx={{ p: 2, textAlign: 'center' }}>
+              <Typography color="text.secondary" sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>
+                No hips data available for this period. Add entries in the Body Parameter Log.
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1, fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>
+                Current date range: {format(new Date(startDate), 'MMM d, yyyy')} - {format(new Date(endDate), 'MMM d, yyyy')}
+              </Typography>
+            </Box>
+          )}
+        </Paper>
+      </Box>
       </Box>
       <Footer />
     </Box>
@@ -1016,3 +1828,4 @@ function ReportPage() {
 
 // Use memo to prevent unnecessary re-renders
 export default React.memo(ReportPage);
+

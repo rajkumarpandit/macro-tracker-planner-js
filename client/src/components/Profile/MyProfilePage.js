@@ -15,12 +15,20 @@ import {
   Alert,
   IconButton,
   InputAdornment,
-  CircularProgress
+  CircularProgress,
+  Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import PersonIcon from '@mui/icons-material/Person';
+import GoogleIcon from '@mui/icons-material/Google';
+import LockIcon from '@mui/icons-material/Lock';
 import { useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase/firebase';
@@ -29,8 +37,101 @@ import { updatePassword } from 'firebase/auth';
 import { FIREBASE_COLLECTIONS } from '../../config/constants';
 import Footer from '../Common/Footer';
 
+// Linked Accounts Section Component
+function LinkedAccountsSection() {
+  const { currentUser, linkGoogleAccount } = useAuth();
+  const [linkedProviders, setLinkedProviders] = useState([]);
+  const [linking, setLinking] = useState(false);
+  const [linkMessage, setLinkMessage] = useState({ text: '', type: '' });
+
+  useEffect(() => {
+    if (currentUser) {
+      const providers = currentUser.providerData.map(p => p.providerId);
+      setLinkedProviders(providers);
+    }
+  }, [currentUser]);
+
+  const handleLinkGoogle = async () => {
+    try {
+      setLinking(true);
+      setLinkMessage({ text: '', type: '' });
+      await linkGoogleAccount();
+      
+      // Refresh provider list
+      const providers = currentUser.providerData.map(p => p.providerId);
+      setLinkedProviders(providers);
+      
+      setLinkMessage({ 
+        text: 'Google account linked successfully! You can now use Google to login.', 
+        type: 'success' 
+      });
+    } catch (error) {
+      console.error('Link error:', error);
+      setLinkMessage({ 
+        text: error.message || 'Failed to link Google account. Please try again.', 
+        type: 'error' 
+      });
+    } finally {
+      setLinking(false);
+    }
+  };
+
+  return (
+    <Box>
+      {linkMessage.text && (
+        <Alert severity={linkMessage.type} sx={{ mb: 2 }} onClose={() => setLinkMessage({ text: '', type: '' })}>
+          {linkMessage.text}
+        </Alert>
+      )}
+      
+      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+        {linkedProviders.includes('password') && (
+          <Chip 
+            icon={<LockIcon />}
+            label="Email/Password" 
+            color="primary" 
+            size="small"
+          />
+        )}
+        
+        {linkedProviders.includes('google.com') ? (
+          <Chip 
+            icon={<GoogleIcon />}
+            label="Google" 
+            color="success" 
+            size="small"
+          />
+        ) : (
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<GoogleIcon />}
+            onClick={handleLinkGoogle}
+            disabled={linking}
+            sx={{
+              borderColor: '#4285f4',
+              color: '#4285f4',
+              textTransform: 'none',
+              '&:hover': {
+                borderColor: '#357ae8',
+                backgroundColor: 'rgba(66, 133, 244, 0.04)'
+              }
+            }}
+          >
+            {linking ? 'Linking...' : 'Link Google Account'}
+          </Button>
+        )}
+      </Box>
+      
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+        Link social accounts to login faster without remembering passwords
+      </Typography>
+    </Box>
+  );
+}
+
 function MyProfilePage() {
-  const { currentUser, userDetails } = useAuth();
+  const { currentUser, userDetails, deleteAccount } = useAuth();
   const navigate = useNavigate();
   
   // Profile fields
@@ -49,6 +150,11 @@ function MyProfilePage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
+  // Delete account dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
   
   // UI states
   const [loading, setLoading] = useState(true);
@@ -234,10 +340,41 @@ function MyProfilePage() {
     navigate('/dashboard');
   };
 
+  const handleDeleteAccount = async () => {
+    // Require user to type "DELETE" to confirm
+    if (deleteConfirmText !== 'DELETE') {
+      setMessage({ text: 'Please type DELETE to confirm', type: 'error' });
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      await deleteAccount();
+      // User is deleted, navigate to landing page
+      navigate('/');
+    } catch (error) {
+      console.error('Delete account error:', error);
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+      
+      if (error.message.includes('recent login')) {
+        setMessage({ 
+          text: 'For security, please log out and log back in before deleting your account.', 
+          type: 'error' 
+        });
+      } else {
+        setMessage({ 
+          text: 'Error deleting account: ' + error.message, 
+          type: 'error' 
+        });
+      }
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <CircularProgress sx={{ color: '#667eea' }} />
+        <CircularProgress sx={{ color: '#4caf50' }} />
       </Box>
     );
   }
@@ -290,7 +427,7 @@ function MyProfilePage() {
           {/* Sex - Optional */}
           <Grid item xs={12}>
             <FormControl component="fieldset">
-              <FormLabel component="legend" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, color: '#667eea', fontWeight: 500 }}>Sex (Optional)</FormLabel>
+              <FormLabel component="legend" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, color: '#4caf50', fontWeight: 500 }}>Sex (Optional)</FormLabel>
               <RadioGroup
                 row
                 value={sex}
@@ -300,7 +437,7 @@ function MyProfilePage() {
                     fontSize: { xs: '0.85rem', sm: '0.95rem' }
                   },
                   '& .MuiRadio-root.Mui-checked': {
-                    color: '#667eea'
+                    color: '#4caf50'
                   }
                 }}
               >
@@ -325,8 +462,8 @@ function MyProfilePage() {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 1.5,
-                  '&:hover fieldset': { borderColor: '#667eea' },
-                  '&.Mui-focused fieldset': { borderColor: '#667eea' }
+                  '&:hover fieldset': { borderColor: '#4caf50' },
+                  '&.Mui-focused fieldset': { borderColor: '#4caf50' }
                 }
               }}
             />
@@ -363,8 +500,8 @@ function MyProfilePage() {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 1.5,
-                  '&:hover fieldset': { borderColor: '#667eea' },
-                  '&.Mui-focused fieldset': { borderColor: '#667eea' }
+                  '&:hover fieldset': { borderColor: '#4caf50' },
+                  '&.Mui-focused fieldset': { borderColor: '#4caf50' }
                 },
                 '& .MuiFormHelperText-root': {
                   fontSize: { xs: '0.65rem', sm: '0.75rem' }
@@ -386,8 +523,8 @@ function MyProfilePage() {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 1.5,
-                  '&:hover fieldset': { borderColor: '#667eea' },
-                  '&.Mui-focused fieldset': { borderColor: '#667eea' }
+                  '&:hover fieldset': { borderColor: '#4caf50' },
+                  '&.Mui-focused fieldset': { borderColor: '#4caf50' }
                 },
                 '& .MuiFormHelperText-root': {
                   fontSize: { xs: '0.65rem', sm: '0.75rem' }
@@ -427,8 +564,8 @@ function MyProfilePage() {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 1.5,
-                  '&:hover fieldset': { borderColor: '#667eea' },
-                  '&.Mui-focused fieldset': { borderColor: '#667eea' }
+                  '&:hover fieldset': { borderColor: '#4caf50' },
+                  '&.Mui-focused fieldset': { borderColor: '#4caf50' }
                 },
                 '& .MuiFormHelperText-root': {
                   fontSize: { xs: '0.65rem', sm: '0.75rem' }
@@ -454,9 +591,20 @@ function MyProfilePage() {
             />
           </Grid>
 
+          {/* Login Methods Section */}
+          <Grid item xs={12}>
+            <Typography variant="body2" fontWeight="600" color="#4caf50" sx={{ mt: 1.5, mb: 0.5, fontSize: { xs: '0.95rem', sm: '1.1rem' } }}>
+              Login Methods
+            </Typography>
+          </Grid>
+
+          <Grid item xs={12}>
+            <LinkedAccountsSection />
+          </Grid>
+
           {/* Change Password Section */}
           <Grid item xs={12}>
-            <Typography variant="body2" fontWeight="600" color="#667eea" sx={{ mt: 1.5, mb: 0.5, fontSize: { xs: '0.95rem', sm: '1.1rem' } }}>
+            <Typography variant="body2" fontWeight="600" color="#4caf50" sx={{ mt: 1.5, mb: 0.5, fontSize: { xs: '0.95rem', sm: '1.1rem' } }}>
               Change Password
             </Typography>
           </Grid>
@@ -486,8 +634,8 @@ function MyProfilePage() {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 1.5,
-                  '&:hover fieldset': { borderColor: '#667eea' },
-                  '&.Mui-focused fieldset': { borderColor: '#667eea' }
+                  '&:hover fieldset': { borderColor: '#4caf50' },
+                  '&.Mui-focused fieldset': { borderColor: '#4caf50' }
                 },
                 '& .MuiFormHelperText-root': {
                   fontSize: { xs: '0.65rem', sm: '0.75rem' }
@@ -526,8 +674,8 @@ function MyProfilePage() {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 1.5,
-                  '&:hover fieldset': { borderColor: '#667eea' },
-                  '&.Mui-focused fieldset': { borderColor: '#667eea' }
+                  '&:hover fieldset': { borderColor: '#4caf50' },
+                  '&.Mui-focused fieldset': { borderColor: '#4caf50' }
                 },
                 '& .MuiFormHelperText-root': {
                   fontSize: { xs: '0.65rem', sm: '0.75rem' }
@@ -567,7 +715,7 @@ function MyProfilePage() {
                   borderRadius: 2,
                   px: 3,
                   fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  background: 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)',
                   '&:hover': {
                     background: 'linear-gradient(135deg, #5568d3 0%, #633d8a 100%)',
                   },
@@ -580,9 +728,97 @@ function MyProfilePage() {
               </Button>
             </Box>
           </Grid>
+
+          {/* Danger Zone - Delete Account */}
+          <Grid item xs={12}>
+            <Typography variant="body2" fontWeight="600" color="error" sx={{ mt: 3, mb: 1, fontSize: { xs: '0.95rem', sm: '1.1rem' } }}>
+              Danger Zone
+            </Typography>
+            <Paper 
+              elevation={0} 
+              sx={{ 
+                p: 2, 
+                borderRadius: 2, 
+                border: '1px solid #ffcdd2',
+                bgcolor: '#ffebee'
+              }}
+            >
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                Delete your account and all associated data. This action cannot be undone.
+              </Typography>
+              <Button
+                variant="outlined"
+                color="error"
+                onClick={() => setDeleteDialogOpen(true)}
+                sx={{
+                  textTransform: 'none',
+                  borderRadius: 2,
+                  px: 2,
+                  fontSize: { xs: '0.85rem', sm: '0.95rem' }
+                }}
+              >
+                Delete My Account
+              </Button>
+            </Paper>
+          </Grid>
         </Grid>
       </Paper>
       </Box>
+
+      {/* Delete Account Confirmation Dialog */}
+      <Dialog 
+        open={deleteDialogOpen} 
+        onClose={() => !deleting && setDeleteDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ color: '#d32f2f', fontWeight: 600 }}>
+          Delete Account Permanently?
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            This will permanently delete your account and all associated data including:
+          </DialogContentText>
+          <Box component="ul" sx={{ pl: 2, mb: 2 }}>
+            <li>Food logs and calorie tracking history</li>
+            <li>Weight records and progress</li>
+            <li>Macro targets and goals</li>
+            <li>Custom food items</li>
+            <li>Profile information</li>
+          </Box>
+          <DialogContentText sx={{ mb: 2, fontWeight: 600 }}>
+            This action cannot be undone!
+          </DialogContentText>
+          <TextField
+            fullWidth
+            label='Type "DELETE" to confirm'
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            disabled={deleting}
+            autoComplete="off"
+            sx={{ mt: 1 }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button 
+            onClick={() => {
+              setDeleteDialogOpen(false);
+              setDeleteConfirmText('');
+            }}
+            disabled={deleting}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleDeleteAccount}
+            color="error"
+            variant="contained"
+            disabled={deleteConfirmText !== 'DELETE' || deleting}
+          >
+            {deleting ? <CircularProgress size={20} sx={{ color: 'white' }} /> : 'Delete Forever'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Snackbar for messages */}
       <Snackbar
@@ -606,3 +842,4 @@ function MyProfilePage() {
 }
 
 export default MyProfilePage;
+

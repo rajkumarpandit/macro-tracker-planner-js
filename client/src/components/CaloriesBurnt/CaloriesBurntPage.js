@@ -257,8 +257,8 @@ function CaloriesBurntPage() {
                       sx: {
                         borderRadius: 1.5,
                         '& .MuiOutlinedInput-root': {
-                          '&:hover fieldset': { borderColor: '#667eea' },
-                          '&.Mui-focused fieldset': { borderColor: '#667eea' }
+                          '&:hover fieldset': { borderColor: '#4caf50' },
+                          '&.Mui-focused fieldset': { borderColor: '#4caf50' }
                         }
                       }
                     } 
@@ -276,8 +276,8 @@ function CaloriesBurntPage() {
                   onChange={(e) => setActivityType(e.target.value)}
                   sx={{
                     borderRadius: 1.5,
-                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#667eea' },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#667eea' }
+                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#4caf50' },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#4caf50' }
                   }}
                 >
                   {ACTIVITY_TYPES.map(activity => (
@@ -301,8 +301,8 @@ function CaloriesBurntPage() {
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1.5,
-                    '&:hover fieldset': { borderColor: '#667eea' },
-                    '&.Mui-focused fieldset': { borderColor: '#667eea' }
+                    '&:hover fieldset': { borderColor: '#4caf50' },
+                    '&.Mui-focused fieldset': { borderColor: '#4caf50' }
                   }
                 }}
               />
@@ -320,8 +320,8 @@ function CaloriesBurntPage() {
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1.5,
-                    '&:hover fieldset': { borderColor: '#667eea' },
-                    '&.Mui-focused fieldset': { borderColor: '#667eea' }
+                    '&:hover fieldset': { borderColor: '#4caf50' },
+                    '&.Mui-focused fieldset': { borderColor: '#4caf50' }
                   }
                 }}
               />
@@ -337,8 +337,8 @@ function CaloriesBurntPage() {
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1.5,
-                    '&:hover fieldset': { borderColor: '#667eea' },
-                    '&.Mui-focused fieldset': { borderColor: '#667eea' }
+                    '&:hover fieldset': { borderColor: '#4caf50' },
+                    '&.Mui-focused fieldset': { borderColor: '#4caf50' }
                   }
                 }}
               />
@@ -375,7 +375,7 @@ function CaloriesBurntPage() {
                     borderRadius: 2,
                     px: 3,
                     fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    background: 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)',
                     '&:hover': {
                       background: 'linear-gradient(135deg, #5568d3 0%, #633d8a 100%)',
                     }
@@ -391,7 +391,7 @@ function CaloriesBurntPage() {
         {/* Activities List */}
         {loading && activities.length === 0 ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-            <CircularProgress sx={{ color: '#667eea' }} />
+            <CircularProgress sx={{ color: '#4caf50' }} />
           </Box>
         ) : (
           <>
@@ -416,7 +416,7 @@ function CaloriesBurntPage() {
 
             {/* Activities List */}
             <Box sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'white', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-              <Typography variant="body2" fontWeight="600" color="#667eea" gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, mb: 1.5 }}>
+              <Typography variant="body2" fontWeight="600" color="#4caf50" gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, mb: 1.5 }}>
                 Activities for {format(selectedDate, 'MMM d, yyyy')} ({activities.length})
               </Typography>
 
@@ -435,7 +435,7 @@ function CaloriesBurntPage() {
                             <IconButton 
                               size="small"
                               onClick={() => handleEdit(activity)}
-                              sx={{ color: '#667eea' }}
+                              sx={{ color: '#4caf50' }}
                             >
                               <EditIcon fontSize="small" />
                             </IconButton>
@@ -511,3 +511,4 @@ function CaloriesBurntPage() {
 }
 
 export default CaloriesBurntPage;
+

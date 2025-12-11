@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GEMINI_CONFIG } from '../config/constants';
+import { checkGeminiApiLimit, incrementGeminiApiCount } from './apiLimits';
 
 // Initialize the Gemini API
 const genAI = new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_API_KEY);
@@ -7,10 +8,19 @@ const genAI = new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_API_KEY);
 /**
  * Parse food item and quantity from natural language text
  * @param {string} text - Natural language input (e.g., "2 bananas")
+ * @param {string} userId - User ID for tracking API usage
  * @returns {Promise<{foodName: string, quantity: number, unit: string}>}
  */
-export async function parseFoodFromText(text) {
+export async function parseFoodFromText(text, userId = null) {
   try {
+    // Check API limit before making the call
+    if (userId) {
+      const limitCheck = await checkGeminiApiLimit(userId);
+      if (!limitCheck.allowed) {
+        throw new Error(limitCheck.message);
+      }
+    }
+
     const model = genAI.getGenerativeModel({ model: GEMINI_CONFIG.MODEL_NAME });
     
     const prompt = `You are a food parsing assistant. Parse the following text and extract ONLY ONE food item with its quantity.
@@ -58,6 +68,11 @@ Rules:
       throw new Error(parsed.error || 'Failed to parse food item');
     }
     
+    // Increment API usage count (successful call)
+    if (userId) {
+      await incrementGeminiApiCount(userId);
+    }
+    
     // Convert food name to Title Case (InitCap)
     const toTitleCase = (str) => {
       return str.toLowerCase().split(' ').map(word => 
@@ -81,10 +96,19 @@ Rules:
  * Get macro nutrition information for a food item
  * @param {string} foodName - Name of the food item
  * @param {string} unit - Unit of measurement
+ * @param {string} userId - User ID for tracking API usage
  * @returns {Promise<{calories: number, protein: number, carbs: number, fats: number, servingSize: string}>}
  */
-export async function getMacrosFromGemini(foodName, unit) {
+export async function getMacrosFromGemini(foodName, unit, userId = null) {
   try {
+    // Check API limit before making the call
+    if (userId) {
+      const limitCheck = await checkGeminiApiLimit(userId);
+      if (!limitCheck.allowed) {
+        throw new Error(limitCheck.message);
+      }
+    }
+
     const model = genAI.getGenerativeModel({ model: GEMINI_CONFIG.MODEL_NAME });
     
     const prompt = `You are a nutrition information assistant. Provide macro nutrition information for the following food item.
@@ -100,6 +124,7 @@ Return a JSON object with this EXACT structure (no additional text):
   "carbs": numeric value in grams (per unit),
   "fats": numeric value in grams (per unit),
   "servingSize": "description of serving size",
+  "proteinSource": "Vegetarian" | "Animal" | "Mixed" | "Low-Protein",
   "error": "error message if data not available"
 }
 
@@ -108,7 +133,12 @@ Rules:
 2. All numeric values should be per the specified unit
 3. If the food item is not recognized, set success: false
 4. servingSize should describe what "1 unit" means (e.g., "1 medium banana (118g)")
-5. Return ONLY the JSON object, no other text`;
+5. proteinSource classification:
+   - "Vegetarian": Plant-based protein sources (lentils, beans, tofu, nuts, seeds, etc.)
+   - "Animal": Meat, fish, eggs, dairy products
+   - "Mixed": Prepared foods containing both plant and animal proteins
+   - "Low-Protein": Foods with less than 5g protein per 100g (rice, fruits, vegetables, oils, etc.)
+6. Return ONLY the JSON object, no other text`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
@@ -129,12 +159,18 @@ Rules:
       throw new Error(parsed.error || 'Failed to fetch macro information');
     }
     
+    // Increment API usage count (successful call)
+    if (userId) {
+      await incrementGeminiApiCount(userId);
+    }
+    
     return {
       calories: parsed.calories,
       protein: parsed.protein,
       carbs: parsed.carbs,
       fats: parsed.fats,
-      servingSize: parsed.servingSize
+      servingSize: parsed.servingSize,
+      proteinSource: parsed.proteinSource || undefined
     };
   } catch (error) {
     console.error('Error fetching macros from Gemini:', error);
@@ -194,3 +230,50 @@ Return a JSON object with this EXACT structure (no additional text):
   }
 }
 
+/**
+ * Detect protein source for a food item using Gemini AI
+ * @param {string} foodName - Name of the food item
+ * @param {string} userId - User ID for tracking API usage
+ * @returns {Promise<string>} - Protein source category
+ */
+export async function detectProteinSource(foodName, userId = null) {
+  try {
+    // Check API limit before making the call
+    if (userId) {
+      const limitCheck = await checkGeminiApiLimit(userId);
+      if (!limitCheck.allowed) {
+        throw new Error(limitCheck.message);
+      }
+    }
+
+    const model = genAI.getGenerativeModel({ model: GEMINI_CONFIG.MODEL_NAME });
+    
+    const prompt = `Classify the protein source for this food item: "${foodName}"
+
+Return ONLY ONE of these exact values (no additional text):
+- Vegetarian (for plant-based protein sources like lentils, beans, tofu, nuts, seeds)
+- Animal (for meat, fish, eggs, dairy products)
+- Mixed (for prepared foods containing both plant and animal proteins)
+- Low-Protein (for foods with less than 5g protein per 100g like rice, fruits, vegetables, oils)
+
+Return only the classification word, nothing else.`;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text().trim();
+    
+    // Increment API usage count (successful call)
+    if (userId) {
+      await incrementGeminiApiCount(userId);
+    }
+    
+    // Validate and return the response
+    const validSources = ['Vegetarian', 'Animal', 'Mixed', 'Low-Protein'];
+    const detected = validSources.find(source => text.includes(source));
+    
+    return detected || 'Unclassified';
+  } catch (error) {
+    console.error('Error detecting protein source:', error);
+    throw new Error(error.message || 'Failed to detect protein source. Please try again.');
+  }
+}

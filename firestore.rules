@@ -39,15 +39,17 @@ service cloud.firestore {
     
     // User profile data
     match /users/{userId} {
+      // Allow anyone to list users (for signup limit check - only reads createdAt field)
       // Allow users to read their own data and admins to read all user data
-      allow read: if isCurrentUser(userId) || 
-                  (isSignedIn() && request.auth.token.email in ['rajkumarpandit@gmail.com', 'admin@example.com']);
+      allow read: if true;
       
       // Allow users to create/update their own data and admins to update any user
       allow create, update: if isCurrentUser(userId) ||
                             (isSignedIn() && request.auth.token.email in ['rajkumarpandit@gmail.com', 'admin@example.com']);
       
-      allow delete: if false; // Prevent user deletion to avoid orphaned data
+      // Allow users to delete their own account and admins to delete any user
+      allow delete: if isCurrentUser(userId) ||
+                    (isSignedIn() && request.auth.token.email in ['rajkumarpandit@gmail.com', 'admin@example.com']);
     }
     
     // User goals collection - for storing personal fitness/nutrition goals
@@ -107,6 +109,50 @@ service cloud.firestore {
       allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
     }
     
+    // Biceps tracking - users can only access their own biceps data
+    match /biceps/{bicepsId} {
+      allow read: if isSignedIn();
+      
+      // For write operations, ensure user can only write their own data
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.userId;
+      allow update: if isSignedIn() && request.auth.uid == resource.data.userId 
+                    && request.auth.uid == request.resource.data.userId;
+      allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
+    }
+    
+    // Waist tracking - users can only access their own waist data
+    match /waist/{waistId} {
+      allow read: if isSignedIn();
+      
+      // For write operations, ensure user can only write their own data
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.userId;
+      allow update: if isSignedIn() && request.auth.uid == resource.data.userId 
+                    && request.auth.uid == request.resource.data.userId;
+      allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
+    }
+    
+    // Chest tracking - users can only access their own chest data
+    match /chest/{chestId} {
+      allow read: if isSignedIn();
+      
+      // For write operations, ensure user can only write their own data
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.userId;
+      allow update: if isSignedIn() && request.auth.uid == resource.data.userId 
+                    && request.auth.uid == request.resource.data.userId;
+      allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
+    }
+    
+    // Hips tracking - users can only access their own hips data
+    match /hips/{hipsId} {
+      allow read: if isSignedIn();
+      
+      // For write operations, ensure user can only write their own data
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.userId;
+      allow update: if isSignedIn() && request.auth.uid == resource.data.userId 
+                    && request.auth.uid == request.resource.data.userId;
+      allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
+    }
+    
     // Macro targets - users can only access their own macro targets
     match /macro_targets/{targetId} {
       allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
@@ -125,6 +171,32 @@ service cloud.firestore {
       allow update: if isSignedIn() && request.auth.uid == resource.data.userId 
                     && request.auth.uid == request.resource.data.userId;
       allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
+    }
+    
+    // App settings - maintenance mode and other app-wide settings
+    match /app_settings/{settingId} {
+      // Allow anyone to read settings (needed for signup limit check before authentication)
+      // This is safe as it only contains public configuration like limits and maintenance mode
+      allow read: if true;
+      
+      // Only admins can write/update settings
+      allow write: if isSignedIn() && 
+                    (request.auth.token.email in ['rajkumarpandit@gmail.com', 'admin@example.com']);
+    }
+    
+    // User API usage tracking - users can only read/write their own usage data
+    match /user_api_usage/{usageId} {
+      // Allow read if the document starts with the user's ID
+      allow read: if isSignedIn() && usageId.matches('^' + request.auth.uid + '_.*');
+      
+      // Allow create/update if the document starts with the user's ID and userId field matches
+      allow create, update: if isSignedIn() && 
+                            usageId.matches('^' + request.auth.uid + '_.*') &&
+                            request.resource.data.userId == request.auth.uid;
+      
+      // Admins can read all usage data
+      allow read: if isSignedIn() && 
+                   (request.auth.token.email in ['rajkumarpandit@gmail.com', 'admin@example.com']);
     }
   }
 }

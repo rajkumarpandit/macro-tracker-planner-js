@@ -9,24 +9,43 @@ import {
   Checkbox,
   FormControlLabel,
   Button,
-  Chip
+  Chip,
+  TextField,
+  InputAdornment,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  TablePagination
 } from '@mui/material';
 import { Link as RouterLink } from 'react-router-dom';
 import PersonIcon from '@mui/icons-material/Person';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
+import SearchIcon from '@mui/icons-material/Search';
+import ClearIcon from '@mui/icons-material/Clear';
 import { useIsAdmin, addAdmin, removeAdmin } from '../../utils/adminUtils';
 import { getAuth } from 'firebase/auth';
 import { db } from '../../firebase/firebase';
-import { collection, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, updateDoc, deleteDoc, query, where, writeBatch } from 'firebase/firestore';
 import Footer from '../Common/Footer';
 
 const AdminManagement = () => {
   const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [notification, setNotification] = useState({ open: false, message: '', severity: 'success' });
   const [userChanges, setUserChanges] = useState({});
+  const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleting, setDeleting] = useState(false);
   
   const auth = getAuth();
   const currentUser = auth.currentUser;
@@ -64,7 +83,7 @@ const AdminManagement = () => {
               };
             }
             
-            // Check if user is admin using our admin utils
+            // Check if user is admin
             let isAdmin = false;
             try {
               const adminRef = doc(db, 'admin_users', userData.email.toLowerCase());
@@ -79,14 +98,12 @@ const AdminManagement = () => {
               email: userData.email,
               displayName: userData.displayName || userData.email.split('@')[0],
               isAdmin: isAdmin,
-              isEnabled: userData.isEnabled !== false, // Default to enabled if not specified
+              isEnabled: userData.isEnabled !== false,
               createdAt: userData.createdAt || null
             };
           }));
           
-          // Filter out any null entries (from errors)
           const filteredUsers = usersList.filter(user => user !== null);
-          
           setUsers(filteredUsers);
           setLoading(false);
         } catch (fetchError) {
@@ -108,35 +125,87 @@ const AdminManagement = () => {
     if (userIsAdmin) {
       fetchUsers();
     } else {
-      console.log("User is not admin, skipping user fetch");
       setLoading(false);
     }
   }, [userIsAdmin]);
 
+  // Filter and sort users based on search term
+  useEffect(() => {
+    let result = users;
+    
+    // Filter by search term
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      result = users.filter(user => 
+        user.email.toLowerCase().includes(term) || 
+        user.displayName.toLowerCase().includes(term)
+      );
+    }
+    
+    // Sort: Super admin (rajkumarpandit@gmail.com) first, then alphabetically by displayName
+    result = [...result].sort((a, b) => {
+      // Super admin always first
+      if (a.email === 'rajkumarpandit@gmail.com') return -1;
+      if (b.email === 'rajkumarpandit@gmail.com') return 1;
+      
+      // Sort others alphabetically by display name
+      return a.displayName.localeCompare(b.displayName);
+    });
+    
+    setFilteredUsers(result);
+    setPage(0);
+  }, [searchTerm, users]);
+
   // Handle checkbox changes
   const handleCheckboxChange = (userId, field, value) => {
-    setUserChanges(prev => ({
-      ...prev,
-      [userId]: {
-        ...(prev[userId] || {}),
-        [field]: value
-      }
-    }));
+    // If delete is checked, it overrides other options
+    if (field === 'delete' && value) {
+      setUserChanges(prev => ({
+        ...prev,
+        [userId]: {
+          delete: true
+        }
+      }));
+    } else if (field === 'delete' && !value) {
+      // If delete is unchecked, remove all changes
+      setUserChanges(prev => {
+        const newChanges = { ...prev };
+        delete newChanges[userId];
+        return newChanges;
+      });
+    } else if (!userChanges[userId]?.delete) {
+      // Only allow other changes if delete is not checked
+      setUserChanges(prev => ({
+        ...prev,
+        [userId]: {
+          ...(prev[userId] || {}),
+          [field]: value
+        }
+      }));
+    }
   };
 
-  // Function to save user changes
+  // Save user changes
   const handleSaveUser = async (user) => {
     try {
       if (user.email === currentUser.email) {
         setNotification({
           open: true,
-          message: "You cannot modify your own permissions!",
+          message: "You cannot modify your own account!",
           severity: "error"
         });
         return;
       }
 
       const changes = userChanges[user.id] || {};
+      
+      // Check if delete is requested
+      if (changes.delete) {
+        setUserToDelete(user);
+        setDeleteDialogOpen(true);
+        return;
+      }
+
       const newIsAdmin = changes.hasOwnProperty('isAdmin') ? changes.isAdmin : user.isAdmin;
       const newIsEnabled = changes.hasOwnProperty('isEnabled') ? changes.isEnabled : user.isEnabled;
 
@@ -188,10 +257,107 @@ const AdminManagement = () => {
     }
   };
 
+  // Delete user function
+  const handleDeleteUser = async () => {
+    if (deleteConfirmText !== 'DELETE') {
+      setNotification({
+        open: true,
+        message: 'Please type DELETE to confirm',
+        severity: 'error'
+      });
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      const userId = userToDelete.id;
+      const email = userToDelete.email;
+
+      // Delete all user data from collections
+      const collectionsToDelete = [
+        'daily_food_log',
+        'weights',
+        'calories_burnt_log',
+        'macro_targets',
+        'food_calorie_master',
+        'user_goals'
+      ];
+
+      // Delete documents from each collection
+      for (const collectionName of collectionsToDelete) {
+        try {
+          const q = query(collection(db, collectionName), where('userId', '==', userId));
+          const querySnapshot = await getDocs(q);
+          
+          const batch = writeBatch(db);
+          querySnapshot.forEach((docSnapshot) => {
+            batch.delete(docSnapshot.ref);
+          });
+          
+          if (querySnapshot.size > 0) {
+            await batch.commit();
+          }
+        } catch (error) {
+          console.error(`Error deleting from ${collectionName}:`, error);
+        }
+      }
+
+      // Remove from admin_users if admin
+      if (userToDelete.isAdmin) {
+        await deleteDoc(doc(db, 'admin_users', email.toLowerCase()));
+      }
+
+      // Delete user document
+      await deleteDoc(doc(db, 'users', userId));
+
+      // Update UI
+      setUsers(users.filter(u => u.id !== userId));
+      
+      // Clear changes
+      setUserChanges(prev => {
+        const newChanges = { ...prev };
+        delete newChanges[userId];
+        return newChanges;
+      });
+
+      setNotification({
+        open: true,
+        message: `User ${userToDelete.displayName || userToDelete.email} deleted successfully`,
+        severity: "success"
+      });
+
+      setDeleteDialogOpen(false);
+      setDeleteConfirmText('');
+      setUserToDelete(null);
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      setNotification({
+        open: true,
+        message: 'Failed to delete user: ' + error.message,
+        severity: 'error'
+      });
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   // Handle notification close
   const handleCloseNotification = () => {
     setNotification({ ...notification, open: false });
   };
+
+  // Pagination handlers
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // Get paginated users
+  const paginatedUsers = filteredUsers.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   if (!userIsAdmin) {
     return (
@@ -206,43 +372,59 @@ const AdminManagement = () => {
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f5f7fa', pb: 2 }}>
       <Box sx={{ p: { xs: 2, sm: 3 } }}>
-        {/* Header */}
-        <Box sx={{ 
-          background: 'linear-gradient(135deg, #66bb6a 0%, #4caf50 100%)',
-          p: { xs: 2, sm: 2.5 },
-          mb: 2,
-          borderRadius: 2,
-          boxShadow: '0 4px 12px rgba(102, 187, 106, 0.25)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1.5
-        }}>
-          <SupervisorAccountIcon sx={{ fontSize: { xs: 28, sm: 36 }, color: 'white' }} />
-          <Typography variant="h5" component="h1" sx={{ color: 'white', fontWeight: 600, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
-            User Management
-          </Typography>
-        </Box>
+        {/* Search Bar */}
+        <Paper elevation={0} sx={{ p: 2, mb: 2, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+          <TextField
+            fullWidth
+            placeholder="Search by name or email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: '#4caf50' }} />
+                </InputAdornment>
+              ),
+              endAdornment: searchTerm && (
+                <InputAdornment position="end">
+                  <IconButton size="small" onClick={() => setSearchTerm('')}>
+                    <ClearIcon />
+                  </IconButton>
+                </InputAdornment>
+              )
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 2,
+                '&:hover fieldset': { borderColor: '#4caf50' },
+                '&.Mui-focused fieldset': { borderColor: '#4caf50' }
+              }
+            }}
+          />
+        </Paper>
       
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-          <CircularProgress sx={{ color: '#667eea' }} />
+          <CircularProgress sx={{ color: '#4caf50' }} />
         </Box>
       ) : error ? (
         <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
       ) : (
+        <>
         <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, mb: 2, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-          <Typography variant="body2" fontWeight="600" color="#667eea" gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' }, mb: 1.5 }}>
-            Manage Users and Permissions
-          </Typography>
           
-          {users.length === 0 ? (
-            <Alert severity="info" sx={{ borderRadius: 1.5 }}>No users found in the system.</Alert>
+          {filteredUsers.length === 0 ? (
+            <Alert severity="info" sx={{ borderRadius: 1.5 }}>
+              {searchTerm ? `No users found matching "${searchTerm}"` : 'No users found in the system.'}
+            </Alert>
           ) : (
+            <>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-              {users.map((user) => {
+              {paginatedUsers.map((user) => {
                 const changes = userChanges[user.id] || {};
                 const currentIsAdmin = changes.hasOwnProperty('isAdmin') ? changes.isAdmin : user.isAdmin;
                 const currentIsEnabled = changes.hasOwnProperty('isEnabled') ? changes.isEnabled : user.isEnabled;
+                const currentDelete = changes.delete || false;
                 const hasChanges = Object.keys(changes).length > 0;
                 
                 return (
@@ -253,39 +435,40 @@ const AdminManagement = () => {
                       p: { xs: 1.5, sm: 2 },
                       borderRadius: 2,
                       border: '1px solid',
-                      borderColor: hasChanges ? '#667eea' : '#e0e0e0',
-                      backgroundColor: currentIsEnabled ? 'white' : 'rgba(0, 0, 0, 0.04)',
+                      borderColor: currentDelete ? '#d32f2f' : (hasChanges ? '#4caf50' : '#e0e0e0'),
+                      backgroundColor: currentDelete ? '#ffebee' : (currentIsEnabled ? 'white' : 'rgba(0, 0, 0, 0.04)'),
                       opacity: currentIsEnabled ? 1 : 0.7,
                       transition: 'all 0.3s ease',
                       '&:hover': {
-                        boxShadow: '0 2px 8px rgba(102, 126, 234, 0.15)'
+                        boxShadow: currentDelete ? '0 2px 8px rgba(211, 47, 47, 0.25)' : '0 2px 8px rgba(102, 126, 234, 0.15)'
                       }
                     }}
                   >
-                    {/* User Info - One Line */}
+                    {/* User Info */}
                     <Box sx={{ mb: 1.5 }}>
                       <Typography variant="subtitle2" fontWeight="600" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
-                        {user.displayName} - {user.email}
+                        {user.displayName}
                         {user.email === currentUser.email && (
-                          <Chip label="You" size="small" sx={{ ml: 1, bgcolor: '#667eea', color: 'white', fontSize: '0.7rem' }} />
+                          <Chip label="You" size="small" sx={{ ml: 1, bgcolor: '#4caf50', color: 'white', fontSize: '0.7rem' }} />
                         )}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>
+                        {user.email}
                       </Typography>
                     </Box>
                     
-                    {/* Checkboxes - Stacked vertically on mobile */}
+                    {/* Checkboxes */}
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, mb: 1.5 }}>
                       <FormControlLabel
                         control={
                           <Checkbox 
                             checked={currentIsAdmin}
                             onChange={(e) => handleCheckboxChange(user.id, 'isAdmin', e.target.checked)}
-                            disabled={user.email === currentUser.email}
+                            disabled={user.email === currentUser.email || currentDelete}
                             size="small"
                             sx={{
-                              color: '#667eea',
-                              '&.Mui-checked': {
-                                color: '#667eea'
-                              }
+                              color: '#4caf50',
+                              '&.Mui-checked': { color: '#4caf50' }
                             }}
                           />
                         }
@@ -302,13 +485,11 @@ const AdminManagement = () => {
                           <Checkbox 
                             checked={currentIsEnabled}
                             onChange={(e) => handleCheckboxChange(user.id, 'isEnabled', e.target.checked)}
-                            disabled={user.email === currentUser.email}
+                            disabled={user.email === currentUser.email || currentDelete}
                             size="small"
                             sx={{
                               color: '#4caf50',
-                              '&.Mui-checked': {
-                                color: '#4caf50'
-                              }
+                              '&.Mui-checked': { color: '#4caf50' }
                             }}
                           />
                         }
@@ -316,6 +497,29 @@ const AdminManagement = () => {
                           <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <PersonIcon fontSize="small" sx={{ mr: 0.5, fontSize: { xs: '1rem', sm: '1.25rem' } }} />
                             <Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>Account Enabled</Typography>
+                          </Box>
+                        }
+                      />
+
+                      <FormControlLabel
+                        control={
+                          <Checkbox 
+                            checked={currentDelete}
+                            onChange={(e) => handleCheckboxChange(user.id, 'delete', e.target.checked)}
+                            disabled={user.email === currentUser.email}
+                            size="small"
+                            sx={{
+                              color: '#d32f2f',
+                              '&.Mui-checked': { color: '#d32f2f' }
+                            }}
+                          />
+                        }
+                        label={
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <DeleteForeverIcon fontSize="small" sx={{ mr: 0.5, fontSize: { xs: '1rem', sm: '1.25rem' } }} />
+                            <Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' }, color: '#d32f2f' }}>
+                              Delete User
+                            </Typography>
                           </Box>
                         }
                       />
@@ -334,9 +538,13 @@ const AdminManagement = () => {
                         py: 1,
                         fontSize: { xs: '0.85rem', sm: '0.95rem' },
                         fontWeight: 600,
-                        background: hasChanges ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : undefined,
+                        background: currentDelete 
+                          ? 'linear-gradient(135deg, #d32f2f 0%, #c62828 100%)'
+                          : (hasChanges ? 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)' : undefined),
                         '&:hover': {
-                          background: hasChanges ? 'linear-gradient(135deg, #5568d3 0%, #633d8a 100%)' : undefined,
+                          background: currentDelete
+                            ? 'linear-gradient(135deg, #c62828 0%, #b71c1c 100%)'
+                            : (hasChanges ? 'linear-gradient(135deg, #5568d3 0%, #633d8a 100%)' : undefined),
                         },
                         '&:disabled': {
                           background: '#e0e0e0',
@@ -344,18 +552,32 @@ const AdminManagement = () => {
                         }
                       }}
                     >
-                      Save Changes
+                      {currentDelete ? 'Delete User' : 'Save Changes'}
                     </Button>
                   </Paper>
                 );
               })}
             </Box>
+
+            {/* Pagination */}
+            <TablePagination
+              component="div"
+              count={filteredUsers.length}
+              page={page}
+              onPageChange={handleChangePage}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              rowsPerPageOptions={[5, 10, 25, 50, 100]}
+              sx={{ mt: 2, borderTop: '1px solid #e0e0e0' }}
+            />
+            </>
           )}
         </Paper>
+        </>
       )}
       
       <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, mb: 2, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-        <Typography variant="body2" fontWeight="600" color="#667eea" gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' }, mb: 1.5 }}>
+        <Typography variant="body2" fontWeight="600" color="#4caf50" gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' }, mb: 1.5 }}>
           User Management Help
         </Typography>
         <Typography variant="body2" paragraph sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' }, mb: 1 }}>
@@ -364,8 +586,11 @@ const AdminManagement = () => {
         <Typography variant="body2" paragraph sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' }, mb: 1 }}>
           <strong>Disable User:</strong> Disabled users cannot log in to the application.
         </Typography>
+        <Typography variant="body2" paragraph sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' }, mb: 1 }}>
+          <strong>Delete User:</strong> Permanently deletes the user and all their data. This action cannot be undone.
+        </Typography>
         <Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>
-          <strong>Note:</strong> You cannot remove your own admin access or disable your own account.
+          <strong>Note:</strong> You cannot modify or delete your own account.
         </Typography>
       </Paper>
       
@@ -387,11 +612,67 @@ const AdminManagement = () => {
           </Box>
           
           <Typography variant="caption" sx={{ mt: 1.5, fontStyle: 'italic', display: 'block', fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>
-            You can visit <RouterLink to="/admin/initialize" style={{ color: '#667eea' }}>Initialize Admin Collection</RouterLink> for more information.
+            You can visit <RouterLink to="/admin/initialize" style={{ color: '#4caf50' }}>Initialize Admin Collection</RouterLink> for more information.
           </Typography>
         </Paper>
       )}
       </Box>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog 
+        open={deleteDialogOpen} 
+        onClose={() => !deleting && setDeleteDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ color: '#d32f2f', fontWeight: 600 }}>
+          Delete User Permanently?
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            You are about to permanently delete <strong>{userToDelete?.displayName || userToDelete?.email}</strong> and all their data including:
+          </DialogContentText>
+          <Box component="ul" sx={{ pl: 2, mb: 2 }}>
+            <li>Food logs and calorie tracking history</li>
+            <li>Weight records and progress</li>
+            <li>Macro targets and goals</li>
+            <li>Custom food items</li>
+            <li>Profile information</li>
+            {userToDelete?.isAdmin && <li>Admin privileges</li>}
+          </Box>
+          <DialogContentText sx={{ mb: 2, fontWeight: 600, color: '#d32f2f' }}>
+            This action cannot be undone!
+          </DialogContentText>
+          <TextField
+            fullWidth
+            label='Type "DELETE" to confirm'
+            value={deleteConfirmText}
+            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            disabled={deleting}
+            autoComplete="off"
+            sx={{ mt: 1 }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button 
+            onClick={() => {
+              setDeleteDialogOpen(false);
+              setDeleteConfirmText('');
+            }}
+            disabled={deleting}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleDeleteUser}
+            color="error"
+            variant="contained"
+            disabled={deleteConfirmText !== 'DELETE' || deleting}
+          >
+            {deleting ? <CircularProgress size={20} sx={{ color: 'white' }} /> : 'Delete Forever'}
+          </Button>
+        </DialogActions>
+      </Dialog>
       
       {/* Notification snackbar */}
       <Snackbar 
@@ -414,3 +695,4 @@ const AdminManagement = () => {
 };
 
 export default AdminManagement;
+

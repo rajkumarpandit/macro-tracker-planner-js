@@ -32,6 +32,7 @@ import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
 // Import authentication components
 import { AuthProvider, useAuth } from './components/Auth/AuthContext';
 import PrivateRoute from './components/Auth/PrivateRoute';
+import MaintenanceRoute from './components/Auth/MaintenanceRoute';
 import { cleanupLegacyData } from './firebase/cleanupUtils';
 
 // Lazy load components to improve initial load time
@@ -43,19 +44,28 @@ const ReportPage = lazy(() => import('./components/Report/ReportPage'));
 const MacroTargetPage = lazy(() => import('./components/MacroTarget/MacroTargetPage'));
 const Login = lazy(() => import('./components/Auth/Login'));
 const Signup = lazy(() => import('./components/Auth/Signup'));
+const ForgotPassword = lazy(() => import('./components/Auth/ForgotPassword'));
 const LandingPage = lazy(() => import('./components/LandingPage/LandingPage'));
-const AdminManagement = lazy(() => import('./components/Admin/AdminManagement'));
+const AdminPage = lazy(() => import('./components/Admin/AdminPage'));
 const InitializeAdminCollection = lazy(() => import('./components/InitializeAdminCollection'));
 const TestFirestorePermissions = lazy(() => import('./components/TestFirestorePermissions'));
 const DataDebugger = lazy(() => import('./components/DataDebugger'));
 const MyProfilePage = lazy(() => import('./components/Profile/MyProfilePage'));
 const CaloriesBurntPage = lazy(() => import('./components/CaloriesBurnt/CaloriesBurntPage'));
+const MaintenancePage = lazy(() => import('./components/Maintenance/MaintenancePage'));
 
 // Create a theme optimized for faster rendering
 const theme = createTheme({
   palette: {
     primary: {
       main: '#4caf50',
+      light: '#81c784',
+      dark: '#388e3c',
+      // Custom gradient colors
+      gradient: {
+        start: '#66bb6a',
+        end: '#2e7d32'
+      }
     },
     secondary: {
       main: '#ff9800',
@@ -76,6 +86,25 @@ const theme = createTheme({
     MuiPaper: {
       defaultProps: {
         elevation: 1,
+      },
+    },
+    // Apply gradient to buttons
+    MuiButton: {
+      styleOverrides: {
+        containedPrimary: {
+          background: 'linear-gradient(135deg, #66bb6a 0%, #2e7d32 100%)',
+          '&:hover': {
+            background: 'linear-gradient(135deg, #81c784 0%, #388e3c 100%)',
+          },
+        },
+      },
+    },
+    // Apply gradient to AppBar
+    MuiAppBar: {
+      styleOverrides: {
+        colorPrimary: {
+          background: 'linear-gradient(135deg, #66bb6a 0%, #2e7d32 100%)',
+        },
       },
     },
   },
@@ -199,8 +228,8 @@ function NavigationBar() {
     }
   }, [location]);
   
-  // Hide navigation on My Profile page
-  if (location.pathname === '/my-profile') {
+  // Hide navigation on My Profile page and Maintenance page
+  if (location.pathname === '/my-profile' || location.pathname === '/maintenance') {
     return null;
   }
   
@@ -277,6 +306,32 @@ function NavigationBar() {
   );
 }
 
+// Conditional AppBar component
+function ConditionalAppBar() {
+  const location = useLocation();
+  const { currentUser } = useAuth();
+  
+  // Hide AppBar on maintenance page (it has its own)
+  if (location.pathname === '/maintenance') {
+    return null;
+  }
+  
+  return (
+    <AppBar position="static" color="primary">
+      <Toolbar>
+        <Typography variant="h6" component="div" sx={{ 
+          flexGrow: 1,
+          fontSize: { xs: '1rem', sm: '1.25rem' } // Responsive font size
+        }}>
+          Macro Tracker
+        </Typography>
+        
+        {currentUser && <UserMenu />}
+      </Toolbar>
+    </AppBar>
+  );
+}
+
 // AppContent component with routes
 function AppContent() {
   const { currentUser } = useAuth();
@@ -300,77 +355,100 @@ function AppContent() {
 
   return (
     <Router>
-      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-        <AppBar position="static" color="primary">
-          <Toolbar>
-            <Typography variant="h6" component="div" sx={{ 
-              flexGrow: 1,
-              fontSize: { xs: '1rem', sm: '1.25rem' } // Responsive font size
-            }}>
-              Macro Tracker
-            </Typography>
-            
-            {currentUser && <UserMenu />}
-          </Toolbar>
-        </AppBar>
-        
-        <Container component="main" sx={{ 
+      <AppRoutes currentUser={currentUser} />
+    </Router>
+  );
+}
+
+// AppRoutes component to handle route-specific layouts
+function AppRoutes({ currentUser }) {
+  const location = useLocation();
+  const isMaintenancePage = location.pathname === '/maintenance';
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <ConditionalAppBar />
+      
+      <Container 
+        component="main" 
+        sx={{ 
           flexGrow: 1, 
-          py: { xs: 2, sm: 3 }, // Smaller padding on mobile
-          px: { xs: 1, sm: 3 },  // Smaller padding on mobile
-          mb: currentUser ? 7 : 0 // Add bottom margin only when user is logged in
-        }}>
-          <Suspense fallback={<LoadingFallback />}>
-            <Routes>
+          py: isMaintenancePage ? 0 : { xs: 2, sm: 3 }, 
+          px: isMaintenancePage ? 0 : { xs: 1, sm: 3 },
+          mb: currentUser && !isMaintenancePage ? 7 : 0,
+          maxWidth: isMaintenancePage ? false : undefined
+        }}
+        disableGutters={isMaintenancePage}
+      >
+        <Suspense fallback={<LoadingFallback />}>
+          <Routes>
               {/* Public routes */}
               <Route path="/login" element={currentUser ? <Navigate to="/dashboard" /> : <Login />} />
               <Route path="/signup" element={currentUser ? <Navigate to="/dashboard" /> : <Signup />} />
+              <Route path="/forgot-password" element={currentUser ? <Navigate to="/dashboard" /> : <ForgotPassword />} />
               <Route path="/" element={currentUser ? <Navigate to="/dashboard" /> : <LandingPage />} />
+              <Route path="/maintenance" element={<MaintenancePage />} />
               
               {/* Protected routes */}
               <Route path="/dashboard" element={
                 <PrivateRoute>
-                  <Dashboard />
+                  <MaintenanceRoute>
+                    <Dashboard />
+                  </MaintenanceRoute>
                 </PrivateRoute>
               } />
               <Route path="/food-master" element={
                 <PrivateRoute>
-                  <FoodMasterPage />
+                  <MaintenanceRoute>
+                    <FoodMasterPage />
+                  </MaintenanceRoute>
                 </PrivateRoute>
               } />
               <Route path="/daily-log" element={
                 <PrivateRoute>
-                  <DailyLogPage />
+                  <MaintenanceRoute>
+                    <DailyLogPage />
+                  </MaintenanceRoute>
                 </PrivateRoute>
               } />
               <Route path="/calories-burnt" element={
                 <PrivateRoute>
-                  <CaloriesBurntPage />
+                  <MaintenanceRoute>
+                    <CaloriesBurntPage />
+                  </MaintenanceRoute>
                 </PrivateRoute>
               } />
               <Route path="/weight-log" element={
                 <PrivateRoute>
-                  <WeightLogPage />
+                  <MaintenanceRoute>
+                    <WeightLogPage />
+                  </MaintenanceRoute>
                 </PrivateRoute>
               } />
               <Route path="/reports" element={
                 <PrivateRoute>
-                  <ReportPage />
+                  <MaintenanceRoute>
+                    <ReportPage />
+                  </MaintenanceRoute>
                 </PrivateRoute>
               } />
               <Route path="/macro-target" element={
                 <PrivateRoute>
-                  <MacroTargetPage />
+                  <MaintenanceRoute>
+                    <MacroTargetPage />
+                  </MaintenanceRoute>
                 </PrivateRoute>
               } />
               <Route path="/my-profile" element={
                 <PrivateRoute>
-                  <MyProfilePage />
+                  <MaintenanceRoute>
+                    <MyProfilePage />
+                  </MaintenanceRoute>
                 </PrivateRoute>
               } />
               <Route path="/admin" element={
                 <PrivateRoute requireAdmin={true}>
-                  <AdminManagement />
+                  <AdminPage />
                 </PrivateRoute>
               } />
               
@@ -400,7 +478,6 @@ function AppContent() {
         
         {currentUser && <NavigationBar />}
       </Box>
-    </Router>
   );
 }
 

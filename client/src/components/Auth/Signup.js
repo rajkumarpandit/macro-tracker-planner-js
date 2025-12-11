@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   Container, 
   Typography, 
@@ -10,17 +10,23 @@ import {
   Alert,
   CircularProgress,
   InputAdornment,
-  IconButton
+  IconButton,
+  Divider
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
+import GoogleIcon from '@mui/icons-material/Google';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { useAuth } from './AuthContext';
 import { auth } from '../../firebase/firebase';
+import { checkDailySignupLimit } from '../../utils/apiLimits';
 
 function Signup() {
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
-  const [pin, setPin] = useState('');
-  const [showPin, setShowPin] = useState(false);
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -29,9 +35,11 @@ function Signup() {
   // Form validation errors
   const [nameError, setNameError] = useState('');
   const [emailError, setEmailError] = useState('');
-  const [pinError, setPinError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
   
-  const { signup } = useAuth();
+  const { signup, loginWithGoogle } = useAuth();
+  const navigate = useNavigate();
   
   // Check Firebase Auth status when component mounts
   useEffect(() => {
@@ -54,10 +62,16 @@ function Signup() {
     return re.test(String(email).toLowerCase());
   };
   
-  const validatePin = (pin) => {
-    // Check if PIN is exactly 6 digits
-    const re = /^[0-9]{6}$/;
-    return re.test(pin);
+  const validatePassword = (password) => {
+    // Minimum 6 characters and at least 1 special character
+    if (password.length < 6) {
+      return 'Password must be at least 6 characters';
+    }
+    const specialCharRegex = /[!@#$%^&*(),.?":{}|<>]/;
+    if (!specialCharRegex.test(password)) {
+      return 'Password must contain at least one special character';
+    }
+    return '';
   };
   
   const validateForm = () => {
@@ -82,21 +96,29 @@ function Signup() {
       setEmailError('');
     }
     
-    // Validate PIN
-    if (!pin) {
-      setPinError('PIN is required');
-      isValid = false;
-    } else if (!validatePin(pin)) {
-      setPinError('PIN must be exactly 6 digits');
+    // Validate password
+    if (!password) {
+      setPasswordError('Password is required');
       isValid = false;
     } else {
-      setPinError('');
+      const passwordValidation = validatePassword(password);
+      if (passwordValidation) {
+        setPasswordError(passwordValidation);
+        isValid = false;
+      } else {
+        setPasswordError('');
+      }
     }
     
-    // Additional check to ensure PIN is at least 6 characters (Firebase requirement)
-    if (pin.length < 6) {
-      setPinError('PIN must be at least 6 characters for security');
+    // Validate confirm password
+    if (!confirmPassword) {
+      setConfirmPasswordError('Please confirm your password');
       isValid = false;
+    } else if (password !== confirmPassword) {
+      setConfirmPasswordError('Passwords do not match');
+      isValid = false;
+    } else {
+      setConfirmPasswordError('');
     }
     
     return isValid;
@@ -116,13 +138,25 @@ function Signup() {
     
     try {
       setLoading(true);
-      await signup(email, pin, displayName);
-      setSuccess('User account created successfully! You can now log in.');
       
-      // Clear form after successful signup
-      setDisplayName('');
-      setEmail('');
-      setPin('');
+      // Check if signup limit has been reached by querying actual users created today
+      const signupCheck = await checkDailySignupLimit();
+      if (!signupCheck.allowed) {
+        setError(signupCheck.message);
+        setLoading(false);
+        return;
+      }
+      
+      // Create the account
+      await signup(email, password, displayName);
+      
+      setSuccess('Account created successfully! Redirecting to dashboard...');
+      
+      // Redirect to dashboard after successful signup
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1500);
+      
     } catch (error) {
       console.error('Signup error:', error);
       
@@ -132,7 +166,7 @@ function Signup() {
       } else if (error.code === 'auth/invalid-email') {
         setError('Please enter a valid email address.');
       } else if (error.code === 'auth/weak-password') {
-        setError('Your PIN is too weak. Please use a stronger PIN.');
+        setError('Your password is too weak. Please use a stronger password.');
       } else if (error.code === 'auth/network-request-failed') {
         setError('Network error. Please check your internet connection and try again.');
       } else if (error.code === 'auth/configuration-not-found') {
@@ -145,29 +179,101 @@ function Signup() {
     }
   };
 
-  const handlePinChange = (e) => {
-    const value = e.target.value;
-    // Only allow numbers
-    if (value === '' || /^\d+$/.test(value)) {
-      setPin(value.slice(0, 6)); // Limit to 6 digits
+  const handleGoogleSignup = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      // Check if signup limit has been reached by querying actual users created today
+      const signupCheck = await checkDailySignupLimit();
+      if (!signupCheck.allowed) {
+        setError(signupCheck.message);
+        setLoading(false);
+        return;
+      }
+      
+      // Sign in with Google
+      await loginWithGoogle();
+      
+      setSuccess('Signed in with Google! Redirecting...');
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1500);
+    } catch (error) {
+      console.error('Google signup error:', error);
+      setError(error.message || 'Failed to sign in with Google. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <Container maxWidth="sm">
-      <Box sx={{ mt: 8, mb: 4 }}>
-        <Paper elevation={3} sx={{ p: 4 }}>
-          <Typography variant="h5" component="h1" align="center" gutterBottom>
-            Create Account
-          </Typography>
+      <Box 
+        sx={{ 
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          py: 4
+        }}
+      >
+        <Paper 
+          elevation={8} 
+          sx={{ 
+            p: { xs: 3, sm: 4 }, 
+            width: '100%',
+            borderRadius: 2,
+            background: 'linear-gradient(to bottom, #ffffff, #f5f7fa)'
+          }}
+        >
+          <Box sx={{ textAlign: 'center', mb: 3 }}>
+            <PersonAddIcon 
+              sx={{ 
+                fontSize: 48, 
+                color: '#667eea', 
+                mb: 1 
+              }} 
+            />
+            <Typography variant="h5" component="h1" fontWeight="bold" gutterBottom>
+              Create Account
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Sign up to get started
+            </Typography>
+          </Box>
           
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-          {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+          {error && <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>}
+          {success && <Alert severity="success" sx={{ mb: 2, borderRadius: 2 }}>{success}</Alert>}
           
-          {/* Display Firebase Authentication status (for debugging) */}
-          <Typography variant="caption" color="text.secondary" display="block" align="center" sx={{ mb: 2 }}>
-            {authStatus}
-          </Typography>
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={<GoogleIcon />}
+            onClick={handleGoogleSignup}
+            disabled={loading}
+            sx={{
+              py: 1.5,
+              mb: 3,
+              borderRadius: 2,
+              textTransform: 'none',
+              fontSize: '1rem',
+              borderColor: '#4285f4',
+              color: '#4285f4',
+              '&:hover': {
+                borderColor: '#357ae8',
+                backgroundColor: 'rgba(66, 133, 244, 0.04)'
+              }
+            }}
+          >
+            Sign up with Google
+          </Button>
+          
+          <Divider sx={{ my: 3 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ px: 2 }}>
+              OR
+            </Typography>
+          </Divider>
           
           <Box component="form" onSubmit={handleSubmit}>
             <TextField
@@ -183,6 +289,17 @@ function Signup() {
               onChange={(e) => setDisplayName(e.target.value)}
               error={!!nameError}
               helperText={nameError}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  '&:hover fieldset': {
+                    borderColor: '#667eea',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#667eea',
+                  }
+                }
+              }}
             />
             <TextField
               margin="normal"
@@ -196,57 +313,153 @@ function Signup() {
               onChange={(e) => setEmail(e.target.value)}
               error={!!emailError}
               helperText={emailError}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  '&:hover fieldset': {
+                    borderColor: '#667eea',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#667eea',
+                  }
+                }
+              }}
             />
             <TextField
               margin="normal"
               required
               fullWidth
-              name="pin"
-              label="6-Digit PIN"
-              id="pin"
-              type={showPin ? 'text' : 'password'}
-              value={pin}
-              onChange={handlePinChange}
-              inputProps={{ maxLength: 6, inputMode: 'numeric' }}
-              error={!!pinError}
-              helperText={pinError}
+              name="password"
+              label="Password"
+              type={showPassword ? 'text' : 'password'}
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              error={!!passwordError}
+              helperText={passwordError || 'Minimum 6 characters with at least 1 special character'}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
                     <IconButton
-                      aria-label="toggle pin visibility"
-                      onClick={() => setShowPin(!showPin)}
+                      aria-label="toggle password visibility"
+                      onClick={() => setShowPassword(!showPassword)}
                       edge="end"
                     >
-                      {showPin ? <VisibilityOff /> : <Visibility />}
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
                 ),
               }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  '&:hover fieldset': {
+                    borderColor: '#667eea',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#667eea',
+                  }
+                }
+              }}
             />
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 3, mb: 2 }}>
-              <Button
-                type="submit"
-                size="small"
-                variant="contained"
-                disabled={loading}
-              >
-                {loading ? <CircularProgress size={20} /> : "Sign Up"}
-              </Button>
-              <Button
-                size="small"
-                variant="outlined"
-                component={Link}
-                to="/"
-                disabled={loading}
-              >
-                Cancel
-              </Button>
-            </Box>
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              name="confirmPassword"
+              label="Confirm Password"
+              type={showConfirmPassword ? 'text' : 'password'}
+              id="confirmPassword"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              error={!!confirmPasswordError}
+              helperText={confirmPasswordError}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle confirm password visibility"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      edge="end"
+                    >
+                      {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                  '&:hover fieldset': {
+                    borderColor: '#667eea',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#667eea',
+                  }
+                }
+              }}
+            />
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              disabled={loading}
+              sx={{
+                py: 1.5,
+                mt: 3,
+                mb: 2,
+                borderRadius: 2,
+                textTransform: 'none',
+                fontSize: '1rem',
+                fontWeight: 600,
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%)',
+                },
+                '&:disabled': {
+                  background: '#e0e0e0'
+                }
+              }}
+            >
+              {loading ? <CircularProgress size={24} sx={{ color: 'white' }} /> : "Sign Up"}
+            </Button>
             
-            <Box sx={{ mt: 2, textAlign: 'center' }}>
-              <Typography variant="body2">
-                Already have an account? <Link to="/login">Log In</Link>
+            <Button
+              fullWidth
+              variant="outlined"
+              component={Link}
+              to="/"
+              disabled={loading}
+              sx={{
+                py: 1.5,
+                mb: 2,
+                borderRadius: 2,
+                textTransform: 'none',
+                fontSize: '1rem',
+                borderColor: '#667eea',
+                color: '#667eea',
+                '&:hover': {
+                  borderColor: '#5568d3',
+                  backgroundColor: 'rgba(102, 126, 234, 0.04)'
+                }
+              }}
+            >
+              Cancel
+            </Button>
+            
+            <Box sx={{ mt: 3, textAlign: 'center' }}>
+              <Typography variant="body2" color="text.secondary">
+                Already have an account?{' '}
+                <Link 
+                  to="/login" 
+                  style={{ 
+                    color: '#667eea', 
+                    textDecoration: 'none',
+                    fontWeight: 600
+                  }}
+                >
+                  Log In
+                </Link>
               </Typography>
             </Box>
           </Box>

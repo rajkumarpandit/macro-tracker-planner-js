@@ -17,14 +17,20 @@ import {
   ListItemSecondaryAction,
   Divider,
   CircularProgress,
-  Snackbar
+  Snackbar,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import { collection, addDoc, getDocs, doc, deleteDoc, updateDoc, query, where } from 'firebase/firestore';
 import { db } from '../../firebase/firebase';
 import { useAuth } from '../Auth/AuthContext';
+import { detectProteinSource } from '../../utils/geminiApi';
 import Footer from '../Common/Footer';
 
 function FoodMasterPage() {
@@ -42,11 +48,24 @@ function FoodMasterPage() {
     calories_in_gms: '',
     Protien_in_gms: '',
     carb_in_gms: '',
-    fat_in_gms: ''
+    fat_in_gms: '',
+    proteinSource: ''
   });
   
   const [editing, setEditing] = useState(false);
   const [currentId, setCurrentId] = useState('');
+  const [detectingSource, setDetectingSource] = useState(false);
+
+  // Helper function to get protein source badge color
+  const getProteinSourceColor = (source) => {
+    const colors = {
+      'Vegetarian': { bg: '#e8f5e9', text: '#2e7d32' },
+      'Animal': { bg: '#ffebee', text: '#c62828' },
+      'Mixed': { bg: '#fff3e0', text: '#e65100' },
+      'Low-Protein': { bg: '#fce4ec', text: '#ad1457' }
+    };
+    return colors[source] || { bg: '#f5f5f5', text: '#616161' };
+  };
 
   // Memoized fetch function to avoid unnecessary re-renders
   const fetchFoods = useCallback(async () => {
@@ -104,10 +123,38 @@ function FoodMasterPage() {
       calories_in_gms: '',
       Protien_in_gms: '',
       carb_in_gms: '',
-      fat_in_gms: ''
+      fat_in_gms: '',
+      proteinSource: ''
     });
     setEditing(false);
     setCurrentId('');
+  };
+
+  const handleDetectProteinSource = async () => {
+    if (!formData.food_name || !formData.food_name.trim()) {
+      setMessage({ text: 'Please enter a food name first', type: 'error' });
+      return;
+    }
+
+    setDetectingSource(true);
+    try {
+      const detectedSource = await detectProteinSource(formData.food_name, currentUser.uid);
+      setFormData(prev => ({ ...prev, proteinSource: detectedSource }));
+      setMessage({ text: `Detected protein source: ${detectedSource}`, type: 'success' });
+    } catch (error) {
+      console.error('Error detecting protein source:', error);
+      
+      // Check for specific error messages
+      if (error.message?.includes('Daily limit')) {
+        setMessage({ text: error.message, type: 'error' });
+      } else if (error.message?.includes('rate limit')) {
+        setMessage({ text: 'Rate limit exceeded. Please try again in a minute.', type: 'error' });
+      } else {
+        setMessage({ text: 'Failed to detect protein source. You can select it manually.', type: 'error' });
+      }
+    } finally {
+      setDetectingSource(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -149,7 +196,8 @@ function FoodMasterPage() {
         calories_in_gms: calories,
         Protien_in_gms: protein,
         carb_in_gms: carbs,
-        fat_in_gms: fats
+        fat_in_gms: fats,
+        proteinSource: formData.proteinSource || undefined
       };
       
       if (editing) {
@@ -185,7 +233,8 @@ function FoodMasterPage() {
       calories_in_gms: food.calories_in_gms,
       Protien_in_gms: food.Protien_in_gms,
       carb_in_gms: food.carb_in_gms,
-      fat_in_gms: food.fat_in_gms
+      fat_in_gms: food.fat_in_gms,
+      proteinSource: food.proteinSource || ''
     });
     setEditing(true);
     setCurrentId(food.id);
@@ -256,7 +305,7 @@ function FoodMasterPage() {
         borderRadius: 2,
         boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
       }}>
-        <Typography variant="body2" component="h2" gutterBottom fontWeight="600" color="#667eea" sx={{ mb: 2, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
+        <Typography variant="body2" component="h2" gutterBottom fontWeight="600" color="#4caf50" sx={{ mb: 2, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
           {editing ? 'Edit Food Item' : 'Add New Food Item'}
         </Typography>
         
@@ -276,10 +325,10 @@ function FoodMasterPage() {
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1.5,
                     '&:hover fieldset': {
-                      borderColor: '#667eea'
+                      borderColor: '#4caf50'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#667eea'
+                      borderColor: '#4caf50'
                     }
                   }
                 }}
@@ -299,10 +348,10 @@ function FoodMasterPage() {
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1.5,
                     '&:hover fieldset': {
-                      borderColor: '#667eea'
+                      borderColor: '#4caf50'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#667eea'
+                      borderColor: '#4caf50'
                     }
                   }
                 }}
@@ -324,10 +373,10 @@ function FoodMasterPage() {
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1.5,
                     '&:hover fieldset': {
-                      borderColor: '#667eea'
+                      borderColor: '#4caf50'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#667eea'
+                      borderColor: '#4caf50'
                     }
                   }
                 }}
@@ -352,10 +401,10 @@ function FoodMasterPage() {
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1.5,
                     '&:hover fieldset': {
-                      borderColor: '#667eea'
+                      borderColor: '#4caf50'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#667eea'
+                      borderColor: '#4caf50'
                     }
                   }
                 }}
@@ -380,10 +429,10 @@ function FoodMasterPage() {
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1.5,
                     '&:hover fieldset': {
-                      borderColor: '#667eea'
+                      borderColor: '#4caf50'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#667eea'
+                      borderColor: '#4caf50'
                     }
                   }
                 }}
@@ -408,10 +457,10 @@ function FoodMasterPage() {
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1.5,
                     '&:hover fieldset': {
-                      borderColor: '#667eea'
+                      borderColor: '#4caf50'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#667eea'
+                      borderColor: '#4caf50'
                     }
                   }
                 }}
@@ -436,14 +485,79 @@ function FoodMasterPage() {
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1.5,
                     '&:hover fieldset': {
-                      borderColor: '#667eea'
+                      borderColor: '#4caf50'
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#667eea'
+                      borderColor: '#4caf50'
                     }
                   }
                 }}
               />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+                <FormControl 
+                  fullWidth 
+                  size="small"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 1.5,
+                      '&:hover fieldset': {
+                        borderColor: '#4caf50'
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#4caf50'
+                      }
+                    }
+                  }}
+                >
+                  <InputLabel>Protein Source (Optional)</InputLabel>
+                  <Select
+                    value={formData.proteinSource}
+                    onChange={(e) => setFormData(prev => ({ ...prev, proteinSource: e.target.value }))}
+                    label="Protein Source (Optional)"
+                  >
+                    <MenuItem value="">
+                      <em>Not specified</em>
+                    </MenuItem>
+                    <MenuItem value="Vegetarian">Vegetarian</MenuItem>
+                    <MenuItem value="Animal">Animal</MenuItem>
+                    <MenuItem value="Mixed">Mixed</MenuItem>
+                    <MenuItem value="Low-Protein">Low-Protein</MenuItem>
+                  </Select>
+                </FormControl>
+                <Button
+                  variant="outlined"
+                  onClick={handleDetectProteinSource}
+                  disabled={detectingSource || !formData.food_name}
+                  size="small"
+                  startIcon={detectingSource ? <CircularProgress size={16} /> : <AutoFixHighIcon />}
+                  sx={{
+                    borderRadius: 1.5,
+                    textTransform: 'none',
+                    whiteSpace: 'nowrap',
+                    minWidth: 'auto',
+                    px: 2,
+                    height: '40px',
+                    borderColor: '#4caf50',
+                    color: '#4caf50',
+                    '&:hover': {
+                      borderColor: '#2e7d32',
+                      bgcolor: 'rgba(76, 175, 80, 0.04)'
+                    },
+                    '&.Mui-disabled': {
+                      borderColor: '#ccc',
+                      color: '#999'
+                    }
+                  }}
+                >
+                  Auto-Detect
+                </Button>
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                Use Auto-Detect to identify protein source automatically
+              </Typography>
             </Grid>
           </Grid>
 
@@ -457,9 +571,9 @@ function FoodMasterPage() {
                 px: 3,
                 textTransform: 'none',
                 fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                background: 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)',
                 '&:hover': {
-                  background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)'
+                  background: 'linear-gradient(135deg, #2e7d32 0%, #4caf50 100%)'
                 }
               }}
             >
@@ -498,7 +612,7 @@ function FoodMasterPage() {
             borderRadius: 2,
             boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
           }}>
-            <Typography variant="body2" fontWeight="600" color="#667eea" gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, mb: 1.5 }}>
+            <Typography variant="body2" fontWeight="600" color="#4caf50" gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, mb: 1.5 }}>
               Food Items ({foods.length})
             </Typography>
           
@@ -509,11 +623,30 @@ function FoodMasterPage() {
                 <React.Fragment key={food.id}>
                   <ListItem sx={{ px: 0 }}>
                     <ListItemText
-                      primary={food.food_name}
-                      primaryTypographyProps={{
-                        fontWeight: 600,
-                        fontSize: { xs: '0.9rem', sm: '1rem' }
-                      }}
+                      primary={
+                        <Box>
+                          <Typography component="span" sx={{ fontWeight: 600, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
+                            {food.food_name}
+                          </Typography>
+                          {food.proteinSource && (
+                            <Typography 
+                              component="span" 
+                              sx={{ 
+                                ml: 1, 
+                                px: 1, 
+                                py: 0.25, 
+                                bgcolor: getProteinSourceColor(food.proteinSource).bg, 
+                                color: getProteinSourceColor(food.proteinSource).text,
+                                borderRadius: 1,
+                                fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                                fontWeight: 500
+                              }}
+                            >
+                              {food.proteinSource}
+                            </Typography>
+                          )}
+                        </Box>
+                      }
                       secondary={
                         <>
                           {`${food.measuring_quantity} ${food.measuring_unit} | ${food.calories_in_gms} cal`}
@@ -526,7 +659,7 @@ function FoodMasterPage() {
                       }}
                     />
                     <ListItemSecondaryAction>
-                      <IconButton edge="end" size="small" onClick={() => handleEdit(food)} sx={{ color: '#667eea' }}>
+                      <IconButton edge="end" size="small" onClick={() => handleEdit(food)} sx={{ color: '#4caf50' }}>
                         <EditIcon fontSize="small" />
                       </IconButton>
                       <IconButton edge="end" size="small" onClick={() => handleDelete(food.id)} sx={{ color: '#ef5350' }}>
@@ -555,12 +688,30 @@ function FoodMasterPage() {
                     border: '1px solid #e0e0e0',
                     '&:hover': {
                       boxShadow: '0 2px 8px rgba(102, 126, 234, 0.15)',
-                      borderColor: '#667eea'
+                      borderColor: '#4caf50'
                     }
                   }}>
-                    <Typography variant="subtitle2" component="div" fontWeight="600" sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}>
-                      {food.food_name}
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 0.5 }}>
+                      <Typography variant="subtitle2" component="span" fontWeight="600" sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}>
+                        {food.food_name}
+                      </Typography>
+                      {food.proteinSource && (
+                        <Typography 
+                          component="span" 
+                          sx={{ 
+                            px: 1, 
+                            py: 0.25, 
+                            bgcolor: getProteinSourceColor(food.proteinSource).bg, 
+                            color: getProteinSourceColor(food.proteinSource).text,
+                            borderRadius: 1,
+                            fontSize: '0.7rem',
+                            fontWeight: 500
+                          }}
+                        >
+                          {food.proteinSource}
+                        </Typography>
+                      )}
+                    </Box>
                     <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem' } }}>
                       {`${food.measuring_quantity} ${food.measuring_unit}`}
                     </Typography>
@@ -571,7 +722,7 @@ function FoodMasterPage() {
                       {`P: ${food.Protien_in_gms}g | C: ${food.carb_in_gms}g | F: ${food.fat_in_gms}g`}
                     </Typography>
                     <Box sx={{ mt: 1.5, display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
-                      <IconButton size="small" onClick={() => handleEdit(food)} sx={{ color: '#667eea' }}>
+                      <IconButton size="small" onClick={() => handleEdit(food)} sx={{ color: '#4caf50' }}>
                         <EditIcon fontSize="small" />
                       </IconButton>
                       <IconButton size="small" onClick={() => handleDelete(food.id)} sx={{ color: '#ef5350' }}>
@@ -601,3 +752,4 @@ function FoodMasterPage() {
 
 // Use memo to prevent unnecessary re-renders
 export default React.memo(FoodMasterPage);
+

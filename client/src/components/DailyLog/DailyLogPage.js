@@ -27,7 +27,11 @@ import {
   Tab,
   FormControlLabel,
   Switch,
-  Tooltip
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
@@ -39,6 +43,8 @@ import { db } from '../../firebase/firebase';
 import { format } from 'date-fns';
 import { useAuth } from '../Auth/AuthContext';
 import { parseFoodFromText, getMacrosFromGemini, areFoodsSimilar } from '../../utils/geminiApi';
+import { calculateProteinBreakdown, getProteinSourceChartData } from '../../utils/proteinSourceUtils';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import Footer from '../Common/Footer';
 import { SEARCH_CONFIG } from '../../config/constants';
 
@@ -68,10 +74,59 @@ function DailyLogPage() {
   const [fetchedMacros, setFetchedMacros] = useState(null); // {calories, protein, carbs, fats, servingSize}
   const [calculatedNlMacros, setCalculatedNlMacros] = useState(null); // Calculated for user's quantity
   const [dataSource, setDataSource] = useState(null); // Track where data came from: 'database' or 'gemini'
+  
+  // Info dialog states for mobile
+  const [infoDialogOpen, setInfoDialogOpen] = useState(false);
+  const [infoDialogContent, setInfoDialogContent] = useState({ title: '', content: '' });
+  
+  // Meal category state
+  const [mealCategory, setMealCategory] = useState('');
+
+  // Handle info button click (for mobile and desktop)
+  const handleInfoClick = (title, content) => {
+    if (isMobile) {
+      setInfoDialogContent({ title, content });
+      setInfoDialogOpen(true);
+    }
+    // On desktop, tooltip will show on hover
+  };
+
+  const handleInfoDialogClose = () => {
+    setInfoDialogOpen(false);
+  };
+
+  // Function to auto-detect meal category based on current time
+  const getMealCategoryByTime = () => {
+    const now = new Date();
+    const hours = now.getHours();
+    
+    if (hours >= 6 && hours < 11) {
+      return 'Breakfast';
+    } else if (hours >= 11 && hours < 13) {
+      return 'Pre-Lunch';
+    } else if (hours >= 13 && hours < 16) {
+      return 'Lunch';
+    } else if (hours >= 16 && hours < 18) {
+      return 'Evening-Snacks';
+    } else if (hours >= 18 && hours < 22) {
+      return 'Dinner';
+    } else {
+      return 'Extra Snacks';
+    }
+  };
+
+  // Set meal category on component mount
+  useEffect(() => {
+    setMealCategory(getMealCategoryByTime());
+  }, []);
 
   // Memoized date string to prevent unnecessary recalculations
+  // Use local timezone instead of UTC to avoid date mismatch issues
   const dateString = useMemo(() => {
-    return selectedDate.toISOString().split('T')[0];
+    const year = selectedDate.getFullYear();
+    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(selectedDate.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }, [selectedDate]);
 
   // Fetch foods from database - memoized callback
@@ -154,6 +209,19 @@ function DailyLogPage() {
     }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
   }, [dailyLogs]);
 
+  // Calculate protein breakdown by source
+  const proteinBreakdown = useMemo(() => {
+    return calculateProteinBreakdown(dailyLogs);
+  }, [dailyLogs]);
+
+  const proteinChartData = useMemo(() => {
+    return getProteinSourceChartData(proteinBreakdown);
+  }, [proteinBreakdown]);
+
+  const totalProtein = useMemo(() => {
+    return Object.values(proteinBreakdown).reduce((sum, val) => sum + val, 0);
+  }, [proteinBreakdown]);
+
   const handleFoodChange = (e) => {
     setSelectedFood(e.target.value);
   };
@@ -196,7 +264,8 @@ function DailyLogPage() {
       calories: Number(food.calories_in_gms * ratio),
       protein: Number(food.Protien_in_gms * ratio),
       carbs: Number(food.carb_in_gms * ratio),
-      fat: Number(food.fat_in_gms * ratio)
+      fat: Number(food.fat_in_gms * ratio),
+      proteinSource: food.proteinSource || undefined
     };
     
     setCalculatedMacros(macros);
@@ -212,7 +281,7 @@ function DailyLogPage() {
     setNlLoading(true);
     try {
       console.log('Calling parseFoodFromText with:', nlText);
-      const result = await parseFoodFromText(nlText);
+      const result = await parseFoodFromText(nlText, currentUser?.uid);
       console.log('parseFoodFromText result:', result);
 
       setParsedFood({
@@ -311,7 +380,7 @@ function DailyLogPage() {
       } else {
         // Call Gemini API to get macro information
         console.log('Not found in database, calling Gemini API...');
-        const result = await getMacrosFromGemini(parsedFood.foodName, parsedFood.unit);
+        const result = await getMacrosFromGemini(parsedFood.foodName, parsedFood.unit, currentUser?.uid);
         macrosPerUnit = {
           calories: result.calories,
           protein: result.protein,
@@ -337,10 +406,15 @@ function DailyLogPage() {
     } catch (error) {
       console.error('Error fetching macros:', error);
       
-      // Check if it's a rate limit error
+      // Check if it's a rate limit or usage limit error
       if (error.message && error.message.includes('quota')) {
         setMessage({ 
           text: 'Gemini API rate limit reached. Please wait a few seconds and try again, or disable "Search my food database first".', 
+          type: 'error' 
+        });
+      } else if (error.message && error.message.includes('daily limit')) {
+        setMessage({ 
+          text: error.message, 
           type: 'error' 
         });
       } else {
@@ -364,14 +438,20 @@ function DailyLogPage() {
     try {
       const dateString = format(selectedDate, 'yyyy-MM-dd');
 
-      // Check for duplicates
+      // Check for exact duplicates (same food, same quantity, same unit)
+      // Users should be able to log the same food multiple times with different quantities
       const existingLog = dailyLogs.find(log => 
         log.food_name.toLowerCase().trim() === parsedFood.foodName.toLowerCase().trim() &&
+        log.quantity === Number(parsedFood.quantity) &&
+        log.unit === parsedFood.unit &&
         log.date_eaten === dateString
       );
 
       if (existingLog) {
-        setMessage({ text: 'This food item is already logged for today', type: 'error' });
+        setMessage({ 
+          text: 'This exact food entry (same item, quantity, and unit) is already logged for today. If you ate this food multiple times, please add them together or delete the existing entry first.', 
+          type: 'warning' 
+        });
         return;
       }
 
@@ -383,6 +463,8 @@ function DailyLogPage() {
         quantity: Number(parsedFood.quantity),
         userId: currentUser.uid,
         createdAt: new Date().toISOString(),
+        mealCategory: mealCategory || 'Others', // Add meal category
+        proteinSource: fetchedMacros?.proteinSource || undefined, // Add protein source
         calories: Number(calculatedNlMacros.calories),
         protein: Number(calculatedNlMacros.protein),
         carbs: Number(calculatedNlMacros.carbs),
@@ -401,6 +483,7 @@ function DailyLogPage() {
           Protien_in_gms: Number(fetchedMacros.protein),
           carb_in_gms: Number(fetchedMacros.carbs),
           fat_in_gms: Number(fetchedMacros.fats),
+          proteinSource: fetchedMacros?.proteinSource || undefined,
           userId: currentUser.uid,
           createdAt: new Date().toISOString()
         };
@@ -451,6 +534,7 @@ function DailyLogPage() {
         food_item: selectedFood,
         userId: currentUser.uid, // Add user ID to the log
         createdAt: new Date().toISOString(),
+        mealCategory: mealCategory || 'Others', // Add meal category
         ...calculatedMacros
       };
       
@@ -459,6 +543,7 @@ function DailyLogPage() {
       setQuantity('');
       setSelectedFood('');
       setCalculatedMacros(null);
+      setMealCategory(getMealCategoryByTime()); // Reset to auto-detected category
       fetchDailyLogs();
     } catch (error) {
       console.error("Error adding food log: ", error);
@@ -543,11 +628,11 @@ function DailyLogPage() {
               minHeight: { xs: 48, sm: 56 }
             },
             '& .Mui-selected': {
-              color: '#667eea !important'
+              color: '#4caf50 !important'
             },
             '& .MuiTabs-indicator': {
               height: 3,
-              background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)'
+              background: 'linear-gradient(90deg, #4caf50 0%, #2e7d32 100%)'
             }
           }}
         >
@@ -580,10 +665,10 @@ function DailyLogPage() {
                               '& .MuiOutlinedInput-root': {
                                 borderRadius: 1.5,
                                 '&:hover fieldset': {
-                                  borderColor: '#667eea'
+                                  borderColor: '#4caf50'
                                 },
                                 '&.Mui-focused fieldset': {
-                                  borderColor: '#667eea'
+                                  borderColor: '#4caf50'
                                 }
                               }
                             }
@@ -610,9 +695,12 @@ function DailyLogPage() {
                       </Box>
                     }
                     arrow
-                    placement="right"
+                    placement={isMobile ? "bottom" : "right"}
                     enterDelay={200}
                     leaveDelay={200}
+                    disableHoverListener={isMobile}
+                    disableFocusListener={isMobile}
+                    disableTouchListener={isMobile}
                     sx={{
                       '& .MuiTooltip-tooltip': {
                         bgcolor: 'rgba(0, 0, 0, 0.9)',
@@ -627,10 +715,19 @@ function DailyLogPage() {
                   >
                     <IconButton 
                       size="small" 
+                      onClick={() => handleInfoClick(
+                        'How to Use',
+                        [
+                          '• My List: Select from your personal food database that you maintain.',
+                          '• New: Use this tab if you don\'t have the food in your list. It fetches nutrition data from the internet.',
+                          '',
+                          'Tip: Manage your food database from the menu at the bottom.'
+                        ]
+                      )}
                       sx={{ 
-                        color: '#667eea',
+                        color: '#4caf50',
                         '&:hover': { 
-                          bgcolor: 'rgba(102, 126, 234, 0.1)' 
+                          bgcolor: 'rgba(76, 175, 80, 0.1)' 
                         }
                       }}
                     >
@@ -656,10 +753,10 @@ function DailyLogPage() {
                     sx={{
                       borderRadius: 1.5,
                       '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#667eea'
+                        borderColor: '#4caf50'
                       },
                       '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#667eea'
+                        borderColor: '#4caf50'
                       }
                     }}
                   >
@@ -693,10 +790,10 @@ function DailyLogPage() {
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 1.5,
                       '&:hover fieldset': {
-                        borderColor: '#667eea'
+                        borderColor: '#4caf50'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#667eea'
+                        borderColor: '#4caf50'
                       }
                     }
                   }}
@@ -704,7 +801,43 @@ function DailyLogPage() {
               </Grid>
             </Grid>
 
-            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+            {/* Meal Category and Calculate Macros in same row */}
+            <Box sx={{ mt: 2, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+              <FormControl 
+                sx={{
+                  flex: '1 1 200px',
+                  minWidth: 150
+                }}
+                size="small"
+              >
+                <InputLabel>Meal Category</InputLabel>
+                <Select
+                  value={mealCategory}
+                  onChange={(e) => setMealCategory(e.target.value)}
+                  label="Meal Category"
+                  sx={{
+                    borderRadius: 1.5,
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#4caf50'
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#4caf50'
+                    }
+                  }}
+                >
+                  <MenuItem value="Pre-Breakfast">Pre-Breakfast</MenuItem>
+                  <MenuItem value="Pre-Workout">Pre-Workout</MenuItem>
+                  <MenuItem value="Breakfast">Breakfast</MenuItem>
+                  <MenuItem value="Pre-Lunch">Pre-Lunch</MenuItem>
+                  <MenuItem value="Lunch">Lunch</MenuItem>
+                  <MenuItem value="Evening-Snacks">Evening-Snacks</MenuItem>
+                  <MenuItem value="Dinner">Dinner</MenuItem>
+                  <MenuItem value="Post-Workout">Post-Workout</MenuItem>
+                  <MenuItem value="Extra Snacks">Extra Snacks</MenuItem>
+                  <MenuItem value="Others">Others</MenuItem>
+                </Select>
+              </FormControl>
+              
               <Button 
                 onClick={calculateMacros} 
                 variant="outlined" 
@@ -714,11 +847,12 @@ function DailyLogPage() {
                   px: 3,
                   textTransform: 'none',
                   fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                  borderColor: '#667eea',
-                  color: '#667eea',
+                  borderColor: '#4caf50',
+                  color: '#4caf50',
+                  whiteSpace: 'nowrap',
                   '&:hover': {
-                    borderColor: '#667eea',
-                    bgcolor: '#f0f4ff'
+                    borderColor: '#4caf50',
+                    bgcolor: '#f1f8f4'
                   }
                 }}
               >
@@ -731,9 +865,9 @@ function DailyLogPage() {
               <Box sx={{ 
                 mt: 2, 
                 p: { xs: 1.5, sm: 2 }, 
-                bgcolor: '#f0f4ff', 
+                bgcolor: '#f1f8f4', 
                 borderRadius: 2,
-                border: '1px solid #667eea'
+                border: '1px solid #4caf50'
               }}>
                 <Typography variant="body2" gutterBottom fontWeight="600" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>
                   Calculated Nutrition for {calculatedMacros.quantity} {calculatedMacros.unit} of {calculatedMacros.food_name}:
@@ -791,9 +925,9 @@ function DailyLogPage() {
                       px: 3,
                       textTransform: 'none',
                       fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      background: 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)',
                       '&:hover': {
-                        background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)'
+                        background: 'linear-gradient(135deg, #2e7d32 0%, #4caf50 100%)'
                       }
                     }}
                   >
@@ -827,10 +961,10 @@ function DailyLogPage() {
                               '& .MuiOutlinedInput-root': {
                                 borderRadius: 1.5,
                                 '&:hover fieldset': {
-                                  borderColor: '#667eea'
+                                  borderColor: '#4caf50'
                                 },
                                 '&.Mui-focused fieldset': {
-                                  borderColor: '#667eea'
+                                  borderColor: '#4caf50'
                                 }
                               }
                             }
@@ -857,9 +991,12 @@ function DailyLogPage() {
                       </Box>
                     }
                     arrow
-                    placement="right"
+                    placement={isMobile ? "bottom" : "right"}
                     enterDelay={200}
                     leaveDelay={200}
+                    disableHoverListener={isMobile}
+                    disableFocusListener={isMobile}
+                    disableTouchListener={isMobile}
                     sx={{
                       '& .MuiTooltip-tooltip': {
                         bgcolor: 'rgba(0, 0, 0, 0.9)',
@@ -874,6 +1011,16 @@ function DailyLogPage() {
                   >
                     <IconButton 
                       size="small" 
+                      onClick={() => handleInfoClick(
+                        '⚠️ Important',
+                        [
+                          'Use this tab only if your food item is not already in your Food Database.',
+                          '',
+                          'This feature relies on internet data, which may not always precisely match your specific food item\'s macro information.',
+                          '',
+                          '💡 For accuracy, add frequently eaten foods to your Food Database first.'
+                        ]
+                      )}
                       sx={{ 
                         color: '#ff9800',
                         '&:hover': { 
@@ -901,10 +1048,10 @@ function DailyLogPage() {
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 1.5,
                       '&:hover fieldset': {
-                        borderColor: '#667eea'
+                        borderColor: '#4caf50'
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#667eea'
+                        borderColor: '#4caf50'
                       }
                     }
                   }}
@@ -923,11 +1070,11 @@ function DailyLogPage() {
                   px: 3,
                   textTransform: 'none',
                   fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                  borderColor: '#667eea',
-                  color: '#667eea',
+                  borderColor: '#4caf50',
+                  color: '#4caf50',
                   '&:hover': {
-                    borderColor: '#667eea',
-                    bgcolor: '#f0f4ff'
+                    borderColor: '#4caf50',
+                    bgcolor: '#f1f8f4'
                   }
                 }}
               >
@@ -940,9 +1087,9 @@ function DailyLogPage() {
               <Box sx={{ 
                 mt: 2, 
                 p: { xs: 1.5, sm: 2 }, 
-                bgcolor: '#f0f4ff', 
+                bgcolor: '#f1f8f4', 
                 borderRadius: 2,
-                border: '1px solid #667eea'
+                border: '1px solid #4caf50'
               }}>
                 <Typography variant="body2" gutterBottom fontWeight="600" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>
                   Parsed Food Item:
@@ -963,10 +1110,10 @@ function DailyLogPage() {
                         size="small"
                         sx={{ 
                           '& .MuiSwitch-switchBase.Mui-checked': {
-                            color: '#667eea',
+                            color: '#4caf50',
                           },
                           '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                            backgroundColor: '#667eea',
+                            backgroundColor: '#4caf50',
                           }
                         }}
                       />
@@ -983,11 +1130,11 @@ function DailyLogPage() {
                       px: 3,
                       textTransform: 'none',
                       fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                      borderColor: '#667eea',
-                      color: '#667eea',
+                      borderColor: '#4caf50',
+                      color: '#4caf50',
                       '&:hover': {
-                        borderColor: '#667eea',
-                        bgcolor: '#f0f4ff'
+                        borderColor: '#4caf50',
+                        bgcolor: '#f1f8f4'
                       }
                     }}
                   >
@@ -1002,9 +1149,9 @@ function DailyLogPage() {
               <Box sx={{ 
                 mt: 2, 
                 p: { xs: 1.5, sm: 2 }, 
-                bgcolor: '#f0f4ff', 
+                bgcolor: '#f1f8f4', 
                 borderRadius: 2,
-                border: '1px solid #667eea'
+                border: '1px solid #4caf50'
               }}>
                 <Typography variant="body2" gutterBottom fontWeight="600" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>
                   Nutrition Information (per {fetchedMacros.servingSize}):
@@ -1075,10 +1222,10 @@ function DailyLogPage() {
                         size="small"
                         sx={{ 
                           '& .MuiSwitch-switchBase.Mui-checked': {
-                            color: '#667eea',
+                            color: '#4caf50',
                           },
                           '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                            backgroundColor: '#667eea',
+                            backgroundColor: '#4caf50',
                           }
                         }}
                       />
@@ -1134,9 +1281,9 @@ function DailyLogPage() {
                       px: 3,
                       textTransform: 'none',
                       fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      background: 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)',
                       '&:hover': {
-                        background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)'
+                        background: 'linear-gradient(135deg, #2e7d32 0%, #4caf50 100%)'
                       }
                     }}
                   >
@@ -1157,7 +1304,7 @@ function DailyLogPage() {
         borderRadius: 2,
         boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
       }}>
-        <Typography variant="body2" fontWeight="600" color="#667eea" gutterBottom sx={{ mb: 1.5, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
+        <Typography variant="body2" fontWeight="600" color="#4caf50" gutterBottom sx={{ mb: 1.5, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
           Today's Summary
         </Typography>
         <Grid container spacing={1.5}>
@@ -1219,6 +1366,85 @@ function DailyLogPage() {
         </Grid>
       </Box>
 
+      {/* Protein Source Analysis Chart */}
+      {totalProtein > 0 && (
+        <Box sx={{ 
+          mb: 2,
+          p: { xs: 1.5, sm: 2 },
+          bgcolor: 'white',
+          borderRadius: 2,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+        }}>
+          <Typography variant="body2" fontWeight="600" color="#4caf50" gutterBottom sx={{ mb: 1.5, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
+            Protein Source Analysis
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: 'center', gap: 2 }}>
+            <Box sx={{ width: { xs: '100%', md: '300px' }, height: '250px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={proteinChartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={2}
+                    dataKey="value"
+                    label={false}
+                    labelLine={false}
+                  >
+                    {proteinChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip 
+                    formatter={(value) => `${value.toFixed(1)}g`}
+                    contentStyle={{ 
+                      backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                      border: '1px solid #ddd', 
+                      borderRadius: '8px',
+                      padding: '8px 12px'
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </Box>
+            <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 'auto' } }}>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Total Protein: <strong>{totalProtein.toFixed(1)}g</strong>
+              </Typography>
+              <Box sx={{ mt: 2 }}>
+                {proteinChartData.map((item) => (
+                  <Box key={item.name} sx={{ mb: 1.5 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ width: 12, height: 12, bgcolor: item.color, borderRadius: '50%' }} />
+                        <Typography variant="body2">{item.name}</Typography>
+                      </Box>
+                      <Typography variant="body2" fontWeight="600">
+                        {item.value.toFixed(1)}g ({((item.value / totalProtein) * 100).toFixed(1)}%)
+                      </Typography>
+                    </Box>
+                    <LinearProgress 
+                      variant="determinate" 
+                      value={(item.value / totalProtein) * 100}
+                      sx={{ 
+                        height: 6, 
+                        borderRadius: 1,
+                        bgcolor: 'rgba(0,0,0,0.08)',
+                        '& .MuiLinearProgress-bar': {
+                          bgcolor: item.color
+                        }
+                      }}
+                    />
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          </Box>
+        </Box>
+      )}
+
       {/* Food Log List */}
       <Box sx={{ 
         p: { xs: 1.5, sm: 2 }, 
@@ -1226,7 +1452,7 @@ function DailyLogPage() {
         borderRadius: 2,
         boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
       }}>
-        <Typography variant="body2" fontWeight="600" color="#667eea" gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, mb: 1.5 }}>
+        <Typography variant="body2" fontWeight="600" color="#4caf50" gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, mb: 1.5 }}>
           Today's Food Log
         </Typography>
         
@@ -1240,11 +1466,30 @@ function DailyLogPage() {
             <React.Fragment key={log.id}>
               <ListItem sx={{ px: 0 }}>
                 <ListItemText
-                  primary={log.food_name}
-                  primaryTypographyProps={{
-                    fontWeight: 600,
-                    fontSize: { xs: '0.9rem', sm: '1rem' }
-                  }}
+                  primary={
+                    <Box>
+                      <Typography component="span" sx={{ fontWeight: 600, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
+                        {log.food_name}
+                      </Typography>
+                      {log.mealCategory && (
+                        <Typography 
+                          component="span" 
+                          sx={{ 
+                            ml: 1, 
+                            px: 1, 
+                            py: 0.25, 
+                            bgcolor: '#e3f2fd', 
+                            color: '#1976d2',
+                            borderRadius: 1,
+                            fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                            fontWeight: 500
+                          }}
+                        >
+                          {log.mealCategory}
+                        </Typography>
+                      )}
+                    </Box>
+                  }
                   secondary={
                     isMobile 
                       ? `${log.quantity} ${log.unit} | ${log.calories.toFixed(0)} cal | P:${log.protein.toFixed(1)}g | C:${log.carbs.toFixed(1)}g | F:${log.fat.toFixed(1)}g` 
@@ -1280,9 +1525,63 @@ function DailyLogPage() {
       </Box>
       </Box>
       <Footer />
+      
+      {/* Info Dialog for Mobile */}
+      <Dialog 
+        open={infoDialogOpen} 
+        onClose={handleInfoDialogClose}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            m: 2
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          bgcolor: '#4caf50', 
+          color: 'white',
+          fontWeight: 600
+        }}>
+          {infoDialogContent.title}
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          {Array.isArray(infoDialogContent.content) ? (
+            infoDialogContent.content.map((line, index) => (
+              <Typography 
+                key={index} 
+                variant="body2" 
+                sx={{ 
+                  mb: line === '' ? 1 : 0.5,
+                  color: line.includes('💡') ? '#4caf50' : 'text.primary',
+                  fontStyle: line.includes('💡') ? 'italic' : 'normal'
+                }}
+              >
+                {line}
+              </Typography>
+            ))
+          ) : (
+            <Typography variant="body2">{infoDialogContent.content}</Typography>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button 
+            onClick={handleInfoDialogClose} 
+            variant="contained"
+            sx={{
+              background: 'linear-gradient(135deg, #66bb6a 0%, #2e7d32 100%)',
+              textTransform: 'none'
+            }}
+          >
+            Got it
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
 
 // Use memo to prevent unnecessary re-renders
 export default React.memo(DailyLogPage);
+
