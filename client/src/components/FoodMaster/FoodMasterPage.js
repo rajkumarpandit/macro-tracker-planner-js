@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Typography, 
   Paper, 
@@ -21,22 +21,31 @@ import {
   MenuItem,
   Select,
   FormControl,
-  InputLabel
+  InputLabel,
+  Tabs,
+  Tab
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import CameraAltIcon from '@mui/icons-material/CameraAlt';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import { collection, addDoc, getDocs, doc, deleteDoc, updateDoc, query, where } from 'firebase/firestore';
 import { db } from '../../firebase/firebase';
 import { useAuth } from '../Auth/AuthContext';
 import { detectProteinSource } from '../../utils/geminiApi';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import Footer from '../Common/Footer';
 
 function FoodMasterPage() {
   const [foods, setFoods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState({ text: '', type: '' });
+  const [tabValue, setTabValue] = useState(0);
+  const [scanning, setScanning] = useState(false);
+  const [scanPreview, setScanPreview] = useState(null);
+  const fileInputRef = useRef(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { currentUser } = useAuth();
@@ -260,6 +269,108 @@ function FoodMasterPage() {
     setMessage({ text: '', type: '' });
   };
 
+  // Scan nutrition label with Gemini Vision API
+  const handleScanLabel = async (file) => {
+    if (!file) return;
+    
+    setScanning(true);
+    setMessage({ text: 'Processing nutrition label...', type: 'info' });
+    
+    try {
+      // Convert image to base64
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      
+      reader.onload = async () => {
+        const base64Image = reader.result.split(',')[1];
+        setScanPreview(reader.result);
+        
+        // Call Gemini Vision API
+        const genAI = new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+        
+        const prompt = `Extract nutrition information from this food nutrition label image.
+Return ONLY valid JSON with these exact fields (use numbers only, no units):
+{
+  "servingSize": "serving size with unit as text",
+  "calories": number,
+  "protein": number in grams,
+  "carbs": number in grams,
+  "fat": number in grams
+}
+If the label shows per 100g or per serving, extract those values. Do not include units in numeric fields.`;
+        
+        const result = await model.generateContent([
+          prompt,
+          {
+            inlineData: {
+              mimeType: file.type,
+              data: base64Image
+            }
+          }
+        ]);
+        
+        const response = await result.response;
+        const text = response.text();
+        
+        // Parse JSON response
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          throw new Error('Could not parse nutrition data from label');
+        }
+        
+        const nutritionData = JSON.parse(jsonMatch[0]);
+        
+        // Parse serving size to extract quantity and unit
+        const servingSizeMatch = nutritionData.servingSize.match(/([\d.]+)\s*([a-zA-Z]+)/);
+        const quantity = servingSizeMatch ? servingSizeMatch[1] : '1';
+        const unit = servingSizeMatch ? servingSizeMatch[2] : 'serving';
+        
+        // Pre-fill form with scanned data
+        setFormData({
+          food_name: '',
+          measuring_unit: unit,
+          measuring_quantity: quantity,
+          calories_in_gms: nutritionData.calories.toString(),
+          Protien_in_gms: nutritionData.protein.toString(),
+          carb_in_gms: nutritionData.carbs.toString(),
+          fat_in_gms: nutritionData.fat.toString(),
+          proteinSource: ''
+        });
+        
+        setMessage({ text: 'Label scanned successfully! Please add food name and review the data.', type: 'success' });
+        setTabValue(0); // Switch to Manual tab to show the pre-filled form
+      };
+      
+      reader.onerror = () => {
+        throw new Error('Failed to read image file');
+      };
+    } catch (error) {
+      console.error('Error scanning label:', error);
+      setMessage({ text: 'Failed to scan label. Please try again or enter manually.', type: 'error' });
+    } finally {
+      setScanning(false);
+      setScanPreview(null);
+    }
+  };
+  
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+      handleScanLabel(file);
+    } else {
+      setMessage({ text: 'Please select a valid image file', type: 'error' });
+    }
+  };
+  
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+    if (newValue === 0) {
+      // Reset scan preview when switching to Manual tab
+      setScanPreview(null);
+    }
+  };
+
   return (
     <Box sx={{ 
       minHeight: '100vh',
@@ -271,18 +382,39 @@ function FoodMasterPage() {
           display: 'flex', 
           alignItems: 'center', 
           gap: 1.5, 
-          mb: 2,
-          background: 'linear-gradient(135deg, #66bb6a 0%, #4caf50 100%)',
-          color: 'white',
-          p: { xs: 2, sm: 2.5 },
-          borderRadius: 2,
-          boxShadow: '0 4px 12px rgba(102, 187, 106, 0.25)'
+          mb: 2
         }}>
-          <MenuBookIcon sx={{ fontSize: { xs: 28, sm: 36 } }} />
-          <Typography variant="h6" component="h1" fontWeight="600" sx={{ fontSize: { xs: '1.1rem', sm: '1.5rem' } }}>
+          <MenuBookIcon sx={{ fontSize: { xs: 28, sm: 36 }, color: 'primary.main' }} />
+          <Typography variant="h6" component="h1" fontWeight="600" sx={{ fontSize: { xs: '1.1rem', sm: '1.5rem' }, color: 'text.primary' }}>
             My Food Database
           </Typography>
         </Box>
+
+      {/* Tabs */}
+      <Paper elevation={0} sx={{ borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+        <Tabs 
+          value={tabValue} 
+          onChange={handleTabChange}
+          variant="fullWidth"
+          sx={{
+            '& .MuiTab-root': {
+              textTransform: 'none',
+              fontWeight: 500,
+              fontSize: { xs: '0.85rem', sm: '0.95rem' },
+              py: 1.5
+            },
+            '& .Mui-selected': {
+              color: '#4caf50'
+            },
+            '& .MuiTabs-indicator': {
+              backgroundColor: '#4caf50'
+            }
+          }}
+        >
+          <Tab label="Manual Entry" />
+          <Tab label="Scan Food Label" icon={<CameraAltIcon />} iconPosition="start" />
+        </Tabs>
+      </Paper>
       
       <Snackbar 
         open={!!message.text} 
@@ -299,17 +431,17 @@ function FoodMasterPage() {
         </Alert>
       </Snackbar>
 
-      <Paper elevation={0} sx={{ 
-        p: { xs: 2, sm: 3 }, 
-        mb: 2,
-        borderRadius: 2,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
-      }}>
-        <Typography variant="body2" component="h2" gutterBottom fontWeight="600" color="#4caf50" sx={{ mb: 2, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
-          {editing ? 'Edit Food Item' : 'Add New Food Item'}
-        </Typography>
-        
-        <form onSubmit={handleSubmit}>
+      {/* Tab 0: Manual Entry */}
+      {tabValue === 0 && (
+        <Paper elevation={0} sx={{ 
+          p: { xs: 2, sm: 3 }, 
+          mb: 2,
+          borderRadius: '0 0 8px 8px',
+          borderTop: 'none',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+        }}>
+          
+          <form onSubmit={handleSubmit}>
           <Grid container spacing={1.5}>
             <Grid item xs={12} sm={6}>
               <TextField
@@ -599,6 +731,69 @@ function FoodMasterPage() {
           </Box>
         </form>
       </Paper>
+      )}
+
+      {/* Tab 1: Scan Food Label */}
+      {tabValue === 1 && (
+        <Paper elevation={0} sx={{ 
+          p: { xs: 2, sm: 3 }, 
+          mb: 2,
+          borderRadius: '0 0 8px 8px',
+          borderTop: 'none',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          textAlign: 'center'
+        }}>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleFileSelect}
+            style={{ display: 'none' }}
+          />
+          
+          <PhotoCameraIcon sx={{ fontSize: 80, color: '#4caf50', mb: 2 }} />
+          
+          <Typography variant="h6" gutterBottom fontWeight="600" color="#4caf50">
+            Scan Nutrition Facts Label
+          </Typography>
+          
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3, px: { xs: 1, sm: 4 } }}>
+            Take a photo of the nutrition facts label on your food package. We'll automatically extract the calories, protein, carbs, and fat information.
+          </Typography>
+          
+          {scanPreview && (
+            <Box sx={{ mb: 2 }}>
+              <img src={scanPreview} alt="Scanned label" style={{ maxWidth: '100%', maxHeight: '300px', borderRadius: '8px' }} />
+            </Box>
+          )}
+          
+          <Button
+            variant="contained"
+            size="large"
+            startIcon={scanning ? <CircularProgress size={20} color="inherit" /> : <CameraAltIcon />}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={scanning}
+            sx={{
+              borderRadius: 2,
+              px: 4,
+              py: 1.5,
+              textTransform: 'none',
+              fontSize: '1rem',
+              background: 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #2e7d32 0%, #4caf50 100%)'
+              }
+            }}
+          >
+            {scanning ? 'Processing...' : 'Scan Nutrition Label'}
+          </Button>
+          
+          <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 2 }}>
+            Tip: Ensure good lighting and the label is clearly visible
+          </Typography>
+        </Paper>
+      )}
 
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>

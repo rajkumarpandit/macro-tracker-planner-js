@@ -187,7 +187,15 @@ function DailyLogPage() {
         ...doc.data()
       }));
       
-      setDailyLogs(logList);
+      // Sort by meal category timing (Breakfast -> Lunch -> Dinner -> Snack -> Others)
+      const mealOrder = { 'Breakfast': 1, 'Lunch': 2, 'Dinner': 3, 'Snack': 4, 'Others': 5 };
+      const sortedLogList = logList.sort((a, b) => {
+        const orderA = mealOrder[a.mealCategory] || 6;
+        const orderB = mealOrder[b.mealCategory] || 6;
+        return orderA - orderB;
+      });
+      
+      setDailyLogs(sortedLogList);
     } catch (error) {
       console.error("Error fetching daily logs: ", error);
       setMessage({ text: 'Failed to load daily logs', type: 'error' });
@@ -619,15 +627,10 @@ function DailyLogPage() {
           display: 'flex', 
           alignItems: 'center', 
           gap: 1.5, 
-          mb: 2,
-          background: 'linear-gradient(135deg, #66bb6a 0%, #4caf50 100%)',
-          color: 'white',
-          p: { xs: 2, sm: 2.5 },
-          borderRadius: 2,
-          boxShadow: '0 4px 12px rgba(102, 187, 106, 0.25)'
+          mb: 2
         }}>
-          <RestaurantMenuIcon sx={{ fontSize: { xs: 28, sm: 36 } }} />
-          <Typography variant="h6" component="h1" fontWeight="600" sx={{ fontSize: { xs: '1.1rem', sm: '1.5rem' } }}>
+          <RestaurantMenuIcon sx={{ fontSize: { xs: 28, sm: 36 }, color: 'primary.main' }} />
+          <Typography variant="h6" component="h1" fontWeight="600" sx={{ fontSize: { xs: '1.1rem', sm: '1.5rem' }, color: 'text.primary' }}>
             Daily Food Log
           </Typography>
         </Box>
@@ -1506,22 +1509,34 @@ function DailyLogPage() {
               <ListItem sx={{ px: 0 }}>
                 <ListItemText
                   primary={
-                    <Box>
-                      <Typography component="span" sx={{ fontWeight: 600, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'nowrap', overflow: 'hidden' }}>
+                      <Typography 
+                        component="span" 
+                        sx={{ 
+                          fontWeight: 600, 
+                          fontSize: { xs: '0.9rem', sm: '1rem' },
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          flexShrink: 1,
+                          minWidth: 0
+                        }}
+                      >
                         {log.food_name}
                       </Typography>
                       {log.mealCategory && (
                         <Typography 
                           component="span" 
                           sx={{ 
-                            ml: 1, 
                             px: 1, 
                             py: 0.25, 
                             bgcolor: '#e3f2fd', 
                             color: '#1976d2',
                             borderRadius: 1,
                             fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                            fontWeight: 500
+                            fontWeight: 500,
+                            flexShrink: 0,
+                            whiteSpace: 'nowrap'
                           }}
                         >
                           {log.mealCategory}
@@ -1534,14 +1549,15 @@ function DailyLogPage() {
                             <Typography 
                               component="span" 
                               sx={{ 
-                                ml: 1, 
                                 px: 1, 
                                 py: 0.25, 
                                 bgcolor: getProteinSourceColor(proteinSource).bg, 
                                 color: getProteinSourceColor(proteinSource).text,
                                 borderRadius: 1,
                                 fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                                fontWeight: 500
+                                fontWeight: 500,
+                                flexShrink: 0,
+                                whiteSpace: 'nowrap'
                               }}
                             >
                               {proteinSource}

@@ -528,17 +528,13 @@ const WeightLogPage = () => {
       <Box sx={{ p: { xs: 2, sm: 3 } }}>
         {/* Header */}
         <Box sx={{ 
-          background: 'linear-gradient(135deg, #66bb6a 0%, #4caf50 100%)',
-          p: { xs: 2, sm: 2.5 },
-          mb: 2,
-          borderRadius: 2,
-          boxShadow: '0 4px 12px rgba(102, 187, 106, 0.25)',
           display: 'flex',
           alignItems: 'center',
-          gap: 1.5
+          gap: 1.5,
+          mb: 2
         }}>
-          <FitnessCenterIcon sx={{ fontSize: { xs: 28, sm: 36 }, color: 'white' }} />
-          <Typography variant="h5" component="h1" sx={{ color: 'white', fontWeight: 600, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
+          <FitnessCenterIcon sx={{ fontSize: { xs: 28, sm: 36 }, color: 'primary.main' }} />
+          <Typography variant="h5" component="h1" sx={{ color: 'text.primary', fontWeight: 600, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
             Body Parameter Log
           </Typography>
         </Box>

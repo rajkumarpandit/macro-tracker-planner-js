@@ -82,7 +82,15 @@ function Dashboard() {
           ...doc.data()
         }));
         
-        setDailyLogs(foodList);
+        // Sort by meal category timing (Breakfast -> Lunch -> Dinner -> Snack -> Others)
+        const mealOrder = { 'Breakfast': 1, 'Lunch': 2, 'Dinner': 3, 'Snack': 4, 'Others': 5 };
+        const sortedFoodList = foodList.sort((a, b) => {
+          const orderA = mealOrder[a.mealCategory] || 6;
+          const orderB = mealOrder[b.mealCategory] || 6;
+          return orderA - orderB;
+        });
+        
+        setDailyLogs(sortedFoodList);
 
         // Fetch calories burnt logs
         const burntQuery = query(
@@ -156,17 +164,13 @@ function Dashboard() {
       <Box sx={{ p: { xs: 2, sm: 3 } }}>
         {/* Header */}
         <Box sx={{ 
-          background: 'linear-gradient(135deg, #66bb6a 0%, #4caf50 100%)',
-          p: { xs: 2, sm: 2.5 },
-          mb: 2,
-          borderRadius: 2,
-          boxShadow: '0 4px 12px rgba(102, 187, 106, 0.25)',
           display: 'flex',
           alignItems: 'center',
-          gap: 1.5
+          gap: 1.5,
+          mb: 2
         }}>
-          <DashboardIcon sx={{ fontSize: { xs: 28, sm: 36 }, color: 'white' }} />
-          <Typography variant="h5" component="h1" sx={{ color: 'white', fontWeight: 600, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
+          <DashboardIcon sx={{ fontSize: { xs: 28, sm: 36 }, color: 'primary.main' }} />
+          <Typography variant="h5" component="h1" sx={{ color: 'text.primary', fontWeight: 600, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
             Today's Overview
           </Typography>
         </Box>
@@ -386,22 +390,34 @@ function Dashboard() {
                       <ListItem sx={{ px: 0 }}>
                         <ListItemText
                           primary={
-                            <Box>
-                              <Typography component="span" sx={{ fontWeight: 600, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'nowrap', overflow: 'hidden' }}>
+                              <Typography 
+                                component="span" 
+                                sx={{ 
+                                  fontWeight: 600, 
+                                  fontSize: { xs: '0.9rem', sm: '1rem' },
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                  flexShrink: 1,
+                                  minWidth: 0
+                                }}
+                              >
                                 {log.food_name}
                               </Typography>
                               {log.mealCategory && (
                                 <Typography 
                                   component="span" 
                                   sx={{ 
-                                    ml: 1, 
                                     px: 1, 
                                     py: 0.25, 
                                     bgcolor: getMealCategoryColor(log.mealCategory).bg, 
                                     color: getMealCategoryColor(log.mealCategory).text,
                                     borderRadius: 1,
                                     fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                                    fontWeight: 500
+                                    fontWeight: 500,
+                                    flexShrink: 0,
+                                    whiteSpace: 'nowrap'
                                   }}
                                 >
                                   {log.mealCategory}
@@ -414,14 +430,15 @@ function Dashboard() {
                                     <Typography 
                                       component="span" 
                                       sx={{ 
-                                        ml: 1, 
                                         px: 1, 
                                         py: 0.25, 
                                         bgcolor: getProteinSourceColor(proteinSource).bg, 
                                         color: getProteinSourceColor(proteinSource).text,
                                         borderRadius: 1,
                                         fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                                        fontWeight: 500
+                                        fontWeight: 500,
+                                        flexShrink: 0,
+                                        whiteSpace: 'nowrap'
                                       }}
                                     >
                                       {proteinSource}

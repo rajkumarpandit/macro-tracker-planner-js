@@ -405,15 +405,10 @@ function MacroTargetPage() {
           display: 'flex', 
           alignItems: 'center', 
           gap: 1.5, 
-          mb: 2,
-          background: 'linear-gradient(135deg, #66bb6a 0%, #4caf50 100%)',
-          color: 'white',
-          p: { xs: 2, sm: 2.5 },
-          borderRadius: 2,
-          boxShadow: '0 4px 12px rgba(102, 187, 106, 0.25)'
+          mb: 2
         }}>
-          <FitnessCenterIcon sx={{ fontSize: { xs: 28, sm: 36 } }} />
-          <Typography variant="h6" component="h1" fontWeight="600" sx={{ fontSize: { xs: '1.1rem', sm: '1.5rem' } }}>
+          <FitnessCenterIcon sx={{ fontSize: { xs: 28, sm: 36 }, color: 'primary.main' }} />
+          <Typography variant="h6" component="h1" fontWeight="600" sx={{ fontSize: { xs: '1.1rem', sm: '1.5rem' }, color: 'text.primary' }}>
             Daily Macro Target
           </Typography>
         </Box>

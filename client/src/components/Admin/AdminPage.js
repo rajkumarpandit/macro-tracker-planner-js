@@ -34,21 +34,18 @@ function AdminPage() {
 
   return (
     <Box>
-      {/* Green banner with Administration title */}
-      <Paper 
-        sx={{ 
-          mb: 2,
-          background: '#4caf50',
-          color: 'white',
-          p: 2,
-          borderRadius: 1
-        }}
-        elevation={3}
-      >
-        <Typography variant="h5" sx={{ fontWeight: 600 }}>
+      {/* Header */}
+      <Box sx={{ 
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1.5,
+        mb: 2
+      }}>
+        <SupervisorAccountIcon sx={{ fontSize: { xs: 28, sm: 36 }, color: 'primary.main' }} />
+        <Typography variant="h5" sx={{ color: 'text.primary', fontWeight: 600 }}>
           Administration
         </Typography>
-      </Paper>
+      </Box>
 
       {/* Tabs below the banner */}
       <Paper sx={{ mb: 2 }}>

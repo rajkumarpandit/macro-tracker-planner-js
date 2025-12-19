@@ -15,7 +15,14 @@ import {
   CircularProgress,
   Menu,
   MenuItem,
-  IconButton
+  IconButton,
+  Drawer,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemButton,
+  ListItemText,
+  Divider
 } from '@mui/material';
 import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
@@ -28,6 +35,7 @@ import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 import MonitorWeightIcon from '@mui/icons-material/MonitorWeight';
 import TrackChangesIcon from '@mui/icons-material/TrackChanges';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
+import MenuIcon from '@mui/icons-material/Menu';
 
 // Import authentication components
 import { AuthProvider, useAuth } from './components/Auth/AuthContext';
@@ -306,10 +314,85 @@ function NavigationBar() {
   );
 }
 
+// Sidebar Drawer component
+function SidebarDrawer({ open, onClose }) {
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const { isAdmin: userIsAdmin } = useIsAdmin(currentUser);
+  
+  const handleNavigation = (path) => {
+    navigate(path);
+    onClose();
+  };
+  
+  const menuItems = [
+    { text: 'Dashboard', icon: <HomeIcon />, path: '/dashboard' },
+    { text: 'Daily Food Log', icon: <RestaurantMenuIcon />, path: '/daily-log' },
+    { text: 'Calories Burnt', icon: <LocalFireDepartmentIcon />, path: '/calories-burnt' },
+    { text: 'Body Parameter Log', icon: <MonitorWeightIcon />, path: '/weight-log' },
+    { text: 'Reports', icon: <BarChartIcon />, path: '/reports' },
+    { text: 'Macro Targets', icon: <TrackChangesIcon />, path: '/macro-target' },
+    { text: 'Food Master', icon: <MenuBookIcon />, path: '/food-master' },
+  ];
+  
+  if (userIsAdmin) {
+    menuItems.push({ text: 'Admin', icon: <SupervisorAccountIcon />, path: '/admin' });
+  }
+  
+  return (
+    <Drawer
+      anchor="left"
+      open={open}
+      onClose={onClose}
+      sx={{
+        '& .MuiDrawer-paper': {
+          width: 280,
+          background: 'linear-gradient(135deg, #66bb6a 0%, #2e7d32 100%)',
+          color: 'white',
+        },
+      }}
+    >
+      <Box sx={{ p: 2, textAlign: 'center' }}>
+        <Typography variant="h6" fontWeight="600">
+          Macro Tracker
+        </Typography>
+      </Box>
+      <Divider sx={{ borderColor: 'rgba(255,255,255,0.2)' }} />
+      <List sx={{ pt: 2 }}>
+        {menuItems.map((item) => (
+          <ListItem key={item.text} disablePadding>
+            <ListItemButton 
+              onClick={() => handleNavigation(item.path)}
+              sx={{
+                '&:hover': {
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                },
+              }}
+            >
+              <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText primary={item.text} />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+    </Drawer>
+  );
+}
+
 // Conditional AppBar component
 function ConditionalAppBar() {
   const location = useLocation();
   const { currentUser } = useAuth();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  
+  const toggleDrawer = (open) => (event) => {
+    if (event && event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
+      return;
+    }
+    setDrawerOpen(open);
+  };
   
   // Hide AppBar on maintenance page (it has its own)
   if (location.pathname === '/maintenance') {
@@ -317,18 +400,32 @@ function ConditionalAppBar() {
   }
   
   return (
-    <AppBar position="static" color="primary">
-      <Toolbar>
-        <Typography variant="h6" component="div" sx={{ 
-          flexGrow: 1,
-          fontSize: { xs: '1rem', sm: '1.25rem' } // Responsive font size
-        }}>
-          Macro Tracker
-        </Typography>
-        
-        {currentUser && <UserMenu />}
-      </Toolbar>
-    </AppBar>
+    <>
+      <SidebarDrawer open={drawerOpen} onClose={toggleDrawer(false)} />
+      <AppBar position="static" color="primary">
+        <Toolbar>
+          {currentUser && (
+            <IconButton
+              color="inherit"
+              aria-label="open menu"
+              onClick={toggleDrawer(true)}
+              edge="start"
+              sx={{ mr: 2 }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
+          <Typography variant="h6" component="div" sx={{ 
+            flexGrow: 1,
+            fontSize: { xs: '1rem', sm: '1.25rem' } // Responsive font size
+          }}>
+            Macro Tracker
+          </Typography>
+          
+          {currentUser && <UserMenu />}
+        </Toolbar>
+      </AppBar>
+    </>
   );
 }
 
