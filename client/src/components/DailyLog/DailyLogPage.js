@@ -42,8 +42,8 @@ import { collection, addDoc, getDocs, query, where, deleteDoc, doc } from 'fireb
 import { db } from '../../firebase/firebase';
 import { format } from 'date-fns';
 import { useAuth } from '../Auth/AuthContext';
-import { parseFoodFromText, getMacrosFromGemini, areFoodsSimilar } from '../../utils/geminiApi';
-import { calculateProteinBreakdown, getProteinSourceChartData } from '../../utils/proteinSourceUtils';
+import { parseFoodFromText, getMacrosFromGemini, areFoodsSimilar, detectProteinSource } from '../../utils/geminiApi';
+import { calculateProteinBreakdown, getProteinSourceChartData, getProteinSourceWithFallback } from '../../utils/proteinSourceUtils';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import Footer from '../Common/Footer';
 import { SEARCH_CONFIG } from '../../config/constants';
@@ -81,6 +81,17 @@ function DailyLogPage() {
   
   // Meal category state
   const [mealCategory, setMealCategory] = useState('');
+
+  // Helper function to get protein source badge color
+  const getProteinSourceColor = (source) => {
+    const colors = {
+      'Vegetarian': { bg: '#e8f5e9', text: '#2e7d32' },
+      'Animal': { bg: '#ffebee', text: '#c62828' },
+      'Mixed': { bg: '#fff3e0', text: '#e65100' },
+      'Low-Protein': { bg: '#fce4ec', text: '#ad1457' }
+    };
+    return colors[source] || { bg: '#f5f5f5', text: '#616161' };
+  };
 
   // Handle info button click (for mobile and desktop)
   const handleInfoClick = (title, content) => {
@@ -264,9 +275,13 @@ function DailyLogPage() {
       calories: Number(food.calories_in_gms * ratio),
       protein: Number(food.Protien_in_gms * ratio),
       carbs: Number(food.carb_in_gms * ratio),
-      fat: Number(food.fat_in_gms * ratio),
-      proteinSource: food.proteinSource || undefined
+      fat: Number(food.fat_in_gms * ratio)
     };
+
+    // Add proteinSource only if it exists
+    if (food.proteinSource) {
+      macros.proteinSource = food.proteinSource;
+    }
     
     setCalculatedMacros(macros);
   };
@@ -308,6 +323,7 @@ function DailyLogPage() {
     try {
       let macrosPerUnit;
       let servingSize;
+      let proteinSource;
       let existingFood = null;
 
       // Check if user wants to search their database first
@@ -375,6 +391,7 @@ function DailyLogPage() {
           fats: Number(existingFood.fat_in_gms * ratio)
         };
         servingSize = `1 ${existingFood.measuring_unit}`;
+        proteinSource = existingFood.proteinSource; // Get from database
         setDataSource('database');
         setMessage({ text: `Found "${existingFood.food_name}" in your food database!`, type: 'success' });
       } else {
@@ -388,11 +405,25 @@ function DailyLogPage() {
           fats: result.fats
         };
         servingSize = result.servingSize;
+        proteinSource = result.proteinSource;
+        
+        // If proteinSource is not returned, use detectProteinSource as fallback
+        if (!proteinSource) {
+          console.log('Protein source not returned from macro API, detecting separately...');
+          try {
+            proteinSource = await detectProteinSource(parsedFood.foodName, currentUser?.uid);
+            console.log('Detected protein source:', proteinSource);
+          } catch (detectError) {
+            console.warn('Failed to detect protein source:', detectError);
+            // Continue without protein source if detection fails
+          }
+        }
+        
         setDataSource('gemini');
         setMessage({ text: 'Macro information fetched from Gemini AI!', type: 'success' });
       }
 
-      setFetchedMacros({ ...macrosPerUnit, servingSize });
+      setFetchedMacros({ ...macrosPerUnit, servingSize, proteinSource });
 
       // Calculate macros for user's quantity
       const calculated = {
@@ -464,12 +495,16 @@ function DailyLogPage() {
         userId: currentUser.uid,
         createdAt: new Date().toISOString(),
         mealCategory: mealCategory || 'Others', // Add meal category
-        proteinSource: fetchedMacros?.proteinSource || undefined, // Add protein source
         calories: Number(calculatedNlMacros.calories),
         protein: Number(calculatedNlMacros.protein),
         carbs: Number(calculatedNlMacros.carbs),
         fat: Number(calculatedNlMacros.fat)
       };
+
+      // Add proteinSource only if it exists
+      if (fetchedMacros?.proteinSource) {
+        logData.proteinSource = fetchedMacros.proteinSource;
+      }
 
       await addDoc(collection(db, 'daily_food_log'), logData);
       
@@ -483,10 +518,14 @@ function DailyLogPage() {
           Protien_in_gms: Number(fetchedMacros.protein),
           carb_in_gms: Number(fetchedMacros.carbs),
           fat_in_gms: Number(fetchedMacros.fats),
-          proteinSource: fetchedMacros?.proteinSource || undefined,
           userId: currentUser.uid,
           createdAt: new Date().toISOString()
         };
+
+        // Add proteinSource only if it exists
+        if (fetchedMacros?.proteinSource) {
+          foodData.proteinSource = fetchedMacros.proteinSource;
+        }
         
         await addDoc(collection(db, 'food_calorie_master'), foodData);
         setMessage({ text: 'Food added to log and food database!', type: 'success' });
@@ -636,8 +675,8 @@ function DailyLogPage() {
             }
           }}
         >
-          <Tab label="My List" />
-          <Tab label="New" />
+          <Tab label="My Food DB" />
+          <Tab label="NLP Based" />
         </Tabs>
 
         {/* Tab 1: Existing Food List */}
@@ -684,10 +723,10 @@ function DailyLogPage() {
                           How to Use:
                         </Typography>
                         <Typography variant="caption" display="block" sx={{ mb: 0.5 }}>
-                          • <strong>My List:</strong> Select from your personal food database that you maintain.
+                          • <strong>My Food DB:</strong> Select from your personal food database that you maintain.
                         </Typography>
                         <Typography variant="caption" display="block" sx={{ mb: 0.5 }}>
-                          • <strong>New:</strong> Use this tab if you don't have the food in your list. It fetches nutrition data from the internet.
+                          • <strong>NLP Based:</strong> Use this tab if you don't have the food in your list. It fetches nutrition data from the internet.
                         </Typography>
                         <Typography variant="caption" display="block" sx={{ fontStyle: 'italic', mt: 1 }}>
                           Tip: Manage your food database from the menu at the bottom.
@@ -718,8 +757,8 @@ function DailyLogPage() {
                       onClick={() => handleInfoClick(
                         'How to Use',
                         [
-                          '• My List: Select from your personal food database that you maintain.',
-                          '• New: Use this tab if you don\'t have the food in your list. It fetches nutrition data from the internet.',
+                          '• My Food DB: Select from your personal food database that you maintain.',
+                          '• NLP Based: Use this tab if you don\'t have the food in your list. It fetches nutrition data from the internet.',
                           '',
                           'Tip: Manage your food database from the menu at the bottom.'
                         ]
@@ -1488,6 +1527,29 @@ function DailyLogPage() {
                           {log.mealCategory}
                         </Typography>
                       )}
+                      {(() => {
+                        const proteinSource = getProteinSourceWithFallback(log);
+                        if (proteinSource && proteinSource !== 'Unclassified') {
+                          return (
+                            <Typography 
+                              component="span" 
+                              sx={{ 
+                                ml: 1, 
+                                px: 1, 
+                                py: 0.25, 
+                                bgcolor: getProteinSourceColor(proteinSource).bg, 
+                                color: getProteinSourceColor(proteinSource).text,
+                                borderRadius: 1,
+                                fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                                fontWeight: 500
+                              }}
+                            >
+                              {proteinSource}
+                            </Typography>
+                          );
+                        }
+                        return null;
+                      })()}
                     </Box>
                   }
                   secondary={

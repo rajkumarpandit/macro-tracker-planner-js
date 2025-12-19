@@ -140,8 +140,8 @@ Rules:
    - "Low-Protein": Foods with less than 5g protein per 100g (rice, fruits, vegetables, oils, etc.)
 6. Return ONLY the JSON object, no other text`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
+    const geminiResult = await model.generateContent(prompt);
+    const response = await geminiResult.response;
     let jsonText = response.text().trim();
     
     // Remove markdown code blocks if present
@@ -164,14 +164,20 @@ Rules:
       await incrementGeminiApiCount(userId);
     }
     
-    return {
+    const result = {
       calories: parsed.calories,
       protein: parsed.protein,
       carbs: parsed.carbs,
       fats: parsed.fats,
-      servingSize: parsed.servingSize,
-      proteinSource: parsed.proteinSource || undefined
+      servingSize: parsed.servingSize
     };
+
+    // Only add proteinSource if it exists
+    if (parsed.proteinSource) {
+      result.proteinSource = parsed.proteinSource;
+    }
+    
+    return result;
   } catch (error) {
     console.error('Error fetching macros from Gemini:', error);
     throw new Error(error.message || 'Failed to fetch macro information. Please try again.');

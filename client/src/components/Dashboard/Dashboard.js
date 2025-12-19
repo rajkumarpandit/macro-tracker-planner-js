@@ -20,7 +20,7 @@ import RestaurantIcon from '@mui/icons-material/Restaurant';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import { useAuth } from '../Auth/AuthContext';
 import { fetchUserMacroTargets } from '../../utils/macroTargetUtils';
-import { calculateProteinBreakdown, getProteinSourceChartData } from '../../utils/proteinSourceUtils';
+import { calculateProteinBreakdown, getProteinSourceChartData, getProteinSourceWithFallback } from '../../utils/proteinSourceUtils';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import { FIREBASE_COLLECTIONS } from '../../config/constants';
 import Footer from '../Common/Footer';
@@ -407,23 +407,29 @@ function Dashboard() {
                                   {log.mealCategory}
                                 </Typography>
                               )}
-                              {log.proteinSource && (
-                                <Typography 
-                                  component="span" 
-                                  sx={{ 
-                                    ml: 1, 
-                                    px: 1, 
-                                    py: 0.25, 
-                                    bgcolor: getProteinSourceColor(log.proteinSource).bg, 
-                                    color: getProteinSourceColor(log.proteinSource).text,
-                                    borderRadius: 1,
-                                    fontSize: { xs: '0.7rem', sm: '0.75rem' },
-                                    fontWeight: 500
-                                  }}
-                                >
-                                  {log.proteinSource}
-                                </Typography>
-                              )}
+                              {(() => {
+                                const proteinSource = getProteinSourceWithFallback(log);
+                                if (proteinSource && proteinSource !== 'Unclassified') {
+                                  return (
+                                    <Typography 
+                                      component="span" 
+                                      sx={{ 
+                                        ml: 1, 
+                                        px: 1, 
+                                        py: 0.25, 
+                                        bgcolor: getProteinSourceColor(proteinSource).bg, 
+                                        color: getProteinSourceColor(proteinSource).text,
+                                        borderRadius: 1,
+                                        fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                                        fontWeight: 500
+                                      }}
+                                    >
+                                      {proteinSource}
+                                    </Typography>
+                                  );
+                                }
+                                return null;
+                              })()}
                             </Box>
                           }
                           secondary={
