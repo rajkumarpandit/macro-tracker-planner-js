@@ -36,6 +36,7 @@ import { useAuth } from '../Auth/AuthContext';
 import { updatePassword } from 'firebase/auth';
 import { FIREBASE_COLLECTIONS } from '../../config/constants';
 import Footer from '../Common/Footer';
+import { appColors, cardSx, sectionTitleSx, primaryBtnSx, outlinedBtnSx } from '../../theme';
 
 // Linked Accounts Section Component
 function LinkedAccountsSection() {
@@ -109,12 +110,12 @@ function LinkedAccountsSection() {
             onClick={handleLinkGoogle}
             disabled={linking}
             sx={{
-              borderColor: '#4285f4',
-              color: '#4285f4',
-              textTransform: 'none',
+              ...outlinedBtnSx,
+              borderColor: appColors.blue,
+              color: appColors.blue,
               '&:hover': {
-                borderColor: '#357ae8',
-                backgroundColor: 'rgba(66, 133, 244, 0.04)'
+                borderColor: appColors.blueDark,
+                backgroundColor: appColors.blueLight
               }
             }}
           >
@@ -374,13 +375,13 @@ function MyProfilePage() {
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
-        <CircularProgress sx={{ color: '#4caf50' }} />
+        <CircularProgress sx={{ color: appColors.blue }} />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f7fa', pb: 2 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: appColors.bgPage, pb: 2 }}>
       <Box sx={{ p: { xs: 2, sm: 3 } }}>
         {/* Header */}
         <Box sx={{ 
@@ -423,7 +424,7 @@ function MyProfilePage() {
           {/* Sex - Optional */}
           <Grid item xs={12}>
             <FormControl component="fieldset">
-              <FormLabel component="legend" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, color: '#4caf50', fontWeight: 500 }}>Sex (Optional)</FormLabel>
+              <FormLabel component="legend" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, color: appColors.blue, fontWeight: 500 }}>Sex (Optional)</FormLabel>
               <RadioGroup
                 row
                 value={sex}
@@ -433,7 +434,7 @@ function MyProfilePage() {
                     fontSize: { xs: '0.85rem', sm: '0.95rem' }
                   },
                   '& .MuiRadio-root.Mui-checked': {
-                    color: '#4caf50'
+                    color: appColors.blue
                   }
                 }}
               >
@@ -458,8 +459,8 @@ function MyProfilePage() {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 1.5,
-                  '&:hover fieldset': { borderColor: '#4caf50' },
-                  '&.Mui-focused fieldset': { borderColor: '#4caf50' }
+                  '&:hover fieldset': { borderColor: appColors.blue },
+                  '&.Mui-focused fieldset': { borderColor: appColors.blue }
                 }
               }}
             />
@@ -496,8 +497,8 @@ function MyProfilePage() {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 1.5,
-                  '&:hover fieldset': { borderColor: '#4caf50' },
-                  '&.Mui-focused fieldset': { borderColor: '#4caf50' }
+                  '&:hover fieldset': { borderColor: appColors.blue },
+                  '&.Mui-focused fieldset': { borderColor: appColors.blue }
                 },
                 '& .MuiFormHelperText-root': {
                   fontSize: { xs: '0.65rem', sm: '0.75rem' }
@@ -519,8 +520,8 @@ function MyProfilePage() {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 1.5,
-                  '&:hover fieldset': { borderColor: '#4caf50' },
-                  '&.Mui-focused fieldset': { borderColor: '#4caf50' }
+                  '&:hover fieldset': { borderColor: appColors.blue },
+                  '&.Mui-focused fieldset': { borderColor: appColors.blue }
                 },
                 '& .MuiFormHelperText-root': {
                   fontSize: { xs: '0.65rem', sm: '0.75rem' }
@@ -560,8 +561,8 @@ function MyProfilePage() {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 1.5,
-                  '&:hover fieldset': { borderColor: '#4caf50' },
-                  '&.Mui-focused fieldset': { borderColor: '#4caf50' }
+                  '&:hover fieldset': { borderColor: appColors.blue },
+                  '&.Mui-focused fieldset': { borderColor: appColors.blue }
                 },
                 '& .MuiFormHelperText-root': {
                   fontSize: { xs: '0.65rem', sm: '0.75rem' }
@@ -589,7 +590,7 @@ function MyProfilePage() {
 
           {/* Login Methods Section */}
           <Grid item xs={12}>
-            <Typography variant="body2" fontWeight="600" color="#4caf50" sx={{ mt: 1.5, mb: 0.5, fontSize: { xs: '0.95rem', sm: '1.1rem' } }}>
+            <Typography variant="body2" fontWeight="600" sx={{ ...sectionTitleSx, mt: 1.5, mb: 0.5, fontSize: { xs: '0.95rem', sm: '1.1rem' } }}>
               Login Methods
             </Typography>
           </Grid>
@@ -600,7 +601,7 @@ function MyProfilePage() {
 
           {/* Change Password Section */}
           <Grid item xs={12}>
-            <Typography variant="body2" fontWeight="600" color="#4caf50" sx={{ mt: 1.5, mb: 0.5, fontSize: { xs: '0.95rem', sm: '1.1rem' } }}>
+            <Typography variant="body2" fontWeight="600" sx={{ ...sectionTitleSx, mt: 1.5, mb: 0.5, fontSize: { xs: '0.95rem', sm: '1.1rem' } }}>
               Change Password
             </Typography>
           </Grid>
@@ -630,8 +631,8 @@ function MyProfilePage() {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 1.5,
-                  '&:hover fieldset': { borderColor: '#4caf50' },
-                  '&.Mui-focused fieldset': { borderColor: '#4caf50' }
+                  '&:hover fieldset': { borderColor: appColors.blue },
+                  '&.Mui-focused fieldset': { borderColor: appColors.blue }
                 },
                 '& .MuiFormHelperText-root': {
                   fontSize: { xs: '0.65rem', sm: '0.75rem' }
@@ -670,8 +671,8 @@ function MyProfilePage() {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 1.5,
-                  '&:hover fieldset': { borderColor: '#4caf50' },
-                  '&.Mui-focused fieldset': { borderColor: '#4caf50' }
+                  '&:hover fieldset': { borderColor: appColors.blue },
+                  '&.Mui-focused fieldset': { borderColor: appColors.blue }
                 },
                 '& .MuiFormHelperText-root': {
                   fontSize: { xs: '0.65rem', sm: '0.75rem' }
@@ -688,14 +689,13 @@ function MyProfilePage() {
                 variant="outlined"
                 disabled={saving}
                 sx={{
-                  textTransform: 'none',
-                  borderRadius: 2,
+                  ...outlinedBtnSx,
                   px: 3,
                   fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                  borderColor: '#9e9e9e',
-                  color: '#616161',
+                  borderColor: appColors.borderDark,
+                  color: appColors.textSecondary,
                   '&:hover': {
-                    borderColor: '#757575',
+                    borderColor: appColors.textSecondary,
                     bgcolor: 'rgba(0,0,0,0.04)'
                   }
                 }}
@@ -707,17 +707,9 @@ function MyProfilePage() {
                 variant="contained"
                 disabled={saving || !name.trim()}
                 sx={{
-                  textTransform: 'none',
-                  borderRadius: 2,
+                  ...primaryBtnSx,
                   px: 3,
-                  fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                  background: 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #5568d3 0%, #633d8a 100%)',
-                  },
-                  '&:disabled': {
-                    background: '#e0e0e0'
-                  }
+                  fontSize: { xs: '0.85rem', sm: '0.95rem' }
                 }}
               >
                 {saving ? <CircularProgress size={20} sx={{ color: 'white' }} /> : 'Save'}
@@ -736,7 +728,7 @@ function MyProfilePage() {
                 p: 2, 
                 borderRadius: 2, 
                 border: '1px solid #ffcdd2',
-                bgcolor: '#ffebee'
+                bgcolor: appColors.errorLight
               }}
             >
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>

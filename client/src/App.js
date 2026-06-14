@@ -1,13 +1,14 @@
 import React, { useState, lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
 import { useIsAdmin } from './utils/adminUtils';
-import { 
-  CssBaseline, 
-  AppBar, 
-  Toolbar, 
-  Typography, 
-  Container, 
+import theme, { appColors } from './theme';
+import {
+  CssBaseline,
+  AppBar,
+  Toolbar,
+  Typography,
+  Container,
   Box,
   BottomNavigation,
   BottomNavigationAction,
@@ -35,15 +36,14 @@ import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 import MonitorWeightIcon from '@mui/icons-material/MonitorWeight';
 import TrackChangesIcon from '@mui/icons-material/TrackChanges';
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import MenuIcon from '@mui/icons-material/Menu';
 
-// Import authentication components
 import { AuthProvider, useAuth } from './components/Auth/AuthContext';
 import PrivateRoute from './components/Auth/PrivateRoute';
 import MaintenanceRoute from './components/Auth/MaintenanceRoute';
 import { cleanupLegacyData } from './firebase/cleanupUtils';
 
-// Lazy load components to improve initial load time
 const Dashboard = lazy(() => import('./components/Dashboard/Dashboard'));
 const FoodMasterPage = lazy(() => import('./components/FoodMaster/FoodMasterPage'));
 const DailyLogPage = lazy(() => import('./components/DailyLog/DailyLogPage'));
@@ -60,127 +60,51 @@ const TestFirestorePermissions = lazy(() => import('./components/TestFirestorePe
 const DataDebugger = lazy(() => import('./components/DataDebugger'));
 const MyProfilePage = lazy(() => import('./components/Profile/MyProfilePage'));
 const CaloriesBurntPage = lazy(() => import('./components/CaloriesBurnt/CaloriesBurntPage'));
+const ExercisePage = lazy(() => import('./components/Exercise/ExercisePage'));
 const MaintenancePage = lazy(() => import('./components/Maintenance/MaintenancePage'));
 
-// Create a theme optimized for faster rendering
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#4caf50',
-      light: '#81c784',
-      dark: '#388e3c',
-      // Custom gradient colors
-      gradient: {
-        start: '#66bb6a',
-        end: '#2e7d32'
-      }
-    },
-    secondary: {
-      main: '#ff9800',
-    },
-    background: {
-      default: '#f5f5f5',
-    },
-  },
-  typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-  },
-  // Optimize animations for mobile
-  transitions: {
-    create: () => 'none', // Disable transitions for better performance
-  },
-  components: {
-    // Reduce shadow depth for better rendering performance
-    MuiPaper: {
-      defaultProps: {
-        elevation: 1,
-      },
-    },
-    // Apply gradient to buttons
-    MuiButton: {
-      styleOverrides: {
-        containedPrimary: {
-          background: 'linear-gradient(135deg, #66bb6a 0%, #2e7d32 100%)',
-          '&:hover': {
-            background: 'linear-gradient(135deg, #81c784 0%, #388e3c 100%)',
-          },
-        },
-      },
-    },
-    // Apply gradient to AppBar
-    MuiAppBar: {
-      styleOverrides: {
-        colorPrimary: {
-          background: 'linear-gradient(135deg, #66bb6a 0%, #2e7d32 100%)',
-        },
-      },
-    },
-  },
-});
-
-// Loading component
 const LoadingFallback = () => (
   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '70vh' }}>
-    <CircularProgress />
+    <CircularProgress sx={{ color: appColors.blue }} />
   </Box>
 );
 
-// User menu component
 function UserMenu() {
   const { currentUser, userDetails, logout } = useAuth();
   const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
-  
-  // Get the display name with proper fallbacks
+
   const getUserName = () => {
     if (userDetails?.displayName) return userDetails.displayName;
     if (currentUser?.displayName) return currentUser.displayName;
     if (currentUser?.email) {
-      // Only fall back to email if no name is available
-      const emailName = currentUser.email.split('@')[0];
-      // Capitalize first letter
-      return emailName.charAt(0).toUpperCase() + emailName.slice(1);
+      const n = currentUser.email.split('@')[0];
+      return n.charAt(0).toUpperCase() + n.slice(1);
     }
-    return "User"; // Final fallback
-  };
-  
-  const handleMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-  
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
-  
-  const handleMyProfile = () => {
-    handleMenuClose();
-    navigate('/my-profile');
+    return 'User';
   };
 
+  const handleMenuOpen = (e) => setAnchorEl(e.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
+  const handleMyProfile = () => { handleMenuClose(); navigate('/my-profile'); };
   const handleLogout = async () => {
-    try {
-      await logout();
-      handleMenuClose();
-      navigate('/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
+    try { await logout(); handleMenuClose(); navigate('/login'); }
+    catch (err) { console.error('Logout error:', err); }
   };
-  
+
   return (
     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-      <Typography variant="body2" sx={{ mr: 1, display: { xs: 'none', sm: 'block' } }}>
-        Welcome, {getUserName()}
+      <Typography variant="body2" sx={{ mr: 1, display: { xs: 'none', sm: 'block' }, opacity: 0.85, fontSize: '0.85rem' }}>
+        {getUserName()}
       </Typography>
       <IconButton
         color="inherit"
         aria-label="user menu"
-        aria-controls="user-menu"
-        aria-haspopup="true"
         onClick={handleMenuOpen}
         size="small"
+        sx={{ bgcolor: 'rgba(255,255,255,0.12)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
       >
-        <AccountCircleIcon />
+        <AccountCircleIcon sx={{ fontSize: 22 }} />
       </IconButton>
       <Menu
         id="user-menu"
@@ -188,21 +112,24 @@ function UserMenu() {
         keepMounted
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
+        PaperProps={{
+          sx: {
+            mt: 1, minWidth: 180,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+            border: '1px solid #E2E8F0',
+            borderRadius: 2,
+          }
         }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <MenuItem onClick={handleMyProfile}>
-          <PersonIcon fontSize="small" sx={{ mr: 1 }} />
+        <MenuItem onClick={handleMyProfile} sx={{ gap: 1, fontSize: '0.9rem', py: 1.2 }}>
+          <PersonIcon fontSize="small" sx={{ color: '#2563EB' }} />
           My Profile
         </MenuItem>
-        <MenuItem onClick={handleLogout}>
-          <LogoutIcon fontSize="small" sx={{ mr: 1 }} />
+        <Divider sx={{ my: 0.5 }} />
+        <MenuItem onClick={handleLogout} sx={{ gap: 1, fontSize: '0.9rem', py: 1.2, color: '#DC2626' }}>
+          <LogoutIcon fontSize="small" />
           Logout
         </MenuItem>
       </Menu>
@@ -210,218 +137,124 @@ function UserMenu() {
   );
 }
 
-// Create a navigation component that syncs with routes
 function NavigationBar() {
   const location = useLocation();
   const [value, setValue] = useState(0);
   const { currentUser } = useAuth();
   const { isAdmin: userIsAdmin } = useIsAdmin(currentUser);
-  
-  // Update navigation value when location changes
+
   useEffect(() => {
-    if (location.pathname === '/dashboard') {
-      setValue(0);
-    } else if (location.pathname === '/daily-log') {
-      setValue(1);
-    } else if (location.pathname === '/calories-burnt') {
-      setValue(2);
-    } else if (location.pathname === '/weight-log') {
-      setValue(3);
-    } else if (location.pathname === '/reports') {
-      setValue(4);
-    } else if (location.pathname === '/macro-target') {
-      setValue(5);
-    } else if (location.pathname === '/food-master') {
-      setValue(6);
-    }
+    const paths = ['/dashboard', '/daily-log', '/calories-burnt', '/weight-log', '/reports', '/macro-target', '/food-master'];
+    const idx = paths.indexOf(location.pathname);
+    if (idx >= 0) setValue(idx);
   }, [location]);
-  
-  // Hide navigation on My Profile page and Maintenance page
-  if (location.pathname === '/my-profile' || location.pathname === '/maintenance') {
-    return null;
-  }
-  
+
+  if (location.pathname === '/my-profile' || location.pathname === '/maintenance') return null;
+
+  const navSx = { minWidth: userIsAdmin ? '12.5%' : '14.29%' };
+
   return (
-    <Paper 
-      sx={{ 
-        position: 'fixed', 
-        bottom: 0, 
-        left: 0, 
-        right: 0,
-        zIndex: 1100 
-      }} 
-      elevation={3}
-    >
-      <BottomNavigation
-        value={value}
-        onChange={(event, newValue) => {
-          setValue(newValue);
-        }}
-        showLabels={false}
-      >
-        <BottomNavigationAction 
-          icon={<HomeIcon />} 
-          component={Link} 
-          to="/dashboard"
-          sx={{ minWidth: userIsAdmin ? '12.5%' : '14.29%' }}
-        />
-        <BottomNavigationAction 
-          icon={<RestaurantMenuIcon />} 
-          component={Link} 
-          to="/daily-log"
-          sx={{ minWidth: userIsAdmin ? '12.5%' : '14.29%' }}
-        />
-        <BottomNavigationAction 
-          icon={<LocalFireDepartmentIcon />} 
-          component={Link} 
-          to="/calories-burnt"
-          sx={{ minWidth: userIsAdmin ? '12.5%' : '14.29%' }}
-        />
-        <BottomNavigationAction 
-          icon={<MonitorWeightIcon />} 
-          component={Link} 
-          to="/weight-log"
-          sx={{ minWidth: userIsAdmin ? '12.5%' : '14.29%' }}
-        />
-        <BottomNavigationAction 
-          icon={<BarChartIcon />} 
-          component={Link} 
-          to="/reports"
-          sx={{ minWidth: userIsAdmin ? '12.5%' : '14.29%' }}
-        />
-        <BottomNavigationAction 
-          icon={<TrackChangesIcon />} 
-          component={Link} 
-          to="/macro-target"
-          sx={{ minWidth: userIsAdmin ? '12.5%' : '14.29%' }}
-        />
-        <BottomNavigationAction 
-          icon={<MenuBookIcon />} 
-          component={Link} 
-          to="/food-master"
-          sx={{ minWidth: userIsAdmin ? '12.5%' : '14.29%' }}
-        />
+    <Paper sx={{
+      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1100,
+      borderRadius: 0, borderLeft: 'none', borderRight: 'none', borderBottom: 'none',
+      boxShadow: '0 -1px 0 rgba(0,0,0,0.06), 0 -4px 12px rgba(0,0,0,0.04)',
+    }}>
+      <BottomNavigation value={value} onChange={(_, v) => setValue(v)} showLabels={false}>
+        <BottomNavigationAction icon={<HomeIcon />} component={Link} to="/dashboard" sx={navSx} />
+        <BottomNavigationAction icon={<RestaurantMenuIcon />} component={Link} to="/daily-log" sx={navSx} />
+        <BottomNavigationAction icon={<LocalFireDepartmentIcon />} component={Link} to="/calories-burnt" sx={navSx} />
+        <BottomNavigationAction icon={<MonitorWeightIcon />} component={Link} to="/weight-log" sx={navSx} />
+        <BottomNavigationAction icon={<BarChartIcon />} component={Link} to="/reports" sx={navSx} />
         {userIsAdmin && (
-          <BottomNavigationAction 
-            icon={<SupervisorAccountIcon />} 
-            component={Link} 
-            to="/admin"
-            sx={{ minWidth: '12.5%' }}
-          />
+          <BottomNavigationAction icon={<SupervisorAccountIcon />} component={Link} to="/admin" sx={{ minWidth: '12.5%' }} />
         )}
       </BottomNavigation>
     </Paper>
   );
 }
 
-// Sidebar Drawer component
 function SidebarDrawer({ open, onClose }) {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const { isAdmin: userIsAdmin } = useIsAdmin(currentUser);
-  
-  const handleNavigation = (path) => {
-    navigate(path);
-    onClose();
-  };
-  
+
+  const handleNavigation = (path) => { navigate(path); onClose(); };
+
   const menuItems = [
-    { text: 'Dashboard', icon: <HomeIcon />, path: '/dashboard' },
-    { text: 'Daily Food Log', icon: <RestaurantMenuIcon />, path: '/daily-log' },
-    { text: 'Calories Burnt', icon: <LocalFireDepartmentIcon />, path: '/calories-burnt' },
-    { text: 'Body Parameter Log', icon: <MonitorWeightIcon />, path: '/weight-log' },
-    { text: 'Reports', icon: <BarChartIcon />, path: '/reports' },
-    { text: 'Macro Targets', icon: <TrackChangesIcon />, path: '/macro-target' },
-    { text: 'Food Master', icon: <MenuBookIcon />, path: '/food-master' },
+    { text: 'Dashboard',          icon: <HomeIcon />,                path: '/dashboard' },
+    { text: 'Daily Food Log',     icon: <RestaurantMenuIcon />,      path: '/daily-log' },
+    { text: 'Calories Burnt',     icon: <LocalFireDepartmentIcon />, path: '/calories-burnt' },
+    { text: 'Body Parameter Log', icon: <MonitorWeightIcon />,       path: '/weight-log' },
+    { text: 'Reports',            icon: <BarChartIcon />,            path: '/reports' },
+    { text: 'Exercise Module',    icon: <FitnessCenterIcon />,       path: '/exercise' },
+    { text: 'Macro Targets',      icon: <TrackChangesIcon />,        path: '/macro-target' },
+    { text: 'Food Master',        icon: <MenuBookIcon />,            path: '/food-master' },
   ];
-  
-  if (userIsAdmin) {
-    menuItems.push({ text: 'Admin', icon: <SupervisorAccountIcon />, path: '/admin' });
-  }
-  
+  if (userIsAdmin) menuItems.push({ text: 'Admin', icon: <SupervisorAccountIcon />, path: '/admin' });
+
   return (
-    <Drawer
-      anchor="left"
-      open={open}
-      onClose={onClose}
-      sx={{
-        '& .MuiDrawer-paper': {
-          width: 280,
-          background: 'linear-gradient(135deg, #66bb6a 0%, #2e7d32 100%)',
-          color: 'white',
-        },
-      }}
-    >
-      <Box sx={{ p: 2, textAlign: 'center' }}>
-        <Typography variant="h6" fontWeight="600">
+    <Drawer anchor="left" open={open} onClose={onClose}>
+      <Box sx={{ p: 2.5, background: 'linear-gradient(135deg, #1B3A6B 0%, #112649 100%)' }}>
+        <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700, fontSize: '1.1rem' }}>
           Macro Tracker
         </Typography>
+        <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.72rem' }}>
+          Nutrition & Fitness
+        </Typography>
       </Box>
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.2)' }} />
-      <List sx={{ pt: 2 }}>
-        {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding>
-            <ListItemButton 
-              onClick={() => handleNavigation(item.path)}
-              sx={{
-                '&:hover': {
-                  backgroundColor: 'rgba(255,255,255,0.1)',
-                },
-              }}
-            >
-              <ListItemIcon sx={{ color: 'white', minWidth: 40 }}>
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
+      <Box sx={{ background: 'linear-gradient(180deg, #1B3A6B 0%, #112649 100%)', flex: 1 }}>
+        <List sx={{ pt: 1 }}>
+          {menuItems.map((item) => (
+            <ListItem key={item.text} disablePadding>
+              <ListItemButton
+                onClick={() => handleNavigation(item.path)}
+                sx={{ py: 1.2, px: 2.5, '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' } }}
+              >
+                <ListItemIcon sx={{ color: 'rgba(255,255,255,0.7)', minWidth: 38 }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText
+                  primary={item.text}
+                  primaryTypographyProps={{
+                    sx: { color: 'rgba(255,255,255,0.9)', fontSize: '0.88rem', fontWeight: 500 }
+                  }}
+                />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+      </Box>
     </Drawer>
   );
 }
 
-// Conditional AppBar component
 function ConditionalAppBar() {
   const location = useLocation();
   const { currentUser } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  
+
   const toggleDrawer = (open) => (event) => {
-    if (event && event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
-      return;
-    }
+    if (event?.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) return;
     setDrawerOpen(open);
   };
-  
-  // Hide AppBar on maintenance page (it has its own)
-  if (location.pathname === '/maintenance') {
-    return null;
-  }
-  
+
+  if (location.pathname === '/maintenance') return null;
+
   return (
     <>
       <SidebarDrawer open={drawerOpen} onClose={toggleDrawer(false)} />
-      <AppBar position="static" color="primary">
-        <Toolbar>
+      <AppBar position="static" color="primary" elevation={0}>
+        <Toolbar sx={{ minHeight: { xs: 52, sm: 56 } }}>
           {currentUser && (
-            <IconButton
-              color="inherit"
-              aria-label="open menu"
-              onClick={toggleDrawer(true)}
-              edge="start"
-              sx={{ mr: 2 }}
-            >
+            <IconButton color="inherit" aria-label="open menu" onClick={toggleDrawer(true)} edge="start" sx={{ mr: 1.5 }} size="small">
               <MenuIcon />
             </IconButton>
           )}
-          <Typography variant="h6" component="div" sx={{ 
-            flexGrow: 1,
-            fontSize: { xs: '1rem', sm: '1.25rem' } // Responsive font size
+          <Typography variant="h6" component="div" sx={{
+            flexGrow: 1, fontSize: { xs: '1rem', sm: '1.1rem' }, fontWeight: 700, letterSpacing: '-0.01em'
           }}>
             Macro Tracker
           </Typography>
-          
           {currentUser && <UserMenu />}
         </Toolbar>
       </AppBar>
@@ -429,24 +262,16 @@ function ConditionalAppBar() {
   );
 }
 
-// AppContent component with routes
 function AppContent() {
   const { currentUser } = useAuth();
   const [dataCleanedUp, setDataCleanedUp] = useState(false);
-  
-  // Run data cleanup once on app initialization
+
   useEffect(() => {
     const runCleanup = async () => {
       try {
-        if (!dataCleanedUp) {
-          await cleanupLegacyData();
-          setDataCleanedUp(true);
-        }
-      } catch (error) {
-        console.error('Error during data cleanup:', error);
-      }
+        if (!dataCleanedUp) { await cleanupLegacyData(); setDataCleanedUp(true); }
+      } catch (error) { console.error('Error during data cleanup:', error); }
     };
-    
     runCleanup();
   }, [dataCleanedUp]);
 
@@ -457,21 +282,19 @@ function AppContent() {
   );
 }
 
-// AppRoutes component to handle route-specific layouts
 function AppRoutes({ currentUser }) {
   const location = useLocation();
   const isMaintenancePage = location.pathname === '/maintenance';
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: '#F1F5F9' }}>
       <ConditionalAppBar />
-      
-      <Container 
-        component="main" 
-        sx={{ 
-          flexGrow: 1, 
-          py: isMaintenancePage ? 0 : { xs: 2, sm: 3 }, 
-          px: isMaintenancePage ? 0 : { xs: 1, sm: 3 },
+      <Container
+        component="main"
+        sx={{
+          flexGrow: 1,
+          py: isMaintenancePage ? 0 : { xs: 2, sm: 3 },
+          px: isMaintenancePage ? 0 : { xs: 1, sm: 2 },
           mb: currentUser && !isMaintenancePage ? 7 : 0,
           maxWidth: isMaintenancePage ? false : undefined
         }}
@@ -479,107 +302,35 @@ function AppRoutes({ currentUser }) {
       >
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
-              {/* Public routes */}
-              <Route path="/login" element={currentUser ? <Navigate to="/dashboard" /> : <Login />} />
-              <Route path="/signup" element={currentUser ? <Navigate to="/dashboard" /> : <Signup />} />
-              <Route path="/forgot-password" element={currentUser ? <Navigate to="/dashboard" /> : <ForgotPassword />} />
-              <Route path="/" element={currentUser ? <Navigate to="/dashboard" /> : <LandingPage />} />
-              <Route path="/maintenance" element={<MaintenancePage />} />
-              
-              {/* Protected routes */}
-              <Route path="/dashboard" element={
-                <PrivateRoute>
-                  <MaintenanceRoute>
-                    <Dashboard />
-                  </MaintenanceRoute>
-                </PrivateRoute>
-              } />
-              <Route path="/food-master" element={
-                <PrivateRoute>
-                  <MaintenanceRoute>
-                    <FoodMasterPage />
-                  </MaintenanceRoute>
-                </PrivateRoute>
-              } />
-              <Route path="/daily-log" element={
-                <PrivateRoute>
-                  <MaintenanceRoute>
-                    <DailyLogPage />
-                  </MaintenanceRoute>
-                </PrivateRoute>
-              } />
-              <Route path="/calories-burnt" element={
-                <PrivateRoute>
-                  <MaintenanceRoute>
-                    <CaloriesBurntPage />
-                  </MaintenanceRoute>
-                </PrivateRoute>
-              } />
-              <Route path="/weight-log" element={
-                <PrivateRoute>
-                  <MaintenanceRoute>
-                    <WeightLogPage />
-                  </MaintenanceRoute>
-                </PrivateRoute>
-              } />
-              <Route path="/reports" element={
-                <PrivateRoute>
-                  <MaintenanceRoute>
-                    <ReportPage />
-                  </MaintenanceRoute>
-                </PrivateRoute>
-              } />
-              <Route path="/macro-target" element={
-                <PrivateRoute>
-                  <MaintenanceRoute>
-                    <MacroTargetPage />
-                  </MaintenanceRoute>
-                </PrivateRoute>
-              } />
-              <Route path="/my-profile" element={
-                <PrivateRoute>
-                  <MaintenanceRoute>
-                    <MyProfilePage />
-                  </MaintenanceRoute>
-                </PrivateRoute>
-              } />
-              <Route path="/admin" element={
-                <PrivateRoute requireAdmin={true}>
-                  <AdminPage />
-                </PrivateRoute>
-              } />
-              
-              <Route path="/admin/initialize" element={
-                <PrivateRoute>
-                  <InitializeAdminCollection />
-                </PrivateRoute>
-              } />
-              
-              <Route path="/admin/test-permissions" element={
-                <PrivateRoute>
-                  <TestFirestorePermissions />
-                </PrivateRoute>
-              } />
-              
-              <Route path="/debug-data" element={
-                <PrivateRoute>
-                  <DataDebugger />
-                </PrivateRoute>
-              } />
-              
-              {/* Redirect any other routes */}
-              <Route path="*" element={<Navigate to={currentUser ? "/dashboard" : "/"} />} />
-            </Routes>
-          </Suspense>
-        </Container>
-        
-        {currentUser && <NavigationBar />}
-      </Box>
+            <Route path="/login" element={currentUser ? <Navigate to="/dashboard" /> : <Login />} />
+            <Route path="/signup" element={currentUser ? <Navigate to="/dashboard" /> : <Signup />} />
+            <Route path="/forgot-password" element={currentUser ? <Navigate to="/dashboard" /> : <ForgotPassword />} />
+            <Route path="/" element={currentUser ? <Navigate to="/dashboard" /> : <LandingPage />} />
+            <Route path="/maintenance" element={<MaintenancePage />} />
+
+            <Route path="/dashboard" element={<PrivateRoute><MaintenanceRoute><Dashboard /></MaintenanceRoute></PrivateRoute>} />
+            <Route path="/food-master" element={<PrivateRoute><MaintenanceRoute><FoodMasterPage /></MaintenanceRoute></PrivateRoute>} />
+            <Route path="/daily-log" element={<PrivateRoute><MaintenanceRoute><DailyLogPage /></MaintenanceRoute></PrivateRoute>} />
+            <Route path="/calories-burnt" element={<PrivateRoute><MaintenanceRoute><CaloriesBurntPage /></MaintenanceRoute></PrivateRoute>} />
+            <Route path="/weight-log" element={<PrivateRoute><MaintenanceRoute><WeightLogPage /></MaintenanceRoute></PrivateRoute>} />
+            <Route path="/reports" element={<PrivateRoute><MaintenanceRoute><ReportPage /></MaintenanceRoute></PrivateRoute>} />
+            <Route path="/exercise" element={<PrivateRoute><MaintenanceRoute><ExercisePage /></MaintenanceRoute></PrivateRoute>} />
+            <Route path="/macro-target" element={<PrivateRoute><MaintenanceRoute><MacroTargetPage /></MaintenanceRoute></PrivateRoute>} />
+            <Route path="/my-profile" element={<PrivateRoute><MaintenanceRoute><MyProfilePage /></MaintenanceRoute></PrivateRoute>} />
+            <Route path="/admin" element={<PrivateRoute requireAdmin={true}><AdminPage /></PrivateRoute>} />
+            <Route path="/admin/initialize" element={<PrivateRoute><InitializeAdminCollection /></PrivateRoute>} />
+            <Route path="/admin/test-permissions" element={<PrivateRoute><TestFirestorePermissions /></PrivateRoute>} />
+            <Route path="/debug-data" element={<PrivateRoute><DataDebugger /></PrivateRoute>} />
+            <Route path="*" element={<Navigate to={currentUser ? '/dashboard' : '/'} />} />
+          </Routes>
+        </Suspense>
+      </Container>
+      {currentUser && <NavigationBar />}
+    </Box>
   );
 }
 
 function App() {
-  // Wrap the entire app with the AuthProvider
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />

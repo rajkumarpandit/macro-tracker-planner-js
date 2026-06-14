@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 import { APP_INFO } from '../../config/constants';
+import { appColors } from '../../theme';
 
 function Footer() {
   const currentYear = new Date().getFullYear();
@@ -12,14 +13,14 @@ function Footer() {
         mt: 'auto',
         py: 2,
         px: 2,
-        backgroundColor: '#f5f5f5',
-        borderTop: '1px solid #e0e0e0',
+        backgroundColor: appColors.bgCard,
+        borderTop: `1px solid ${appColors.border}`,
         textAlign: 'center',
-        width: '100%'
+        width: '100%',
       }}
     >
-      <Typography variant="body2" color="text.secondary">
-        © {currentYear} {APP_INFO.AUTHOR}. All rights reserved.
+      <Typography variant="caption" sx={{ color: appColors.textDisabled, fontSize: '0.75rem' }}>
+        © {currentYear} {APP_INFO.AUTHOR} • All rights reserved
       </Typography>
     </Box>
   );

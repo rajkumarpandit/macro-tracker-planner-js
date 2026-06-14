@@ -173,6 +173,28 @@ service cloud.firestore {
       allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
     }
     
+    // Exercise plans - users can only access their own workout plans
+    match /exercise_plans/{planId} {
+      allow read: if isSignedIn();
+      
+      // For write operations, ensure user can only write their own data
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.userId;
+      allow update: if isSignedIn() && request.auth.uid == resource.data.userId 
+                    && request.auth.uid == request.resource.data.userId;
+      allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
+    }
+    
+    // Workout sessions - users can only access their own workout session logs
+    match /workout_sessions/{sessionId} {
+      allow read: if isSignedIn();
+      
+      // For write operations, ensure user can only write their own data
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.userId;
+      allow update: if isSignedIn() && request.auth.uid == resource.data.userId 
+                    && request.auth.uid == request.resource.data.userId;
+      allow delete: if isSignedIn() && request.auth.uid == resource.data.userId;
+    }
+    
     // App settings - maintenance mode and other app-wide settings
     match /app_settings/{settingId} {
       // Allow anyone to read settings (needed for signup limit check before authentication)

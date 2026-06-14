@@ -31,6 +31,7 @@ import { useAuth } from '../Auth/AuthContext';
 import { db } from '../../firebase/firebase';
 import { format, subDays } from 'date-fns';
 import Footer from '../Common/Footer';
+import { appColors, cardSx, sectionTitleSx, primaryBtnSx, outlinedBtnSx } from '../../theme';
 
 const WeightLogPage = () => {
   const { currentUser } = useAuth();
@@ -524,7 +525,7 @@ const WeightLogPage = () => {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f7fa', pb: 2 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: appColors.bgPage, pb: 2 }}>
       <Box sx={{ p: { xs: 2, sm: 3 } }}>
         {/* Header */}
         <Box sx={{ 
@@ -553,11 +554,11 @@ const WeightLogPage = () => {
                 py: 2
               },
               '& .MuiTabs-indicator': {
-                backgroundColor: '#4caf50',
+                backgroundColor: appColors.blue,
                 height: 3
               },
               '& .Mui-selected': {
-                color: '#4caf50 !important',
+                color: `${appColors.blue} !important`,
                 fontWeight: 600
               }
             }}
@@ -585,8 +586,8 @@ const WeightLogPage = () => {
                     sx: {
                       borderRadius: 1.5,
                       '& .MuiOutlinedInput-root': {
-                        '&:hover fieldset': { borderColor: '#4caf50' },
-                        '&.Mui-focused fieldset': { borderColor: '#4caf50' }
+                        '&:hover fieldset': { borderColor: appColors.blue },
+                        '&.Mui-focused fieldset': { borderColor: appColors.blue }
                       }
                     }
                   } 
@@ -615,8 +616,8 @@ const WeightLogPage = () => {
                 sx={{
                   borderRadius: 1.5,
                   '& .MuiOutlinedInput-root': {
-                    '&:hover fieldset': { borderColor: '#4caf50' },
-                    '&.Mui-focused fieldset': { borderColor: '#4caf50' }
+                    '&:hover fieldset': { borderColor: appColors.blue },
+                    '&.Mui-focused fieldset': { borderColor: appColors.blue }
                   }
                 }}
               />
@@ -641,8 +642,8 @@ const WeightLogPage = () => {
                   sx={{
                     borderRadius: 1.5,
                     '& .MuiOutlinedInput-root': {
-                      '&:hover fieldset': { borderColor: '#4caf50' },
-                      '&.Mui-focused fieldset': { borderColor: '#4caf50' }
+                      '&:hover fieldset': { borderColor: appColors.blue },
+                      '&.Mui-focused fieldset': { borderColor: appColors.blue }
                     }
                   }}
                 />
@@ -656,8 +657,8 @@ const WeightLogPage = () => {
                     label="Unit"
                     sx={{
                       borderRadius: 1.5,
-                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#4caf50' },
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#4caf50' }
+                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: appColors.blue },
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: appColors.blue }
                     }}
                   >
                     <MenuItem value="cm">cm</MenuItem>
@@ -686,8 +687,8 @@ const WeightLogPage = () => {
                   sx={{
                     borderRadius: 1.5,
                     '& .MuiOutlinedInput-root': {
-                      '&:hover fieldset': { borderColor: '#4caf50' },
-                      '&.Mui-focused fieldset': { borderColor: '#4caf50' }
+                      '&:hover fieldset': { borderColor: appColors.blue },
+                      '&.Mui-focused fieldset': { borderColor: appColors.blue }
                     }
                   }}
                 />
@@ -701,8 +702,8 @@ const WeightLogPage = () => {
                     label="Unit"
                     sx={{
                       borderRadius: 1.5,
-                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#4caf50' },
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#4caf50' }
+                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: appColors.blue },
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: appColors.blue }
                     }}
                   >
                     <MenuItem value="cm">cm</MenuItem>
@@ -731,8 +732,8 @@ const WeightLogPage = () => {
                   sx={{
                     borderRadius: 1.5,
                     '& .MuiOutlinedInput-root': {
-                      '&:hover fieldset': { borderColor: '#4caf50' },
-                      '&.Mui-focused fieldset': { borderColor: '#4caf50' }
+                      '&:hover fieldset': { borderColor: appColors.blue },
+                      '&.Mui-focused fieldset': { borderColor: appColors.blue }
                     }
                   }}
                 />
@@ -746,8 +747,8 @@ const WeightLogPage = () => {
                     label="Unit"
                     sx={{
                       borderRadius: 1.5,
-                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#4caf50' },
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#4caf50' }
+                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: appColors.blue },
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: appColors.blue }
                     }}
                   >
                     <MenuItem value="cm">cm</MenuItem>
@@ -776,8 +777,8 @@ const WeightLogPage = () => {
                   sx={{
                     borderRadius: 1.5,
                     '& .MuiOutlinedInput-root': {
-                      '&:hover fieldset': { borderColor: '#4caf50' },
-                      '&.Mui-focused fieldset': { borderColor: '#4caf50' }
+                      '&:hover fieldset': { borderColor: appColors.blue },
+                      '&.Mui-focused fieldset': { borderColor: appColors.blue }
                     }
                   }}
                 />
@@ -791,8 +792,8 @@ const WeightLogPage = () => {
                     label="Unit"
                     sx={{
                       borderRadius: 1.5,
-                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#4caf50' },
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#4caf50' }
+                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: appColors.blue },
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: appColors.blue }
                     }}
                   >
                     <MenuItem value="cm">cm</MenuItem>
@@ -814,16 +815,7 @@ const WeightLogPage = () => {
                 variant="outlined"
                 onClick={handleCancel}
                 sx={{
-                  textTransform: 'none',
-                  borderRadius: 2,
-                  px: 3,
-                  fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                  borderColor: '#9e9e9e',
-                  color: '#616161',
-                  '&:hover': {
-                    borderColor: '#757575',
-                    bgcolor: 'rgba(0,0,0,0.04)'
-                  }
+                  ...outlinedBtnSx
                 }}
               >
                 Cancel
@@ -833,14 +825,7 @@ const WeightLogPage = () => {
                 onClick={handleSave}
                 disabled={isLoading}
                 sx={{
-                  textTransform: 'none',
-                  borderRadius: 2,
-                  px: 3,
-                  fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                  background: 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #5568d3 0%, #633d8a 100%)',
-                  }
+                  ...primaryBtnSx
                 }}
               >
                 Save
@@ -852,7 +837,7 @@ const WeightLogPage = () => {
 
       {savedMetrics.length > 0 && (
         <Box sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'white', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', mb: 2 }}>
-          <Typography variant="body2" fontWeight="600" color="#4caf50" gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, mb: 1.5 }}>
+          <Typography variant="body2" fontWeight="600" color={appColors.blue} gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, mb: 1.5 }}>
             {getMetricLabel()} History - Last 7 Days
           </Typography>
           <List sx={{ p: 0 }}>
@@ -866,7 +851,7 @@ const WeightLogPage = () => {
                         size="small"
                         aria-label="edit"
                         onClick={() => handleEdit(entry)}
-                        sx={{ color: '#4caf50' }}
+                        sx={{ color: appColors.blue }}
                       >
                         <EditIcon fontSize="small" />
                       </IconButton>
@@ -884,7 +869,7 @@ const WeightLogPage = () => {
                   <ListItemText
                     primary={
                       <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
-                        <Typography variant="h6" component="span" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' }, fontWeight: 600, color: '#4caf50' }}>
+                        <Typography variant="h6" component="span" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' }, fontWeight: 600, color: appColors.blue }}>
                           {entry.value.toFixed(2)} {entry.unit || 'kg'}
                         </Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>

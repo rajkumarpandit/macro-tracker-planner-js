@@ -283,3 +283,37 @@ Return only the classification word, nothing else.`;
     throw new Error(error.message || 'Failed to detect protein source. Please try again.');
   }
 }
+
+/**
+ * Generic Gemini API call for any prompt
+ * @param {string} prompt - The prompt to send to Gemini
+ * @param {string} userId - User ID for tracking API usage (optional)
+ * @returns {Promise<string>} - The response text from Gemini
+ */
+export async function getGeminiResponse(prompt, userId = null) {
+  try {
+    // Check API limit before making the call
+    if (userId) {
+      const limitCheck = await checkGeminiApiLimit(userId);
+      if (!limitCheck.allowed) {
+        throw new Error(limitCheck.message);
+      }
+    }
+
+    const model = genAI.getGenerativeModel({ model: GEMINI_CONFIG.MODEL_NAME });
+    
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text().trim();
+    
+    // Increment API usage count (successful call)
+    if (userId) {
+      await incrementGeminiApiCount(userId);
+    }
+    
+    return text;
+  } catch (error) {
+    console.error('Error getting Gemini response:', error);
+    throw new Error(error.message || 'Failed to get response from Gemini. Please try again.');
+  }
+}

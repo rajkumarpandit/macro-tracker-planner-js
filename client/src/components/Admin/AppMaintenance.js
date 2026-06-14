@@ -14,6 +14,7 @@ import {
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../firebase/firebase';
 import Footer from '../Common/Footer';
+import { appColors, cardSx, sectionTitleSx, primaryBtnSx, outlinedBtnSx } from '../../theme';
 
 function AppMaintenance() {
   const [loading, setLoading] = useState(true);
@@ -134,14 +135,14 @@ function AppMaintenance() {
 
   if (loading) {
     return (
-      <Box sx={{ minHeight: '100vh', bgcolor: '#f5f7fa', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <CircularProgress sx={{ color: '#4caf50' }} />
+      <Box sx={{ minHeight: '100vh', bgcolor: appColors.bgPage, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <CircularProgress sx={{ color: appColors.blue }} />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f7fa', pb: 2 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: appColors.bgPage, pb: 2 }}>
       <Box sx={{ p: { xs: 2, sm: 3 } }}>
         {maintenanceEnabled && (
           <Alert severity="warning" sx={{ mb: 2, borderRadius: 2 }}>
@@ -236,8 +237,8 @@ function AppMaintenance() {
               mb: 3,
               '& .MuiOutlinedInput-root': {
                 borderRadius: 2,
-                '&:hover fieldset': { borderColor: '#4caf50' },
-                '&.Mui-focused fieldset': { borderColor: '#4caf50' }
+                '&:hover fieldset': { borderColor: appColors.blue },
+                '&.Mui-focused fieldset': { borderColor: appColors.blue }
               }
             }}
             helperText="Default: 40"
@@ -260,8 +261,8 @@ function AppMaintenance() {
               mb: 3,
               '& .MuiOutlinedInput-root': {
                 borderRadius: 2,
-                '&:hover fieldset': { borderColor: '#4caf50' },
-                '&.Mui-focused fieldset': { borderColor: '#4caf50' }
+                '&:hover fieldset': { borderColor: appColors.blue },
+                '&.Mui-focused fieldset': { borderColor: appColors.blue }
               }
             }}
             helperText="Default: 100"
@@ -275,17 +276,11 @@ function AppMaintenance() {
             disabled={saving}
             fullWidth
             sx={{
+              ...primaryBtnSx,
               py: 1.5,
-              borderRadius: 2,
-              textTransform: 'none',
               fontSize: '1rem',
-              fontWeight: 600,
-              background: 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%)',
-              },
               '&:disabled': {
-                background: '#e0e0e0'
+                background: appColors.border
               }
             }}
           >

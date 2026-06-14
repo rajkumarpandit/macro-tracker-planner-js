@@ -31,6 +31,7 @@ import { getAuth } from 'firebase/auth';
 import { db } from '../../firebase/firebase';
 import { collection, getDocs, doc, getDoc, updateDoc, deleteDoc, query, where, writeBatch } from 'firebase/firestore';
 import Footer from '../Common/Footer';
+import { appColors, cardSx, sectionTitleSx, primaryBtnSx, outlinedBtnSx } from '../../theme';
 
 const AdminManagement = () => {
   const [users, setUsers] = useState([]);
@@ -361,7 +362,7 @@ const AdminManagement = () => {
 
   if (!userIsAdmin) {
     return (
-      <Box sx={{ minHeight: '100vh', bgcolor: '#f5f7fa', p: { xs: 2, sm: 3 } }}>
+      <Box sx={{ minHeight: '100vh', bgcolor: appColors.bgPage, p: { xs: 2, sm: 3 } }}>
         <Alert severity="error" sx={{ borderRadius: 2 }}>
           You don't have permission to access this page.
         </Alert>
@@ -370,7 +371,7 @@ const AdminManagement = () => {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f7fa', pb: 2 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: appColors.bgPage, pb: 2 }}>
       <Box sx={{ p: { xs: 2, sm: 3 } }}>
         {/* Search Bar */}
         <Paper elevation={0} sx={{ p: 2, mb: 2, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
@@ -382,7 +383,7 @@ const AdminManagement = () => {
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon sx={{ color: '#4caf50' }} />
+                  <SearchIcon sx={{ color: appColors.blue }} />
                 </InputAdornment>
               ),
               endAdornment: searchTerm && (
@@ -396,8 +397,8 @@ const AdminManagement = () => {
             sx={{
               '& .MuiOutlinedInput-root': {
                 borderRadius: 2,
-                '&:hover fieldset': { borderColor: '#4caf50' },
-                '&.Mui-focused fieldset': { borderColor: '#4caf50' }
+                '&:hover fieldset': { borderColor: appColors.blue },
+                '&.Mui-focused fieldset': { borderColor: appColors.blue }
               }
             }}
           />
@@ -405,7 +406,7 @@ const AdminManagement = () => {
       
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-          <CircularProgress sx={{ color: '#4caf50' }} />
+          <CircularProgress sx={{ color: appColors.blue }} />
         </Box>
       ) : error ? (
         <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>{error}</Alert>
@@ -435,7 +436,7 @@ const AdminManagement = () => {
                       p: { xs: 1.5, sm: 2 },
                       borderRadius: 2,
                       border: '1px solid',
-                      borderColor: currentDelete ? '#d32f2f' : (hasChanges ? '#4caf50' : '#e0e0e0'),
+                      borderColor: currentDelete ? appColors.error : (hasChanges ? appColors.blue : appColors.border),
                       backgroundColor: currentDelete ? '#ffebee' : (currentIsEnabled ? 'white' : 'rgba(0, 0, 0, 0.04)'),
                       opacity: currentIsEnabled ? 1 : 0.7,
                       transition: 'all 0.3s ease',
@@ -449,7 +450,7 @@ const AdminManagement = () => {
                       <Typography variant="subtitle2" fontWeight="600" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                         {user.displayName}
                         {user.email === currentUser.email && (
-                          <Chip label="You" size="small" sx={{ ml: 1, bgcolor: '#4caf50', color: 'white', fontSize: '0.7rem' }} />
+                          <Chip label="You" size="small" sx={{ ml: 1, bgcolor: appColors.blue, color: 'white', fontSize: '0.7rem' }} />
                         )}
                       </Typography>
                       <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>
@@ -467,8 +468,8 @@ const AdminManagement = () => {
                             disabled={user.email === currentUser.email || currentDelete}
                             size="small"
                             sx={{
-                              color: '#4caf50',
-                              '&.Mui-checked': { color: '#4caf50' }
+                              color: appColors.blue,
+                              '&.Mui-checked': { color: appColors.blue }
                             }}
                           />
                         }
@@ -488,8 +489,8 @@ const AdminManagement = () => {
                             disabled={user.email === currentUser.email || currentDelete}
                             size="small"
                             sx={{
-                              color: '#4caf50',
-                              '&.Mui-checked': { color: '#4caf50' }
+                              color: appColors.blue,
+                              '&.Mui-checked': { color: appColors.blue }
                             }}
                           />
                         }
@@ -509,15 +510,15 @@ const AdminManagement = () => {
                             disabled={user.email === currentUser.email}
                             size="small"
                             sx={{
-                              color: '#d32f2f',
-                              '&.Mui-checked': { color: '#d32f2f' }
+                              color: appColors.error,
+                              '&.Mui-checked': { color: appColors.error }
                             }}
                           />
                         }
                         label={
                           <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <DeleteForeverIcon fontSize="small" sx={{ mr: 0.5, fontSize: { xs: '1rem', sm: '1.25rem' } }} />
-                            <Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' }, color: '#d32f2f' }}>
+                            <Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' }, color: appColors.error }}>
                               Delete User
                             </Typography>
                           </Box>
@@ -533,21 +534,19 @@ const AdminManagement = () => {
                       disabled={!hasChanges || user.email === currentUser.email}
                       fullWidth
                       sx={{
-                        textTransform: 'none',
-                        borderRadius: 1.5,
+                        ...primaryBtnSx,
                         py: 1,
                         fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                        fontWeight: 600,
                         background: currentDelete 
-                          ? 'linear-gradient(135deg, #d32f2f 0%, #c62828 100%)'
-                          : (hasChanges ? 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)' : undefined),
+                          ? `linear-gradient(135deg, ${appColors.error} 0%, #c62828 100%)`
+                          : (hasChanges ? undefined : appColors.border),
                         '&:hover': {
                           background: currentDelete
                             ? 'linear-gradient(135deg, #c62828 0%, #b71c1c 100%)'
-                            : (hasChanges ? 'linear-gradient(135deg, #5568d3 0%, #633d8a 100%)' : undefined),
+                            : undefined,
                         },
                         '&:disabled': {
-                          background: '#e0e0e0',
+                          background: appColors.border,
                           color: '#9e9e9e'
                         }
                       }}
@@ -568,7 +567,7 @@ const AdminManagement = () => {
               rowsPerPage={rowsPerPage}
               onRowsPerPageChange={handleChangeRowsPerPage}
               rowsPerPageOptions={[5, 10, 25, 50, 100]}
-              sx={{ mt: 2, borderTop: '1px solid #e0e0e0' }}
+              sx={{ mt: 2, borderTop: `1px solid ${appColors.border}` }}
             />
             </>
           )}
@@ -577,7 +576,7 @@ const AdminManagement = () => {
       )}
       
       <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, mb: 2, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-        <Typography variant="body2" fontWeight="600" color="#4caf50" gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' }, mb: 1.5 }}>
+        <Typography variant="body2" fontWeight="600" color={appColors.blue} gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' }, mb: 1.5 }}>
           User Management Help
         </Typography>
         <Typography variant="body2" paragraph sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' }, mb: 1 }}>
@@ -595,7 +594,7 @@ const AdminManagement = () => {
       </Paper>
       
       {error && error.includes("permission") && (
-        <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: '#ffebee', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+        <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: appColors.errorLight, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
           <Typography variant="body2" fontWeight="600" color="error" gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' } }}>
             Permission Error
           </Typography>
@@ -612,7 +611,7 @@ const AdminManagement = () => {
           </Box>
           
           <Typography variant="caption" sx={{ mt: 1.5, fontStyle: 'italic', display: 'block', fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>
-            You can visit <RouterLink to="/admin/initialize" style={{ color: '#4caf50' }}>Initialize Admin Collection</RouterLink> for more information.
+            You can visit <RouterLink to="/admin/initialize" style={{ color: appColors.blue }}>Initialize Admin Collection</RouterLink> for more information.
           </Typography>
         </Paper>
       )}
@@ -625,7 +624,7 @@ const AdminManagement = () => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle sx={{ color: '#d32f2f', fontWeight: 600 }}>
+        <DialogTitle sx={{ color: appColors.error, fontWeight: 600 }}>
           Delete User Permanently?
         </DialogTitle>
         <DialogContent>
@@ -640,7 +639,7 @@ const AdminManagement = () => {
             <li>Profile information</li>
             {userToDelete?.isAdmin && <li>Admin privileges</li>}
           </Box>
-          <DialogContentText sx={{ mb: 2, fontWeight: 600, color: '#d32f2f' }}>
+          <DialogContentText sx={{ mb: 2, fontWeight: 600, color: appColors.error }}>
             This action cannot be undone!
           </DialogContentText>
           <TextField

@@ -7,6 +7,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase/firebase';
 import { useAuth } from '../Auth/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { appColors } from '../../theme';
 
 function MaintenancePage() {
   const [maintenanceData, setMaintenanceData] = useState(null);
@@ -80,7 +81,7 @@ function MaintenancePage() {
       </AppBar>
       <Box sx={{ flexGrow: 1, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', px: { xs: 2, sm: 3 }, py: { xs: 3, sm: 4 } }}>
         <Container maxWidth="sm">
-          <Paper elevation={8} sx={{ p: { xs: 3, sm: 4, md: 6 }, borderRadius: 3, textAlign: 'center', background: 'linear-gradient(to bottom, #ffffff, #f5f7fa)' }}>
+          <Paper elevation={8} sx={{ p: { xs: 3, sm: 4, md: 6 }, borderRadius: 3, textAlign: 'center', background: `linear-gradient(to bottom, ${appColors.bgCard}, ${appColors.bgPage})` }}>
             <BuildIcon sx={{ fontSize: { xs: 60, sm: 80 }, color: '#667eea', mb: { xs: 2, sm: 3 }, animation: 'spin 3s linear infinite', '@keyframes spin': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } } }} />
             <Typography variant="h4" component="h1" fontWeight="bold" gutterBottom sx={{ mb: 2, fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>Under Maintenance</Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 3, fontSize: { xs: '1rem', sm: '1.1rem' }, lineHeight: 1.6 }}>{message}</Typography>

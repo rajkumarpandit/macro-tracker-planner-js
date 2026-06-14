@@ -30,6 +30,7 @@ import { db } from '../../firebase/firebase';
 import { format } from 'date-fns';
 import { FIREBASE_COLLECTIONS } from '../../config/constants';
 import Footer from '../Common/Footer';
+import { appColors, cardSx, primaryBtnSx, outlinedBtnSx } from '../../theme';
 
 const ACTIVITY_TYPES = [
   { value: 'walking', label: 'Walking (Step Count)', unit: 'steps' },
@@ -222,7 +223,7 @@ function CaloriesBurntPage() {
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f7fa', pb: 2 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: appColors.bgPage, pb: 2 }}>
       <Box sx={{ p: { xs: 2, sm: 3 } }}>
         {/* Header */}
         <Box sx={{ 
@@ -231,14 +232,14 @@ function CaloriesBurntPage() {
           gap: 1.5,
           mb: 2
         }}>
-          <LocalFireDepartmentIcon sx={{ fontSize: { xs: 28, sm: 36 }, color: 'primary.main' }} />
-          <Typography variant="h5" component="h1" sx={{ color: 'text.primary', fontWeight: 600, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
+          <LocalFireDepartmentIcon sx={{ fontSize: { xs: 28, sm: 36 }, color: appColors.error }} />
+          <Typography variant="h5" component="h1" sx={{ color: appColors.textPrimary, fontWeight: 600, fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
             Calories Burnt Log
           </Typography>
         </Box>
 
         {/* Input Form */}
-        <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, mb: 2, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+        <Paper elevation={0} sx={{ ...cardSx }}>
           <Grid container spacing={1.5}>
             <Grid item xs={12} sm={6}>
               <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -253,8 +254,8 @@ function CaloriesBurntPage() {
                       sx: {
                         borderRadius: 1.5,
                         '& .MuiOutlinedInput-root': {
-                          '&:hover fieldset': { borderColor: '#4caf50' },
-                          '&.Mui-focused fieldset': { borderColor: '#4caf50' }
+                          '&:hover fieldset': { borderColor: appColors.blue },
+                          '&.Mui-focused fieldset': { borderColor: appColors.blue }
                         }
                       }
                     } 
@@ -272,8 +273,8 @@ function CaloriesBurntPage() {
                   onChange={(e) => setActivityType(e.target.value)}
                   sx={{
                     borderRadius: 1.5,
-                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#4caf50' },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#4caf50' }
+                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: appColors.blue },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: appColors.blue }
                   }}
                 >
                   {ACTIVITY_TYPES.map(activity => (
@@ -297,8 +298,8 @@ function CaloriesBurntPage() {
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1.5,
-                    '&:hover fieldset': { borderColor: '#4caf50' },
-                    '&.Mui-focused fieldset': { borderColor: '#4caf50' }
+                    '&:hover fieldset': { borderColor: appColors.blue },
+                    '&.Mui-focused fieldset': { borderColor: appColors.blue }
                   }
                 }}
               />
@@ -316,8 +317,8 @@ function CaloriesBurntPage() {
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1.5,
-                    '&:hover fieldset': { borderColor: '#4caf50' },
-                    '&.Mui-focused fieldset': { borderColor: '#4caf50' }
+                    '&:hover fieldset': { borderColor: appColors.blue },
+                    '&.Mui-focused fieldset': { borderColor: appColors.blue }
                   }
                 }}
               />
@@ -333,8 +334,8 @@ function CaloriesBurntPage() {
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1.5,
-                    '&:hover fieldset': { borderColor: '#4caf50' },
-                    '&.Mui-focused fieldset': { borderColor: '#4caf50' }
+                    '&:hover fieldset': { borderColor: appColors.blue },
+                    '&.Mui-focused fieldset': { borderColor: appColors.blue }
                   }
                 }}
               />
@@ -347,16 +348,9 @@ function CaloriesBurntPage() {
                     variant="outlined"
                     onClick={handleCancel}
                     sx={{
-                      textTransform: 'none',
-                      borderRadius: 2,
+                      ...outlinedBtnSx,
                       px: 3,
                       fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                      borderColor: '#9e9e9e',
-                      color: '#616161',
-                      '&:hover': {
-                        borderColor: '#757575',
-                        bgcolor: 'rgba(0,0,0,0.04)'
-                      }
                     }}
                   >
                     Cancel
@@ -367,14 +361,9 @@ function CaloriesBurntPage() {
                   onClick={handleSave}
                   disabled={loading}
                   sx={{
-                    textTransform: 'none',
-                    borderRadius: 2,
+                    ...primaryBtnSx,
                     px: 3,
                     fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                    background: 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)',
-                    '&:hover': {
-                      background: 'linear-gradient(135deg, #5568d3 0%, #633d8a 100%)',
-                    }
                   }}
                 >
                   {editingId ? 'Update Activity' : 'Add Activity'}
@@ -394,51 +383,47 @@ function CaloriesBurntPage() {
             {/* Summary */}
             {activities.length > 0 && (
               <Box sx={{ 
-                p: { xs: 1.5, sm: 2 }, 
-                bgcolor: 'white', 
-                borderRadius: 2, 
-                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                ...cardSx,
                 mb: 2,
                 textAlign: 'center'
               }}>
                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                   Total Calories Burnt Today
                 </Typography>
-                <Typography variant="h5" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' }, fontWeight: 600, color: '#f44336', mt: 0.5 }}>
+                <Typography variant="h5" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' }, fontWeight: 600, color: appColors.error, mt: 0.5 }}>
                   {getTotalCaloriesBurnt()} cal
                 </Typography>
               </Box>
             )}
 
             {/* Activities List */}
-            <Box sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'white', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-              <Typography variant="body2" fontWeight="600" color="#4caf50" gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, mb: 1.5 }}>
-                Activities for {format(selectedDate, 'MMM d, yyyy')} ({activities.length})
+            <Box sx={{ ...cardSx, mb: 0 }}>
+              <Typography variant="body2" fontWeight="600" color={appColors.textPrimary} sx={{ mb: 1.5, px: 2, pt: 2 }}>
+                Activities for {format(selectedDate, 'MMM dd, yyyy')}
               </Typography>
-
               {activities.length === 0 ? (
-                <Alert severity="info" sx={{ borderRadius: 1.5 }}>
-                  No activities logged for this date. Add your first activity above!
-                </Alert>
+                <Typography variant="body2" color="text.secondary" sx={{ p: 2, textAlign: 'center' }}>
+                  No activities recorded for this date
+                </Typography>
               ) : (
-                <List sx={{ p: 0 }}>
+                <List sx={{ py: 0 }}>
                   {activities.map((activity, index) => (
                     <React.Fragment key={activity.id}>
-                      <ListItem 
-                        sx={{ px: 0 }}
+                      <ListItem
+                        sx={{ px: 2 }}
                         secondaryAction={
                           <Box sx={{ display: 'flex', gap: 0.5 }}>
                             <IconButton 
                               size="small"
                               onClick={() => handleEdit(activity)}
-                              sx={{ color: '#4caf50' }}
+                              sx={{ color: appColors.success }}
                             >
                               <EditIcon fontSize="small" />
                             </IconButton>
                             <IconButton 
                               size="small"
                               onClick={() => handleDelete(activity.id)}
-                              sx={{ color: '#ef5350' }}
+                              sx={{ color: appColors.error }}
                             >
                               <DeleteIcon fontSize="small" />
                             </IconButton>
@@ -451,7 +436,7 @@ function CaloriesBurntPage() {
                               <Typography variant="body1" component="span" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, fontWeight: 600 }}>
                                 {getActivityLabel(activity.activityType)}
                               </Typography>
-                              <Typography variant="h6" component="span" sx={{ fontSize: { xs: '1rem', sm: '1.1rem' }, fontWeight: 600, color: '#f44336' }}>
+                              <Typography variant="h6" component="span" sx={{ fontSize: { xs: '1rem', sm: '1.1rem' }, fontWeight: 600, color: appColors.error }}>
                                 {activity.caloriesBurnt} cal
                               </Typography>
                             </Box>

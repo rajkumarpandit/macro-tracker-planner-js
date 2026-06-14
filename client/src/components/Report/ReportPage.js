@@ -21,6 +21,7 @@ import {
   Button
 } from '@mui/material';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import { appColors, cardSx, sectionTitleSx, primaryBtnSx, outlinedBtnSx } from '../../theme';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
 import { collection, query, where, getDocs, limit, addDoc, Timestamp } from 'firebase/firestore';
@@ -766,7 +767,7 @@ function ReportPage() {
   }, [dailyData, isMobile]);
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f5f7fa', pb: 2 }}>
+    <Box sx={{ minHeight: '100vh', bgcolor: appColors.bgPage, pb: 2 }}>
       <Box sx={{ p: { xs: 2, sm: 3 } }}>
         {/* Header */}
         <Box sx={{ 
@@ -792,13 +793,13 @@ function ReportPage() {
             sx={{
               borderRadius: 1.5,
               '& .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#e0e0e0',
+                borderColor: appColors.border,
               },
               '&:hover .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#4caf50',
+                borderColor: appColors.blue,
               },
               '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#4caf50',
+                borderColor: appColors.blue,
               },
             }}
           >
@@ -823,8 +824,8 @@ function ReportPage() {
                       sx: { 
                         borderRadius: 1.5,
                         '& .MuiOutlinedInput-root': {
-                          '&:hover fieldset': { borderColor: '#4caf50' },
-                          '&.Mui-focused fieldset': { borderColor: '#4caf50' }
+                          '&:hover fieldset': { borderColor: appColors.blue },
+                          '&.Mui-focused fieldset': { borderColor: appColors.blue }
                         }
                       }
                     } 
@@ -845,8 +846,8 @@ function ReportPage() {
                       sx: { 
                         borderRadius: 1.5,
                         '& .MuiOutlinedInput-root': {
-                          '&:hover fieldset': { borderColor: '#4caf50' },
-                          '&.Mui-focused fieldset': { borderColor: '#4caf50' }
+                          '&:hover fieldset': { borderColor: appColors.blue },
+                          '&.Mui-focused fieldset': { borderColor: appColors.blue }
                         }
                       }
                     } 
@@ -860,7 +861,7 @@ function ReportPage() {
 
       {!!error && (
         <Box sx={{ mb: 2 }}>
-          <Paper elevation={0} sx={{ p: 1.5, bgcolor: '#ffebee', borderRadius: 1.5 }}>
+          <Paper elevation={0} sx={{ p: 1.5, bgcolor: appColors.errorLight, borderRadius: 1.5 }}>
             <Typography variant="body2" color="error.main" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>{error}</Typography>
           </Paper>
         </Box>
@@ -868,7 +869,7 @@ function ReportPage() {
 
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-          <CircularProgress size={30} sx={{ color: '#4caf50' }} />
+          <CircularProgress size={30} sx={{ color: appColors.blue }} />
         </Box>
       ) : (
         <>
@@ -884,7 +885,7 @@ function ReportPage() {
                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                   Avg. Calories
                 </Typography>
-                <Typography variant="h6" component="div" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' }, fontWeight: 600, color: '#4caf50', mt: 0.5 }}>
+                <Typography variant="h6" component="div" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' }, fontWeight: 600, color: appColors.blue, mt: 0.5 }}>
                   {averages.calories.toFixed(0)}
                 </Typography>
               </Box>
@@ -900,7 +901,7 @@ function ReportPage() {
                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                   Avg. Protein
                 </Typography>
-                <Typography variant="h6" component="div" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' }, fontWeight: 600, color: '#4caf50', mt: 0.5 }}>
+                <Typography variant="h6" component="div" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' }, fontWeight: 600, color: appColors.blue, mt: 0.5 }}>
                   {averages.protein.toFixed(1)}g
                 </Typography>
               </Box>
@@ -916,7 +917,7 @@ function ReportPage() {
                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                   Avg. Carbs
                 </Typography>
-                <Typography variant="h6" component="div" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' }, fontWeight: 600, color: '#4caf50', mt: 0.5 }}>
+                <Typography variant="h6" component="div" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' }, fontWeight: 600, color: appColors.blue, mt: 0.5 }}>
                   {averages.carbs.toFixed(1)}g
                 </Typography>
               </Box>
@@ -932,7 +933,7 @@ function ReportPage() {
                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
                   Avg. Fat
                 </Typography>
-                <Typography variant="h6" component="div" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' }, fontWeight: 600, color: '#4caf50', mt: 0.5 }}>
+                <Typography variant="h6" component="div" sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' }, fontWeight: 600, color: appColors.blue, mt: 0.5 }}>
                   {averages.fat.toFixed(1)}g
                 </Typography>
               </Box>
@@ -954,10 +955,10 @@ function ReportPage() {
                   fontWeight: 500
                 },
                 '& .Mui-selected': {
-                  color: '#4caf50'
+                  color: appColors.blue
                 },
                 '& .MuiTabs-indicator': {
-                  backgroundColor: '#4caf50'
+                  backgroundColor: appColors.blue
                 }
               }}
             >
@@ -1002,7 +1003,7 @@ function ReportPage() {
                     <Line 
                       type="monotone" 
                       dataKey="calories" 
-                      stroke="#4caf50" 
+                      stroke={appColors.blue} 
                       name="Calories" 
                       strokeWidth={2}
                       dot={{ r: 3 }}
@@ -1048,9 +1049,9 @@ function ReportPage() {
                       }}
                     />
                     <Legend />
-                    <Bar dataKey="protein" fill="#4caf50" name="Protein" />
-                    <Bar dataKey="carbs" fill="#4caf50" name="Carbs" />
-                    <Bar dataKey="fat" fill="#ff8042" name="Fat" />
+                    <Bar dataKey="protein" fill={appColors.protein} name="Protein" />
+                    <Bar dataKey="carbs" fill={appColors.carbs} name="Carbs" />
+                    <Bar dataKey="fat" fill={appColors.fat} name="Fat" />
                   </BarChart>
                 </ResponsiveContainer>
               </Box>
@@ -1092,12 +1093,12 @@ function ReportPage() {
 
       {/* Weight Tracking Section */}
       <Box sx={{ mt: 3 }}>
-        <Typography variant="body2" fontWeight="600" color="#4caf50" gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' }, mb: 1.5 }}>
+        <Typography variant="body2" fontWeight="600" color={appColors.blue} gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' }, mb: 1.5 }}>
           Weight Tracking
         </Typography>
 
         <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-          {loading && <LinearProgress sx={{ mb: 2, '& .MuiLinearProgress-bar': { bgcolor: '#4caf50' } }} />}
+          {loading && <LinearProgress sx={{ mb: 2, '& .MuiLinearProgress-bar': { bgcolor: appColors.blue } }} />}
           
           {weightData.length > 0 ? (
             <>
@@ -1115,10 +1116,10 @@ function ReportPage() {
                     fontWeight: 500
                   },
                   '& .Mui-selected': {
-                    color: '#4caf50'
+                    color: appColors.blue
                   },
                   '& .MuiTabs-indicator': {
-                    backgroundColor: '#4caf50'
+                    backgroundColor: appColors.blue
                   }
                 }}
               >
@@ -1172,7 +1173,7 @@ function ReportPage() {
                       <Line 
                         type="monotone" 
                         dataKey="weight" 
-                        stroke="#4caf50" 
+                        stroke={appColors.blue} 
                         strokeWidth={2}
                         dot={{ r: 4 }}
                         activeDot={{ r: 6 }}
@@ -1196,7 +1197,7 @@ function ReportPage() {
                                 <Typography variant="body2" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, fontWeight: 600 }}>
                                   {format(entry.date, 'EEEE, MMM d, yyyy')}
                                 </Typography>
-                                <Typography variant="h6" sx={{ color: '#4caf50', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+                                <Typography variant="h6" sx={{ color: appColors.blue, fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
                                   {entry.weight.toFixed(2)} kg
                                 </Typography>
                               </Box>
@@ -1259,13 +1260,7 @@ function ReportPage() {
                       }
                     }}
                     sx={{
-                      textTransform: 'none',
-                      borderColor: '#4caf50',
-                      color: '#4caf50',
-                      '&:hover': {
-                        borderColor: '#4caf50',
-                        bgcolor: 'rgba(102, 126, 234, 0.08)'
-                      }
+                      ...outlinedBtnSx
                     }}
                   >
                     Add Test Weight for Today
@@ -1279,12 +1274,12 @@ function ReportPage() {
 
       {/* Biceps Tracking Section */}
       <Box sx={{ mt: 3 }}>
-        <Typography variant="body2" fontWeight="600" color="#4caf50" gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' }, mb: 1.5 }}>
+        <Typography variant="body2" fontWeight="600" color={appColors.blue} gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' }, mb: 1.5 }}>
           Biceps Tracking
         </Typography>
 
         <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-          {loading && <LinearProgress sx={{ mb: 2, '& .MuiLinearProgress-bar': { bgcolor: '#4caf50' } }} />}
+          {loading && <LinearProgress sx={{ mb: 2, '& .MuiLinearProgress-bar': { bgcolor: appColors.blue } }} />}
           
           {bicepsData.length > 0 ? (
             <>
@@ -1302,10 +1297,10 @@ function ReportPage() {
                     fontWeight: 500
                   },
                   '& .Mui-selected': {
-                    color: '#4caf50'
+                    color: appColors.blue
                   },
                   '& .MuiTabs-indicator': {
-                    backgroundColor: '#4caf50'
+                    backgroundColor: appColors.blue
                   }
                 }}
               >
@@ -1354,7 +1349,7 @@ function ReportPage() {
                       <Line 
                         type="monotone" 
                         dataKey="value" 
-                        stroke="#2196f3" 
+                        stroke={appColors.blue} 
                         strokeWidth={2}
                         dot={{ r: 4 }}
                         activeDot={{ r: 6 }}
@@ -1378,7 +1373,7 @@ function ReportPage() {
                                 <Typography variant="body2" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, fontWeight: 600 }}>
                                   {format(entry.date, 'EEEE, MMM d, yyyy')}
                                 </Typography>
-                                <Typography variant="h6" sx={{ color: '#2196f3', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+                                <Typography variant="h6" sx={{ color: appColors.blue, fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
                                   {entry.value.toFixed(2)} {entry.unit}
                                 </Typography>
                               </Box>
@@ -1414,12 +1409,12 @@ function ReportPage() {
 
       {/* Waist Tracking Section */}
       <Box sx={{ mt: 3 }}>
-        <Typography variant="body2" fontWeight="600" color="#4caf50" gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' }, mb: 1.5 }}>
+        <Typography variant="body2" fontWeight="600" color={appColors.blue} gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' }, mb: 1.5 }}>
           Waist Tracking
         </Typography>
 
         <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-          {loading && <LinearProgress sx={{ mb: 2, '& .MuiLinearProgress-bar': { bgcolor: '#4caf50' } }} />}
+          {loading && <LinearProgress sx={{ mb: 2, '& .MuiLinearProgress-bar': { bgcolor: appColors.blue } }} />}
           
           {waistData.length > 0 ? (
             <>
@@ -1437,10 +1432,10 @@ function ReportPage() {
                     fontWeight: 500
                   },
                   '& .Mui-selected': {
-                    color: '#4caf50'
+                    color: appColors.blue
                   },
                   '& .MuiTabs-indicator': {
-                    backgroundColor: '#4caf50'
+                    backgroundColor: appColors.blue
                   }
                 }}
               >
@@ -1489,7 +1484,7 @@ function ReportPage() {
                       <Line 
                         type="monotone" 
                         dataKey="value" 
-                        stroke="#ff9800" 
+                        stroke={appColors.warning} 
                         strokeWidth={2}
                         dot={{ r: 4 }}
                         activeDot={{ r: 6 }}
@@ -1513,7 +1508,7 @@ function ReportPage() {
                                 <Typography variant="body2" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, fontWeight: 600 }}>
                                   {format(entry.date, 'EEEE, MMM d, yyyy')}
                                 </Typography>
-                                <Typography variant="h6" sx={{ color: '#ff9800', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+                                <Typography variant="h6" sx={{ color: appColors.warning, fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
                                   {entry.value.toFixed(2)} {entry.unit}
                                 </Typography>
                               </Box>
@@ -1549,12 +1544,12 @@ function ReportPage() {
 
       {/* Chest Tracking Section */}
       <Box sx={{ mt: 3 }}>
-        <Typography variant="body2" fontWeight="600" color="#4caf50" gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' }, mb: 1.5 }}>
+        <Typography variant="body2" fontWeight="600" color={appColors.blue} gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' }, mb: 1.5 }}>
           Chest Tracking
         </Typography>
 
         <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-          {loading && <LinearProgress sx={{ mb: 2, '& .MuiLinearProgress-bar': { bgcolor: '#4caf50' } }} />}
+          {loading && <LinearProgress sx={{ mb: 2, '& .MuiLinearProgress-bar': { bgcolor: appColors.blue } }} />}
           
           {chestData.length > 0 ? (
             <>
@@ -1572,10 +1567,10 @@ function ReportPage() {
                     fontWeight: 500
                   },
                   '& .Mui-selected': {
-                    color: '#4caf50'
+                    color: appColors.blue
                   },
                   '& .MuiTabs-indicator': {
-                    backgroundColor: '#4caf50'
+                    backgroundColor: appColors.blue
                   }
                 }}
               >
@@ -1624,7 +1619,7 @@ function ReportPage() {
                       <Line 
                         type="monotone" 
                         dataKey="value" 
-                        stroke="#9c27b0" 
+                        stroke={appColors.protein} 
                         strokeWidth={2}
                         dot={{ r: 4 }}
                         activeDot={{ r: 6 }}
@@ -1648,7 +1643,7 @@ function ReportPage() {
                                 <Typography variant="body2" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, fontWeight: 600 }}>
                                   {format(entry.date, 'EEEE, MMM d, yyyy')}
                                 </Typography>
-                                <Typography variant="h6" sx={{ color: '#9c27b0', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+                                <Typography variant="h6" sx={{ color: appColors.protein, fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
                                   {entry.value.toFixed(2)} {entry.unit}
                                 </Typography>
                               </Box>
@@ -1684,12 +1679,12 @@ function ReportPage() {
 
       {/* Hips Tracking Section */}
       <Box sx={{ mt: 3 }}>
-        <Typography variant="body2" fontWeight="600" color="#4caf50" gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' }, mb: 1.5 }}>
+        <Typography variant="body2" fontWeight="600" color={appColors.blue} gutterBottom sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' }, mb: 1.5 }}>
           Hips Tracking
         </Typography>
 
         <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-          {loading && <LinearProgress sx={{ mb: 2, '& .MuiLinearProgress-bar': { bgcolor: '#4caf50' } }} />}
+          {loading && <LinearProgress sx={{ mb: 2, '& .MuiLinearProgress-bar': { bgcolor: appColors.blue } }} />}
           
           {hipsData.length > 0 ? (
             <>
@@ -1707,10 +1702,10 @@ function ReportPage() {
                     fontWeight: 500
                   },
                   '& .Mui-selected': {
-                    color: '#4caf50'
+                    color: appColors.blue
                   },
                   '& .MuiTabs-indicator': {
-                    backgroundColor: '#4caf50'
+                    backgroundColor: appColors.blue
                   }
                 }}
               >
@@ -1759,7 +1754,7 @@ function ReportPage() {
                       <Line 
                         type="monotone" 
                         dataKey="value" 
-                        stroke="#e91e63" 
+                        stroke={appColors.fat} 
                         strokeWidth={2}
                         dot={{ r: 4 }}
                         activeDot={{ r: 6 }}
@@ -1783,7 +1778,7 @@ function ReportPage() {
                                 <Typography variant="body2" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, fontWeight: 600 }}>
                                   {format(entry.date, 'EEEE, MMM d, yyyy')}
                                 </Typography>
-                                <Typography variant="h6" sx={{ color: '#e91e63', fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+                                <Typography variant="h6" sx={{ color: appColors.fat, fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
                                   {entry.value.toFixed(2)} {entry.unit}
                                 </Typography>
                               </Box>

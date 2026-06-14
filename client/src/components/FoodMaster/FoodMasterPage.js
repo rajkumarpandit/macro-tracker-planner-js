@@ -37,6 +37,7 @@ import { useAuth } from '../Auth/AuthContext';
 import { detectProteinSource } from '../../utils/geminiApi';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import Footer from '../Common/Footer';
+import { appColors, cardSx, sectionTitleSx, primaryBtnSx, outlinedBtnSx } from '../../theme';
 
 function FoodMasterPage() {
   const [foods, setFoods] = useState([]);
@@ -68,7 +69,7 @@ function FoodMasterPage() {
   // Helper function to get protein source badge color
   const getProteinSourceColor = (source) => {
     const colors = {
-      'Vegetarian': { bg: '#e8f5e9', text: '#2e7d32' },
+      'Vegetarian': { bg: appColors.lightGreen, text: appColors.green },
       'Animal': { bg: '#ffebee', text: '#c62828' },
       'Mixed': { bg: '#fff3e0', text: '#e65100' },
       'Low-Protein': { bg: '#fce4ec', text: '#ad1457' }
@@ -374,7 +375,7 @@ If the label shows per 100g or per serving, extract those values. Do not include
   return (
     <Box sx={{ 
       minHeight: '100vh',
-      bgcolor: '#f5f7fa',
+      bgcolor: appColors.bgPage,
       pb: 2
     }}>
       <Box sx={{ p: { xs: 2, sm: 3 } }}>
@@ -404,10 +405,10 @@ If the label shows per 100g or per serving, extract those values. Do not include
               py: 1.5
             },
             '& .Mui-selected': {
-              color: '#4caf50'
+              color: appColors.green
             },
             '& .MuiTabs-indicator': {
-              backgroundColor: '#4caf50'
+              backgroundColor: appColors.green
             }
           }}
         >
@@ -457,10 +458,10 @@ If the label shows per 100g or per serving, extract those values. Do not include
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1.5,
                     '&:hover fieldset': {
-                      borderColor: '#4caf50'
+                      borderColor: appColors.blue
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#4caf50'
+                      borderColor: appColors.blue
                     }
                   }
                 }}
@@ -480,10 +481,10 @@ If the label shows per 100g or per serving, extract those values. Do not include
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1.5,
                     '&:hover fieldset': {
-                      borderColor: '#4caf50'
+                      borderColor: appColors.blue
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#4caf50'
+                      borderColor: appColors.blue
                     }
                   }
                 }}
@@ -505,10 +506,10 @@ If the label shows per 100g or per serving, extract those values. Do not include
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1.5,
                     '&:hover fieldset': {
-                      borderColor: '#4caf50'
+                      borderColor: appColors.blue
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#4caf50'
+                      borderColor: appColors.blue
                     }
                   }
                 }}
@@ -533,10 +534,10 @@ If the label shows per 100g or per serving, extract those values. Do not include
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1.5,
                     '&:hover fieldset': {
-                      borderColor: '#4caf50'
+                      borderColor: appColors.blue
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#4caf50'
+                      borderColor: appColors.blue
                     }
                   }
                 }}
@@ -561,10 +562,10 @@ If the label shows per 100g or per serving, extract those values. Do not include
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1.5,
                     '&:hover fieldset': {
-                      borderColor: '#4caf50'
+                      borderColor: appColors.blue
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#4caf50'
+                      borderColor: appColors.blue
                     }
                   }
                 }}
@@ -589,10 +590,10 @@ If the label shows per 100g or per serving, extract those values. Do not include
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1.5,
                     '&:hover fieldset': {
-                      borderColor: '#4caf50'
+                      borderColor: appColors.blue
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#4caf50'
+                      borderColor: appColors.blue
                     }
                   }
                 }}
@@ -617,10 +618,10 @@ If the label shows per 100g or per serving, extract those values. Do not include
                   '& .MuiOutlinedInput-root': {
                     borderRadius: 1.5,
                     '&:hover fieldset': {
-                      borderColor: '#4caf50'
+                      borderColor: appColors.blue
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: '#4caf50'
+                      borderColor: appColors.blue
                     }
                   }
                 }}
@@ -636,10 +637,10 @@ If the label shows per 100g or per serving, extract those values. Do not include
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 1.5,
                       '&:hover fieldset': {
-                        borderColor: '#4caf50'
+                        borderColor: appColors.blue
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#4caf50'
+                        borderColor: appColors.blue
                       }
                     }
                   }}
@@ -666,18 +667,10 @@ If the label shows per 100g or per serving, extract those values. Do not include
                   size="small"
                   startIcon={detectingSource ? <CircularProgress size={16} /> : <AutoFixHighIcon />}
                   sx={{
-                    borderRadius: 1.5,
-                    textTransform: 'none',
+                    ...outlinedBtnSx,
                     whiteSpace: 'nowrap',
                     minWidth: 'auto',
-                    px: 2,
                     height: '40px',
-                    borderColor: '#4caf50',
-                    color: '#4caf50',
-                    '&:hover': {
-                      borderColor: '#2e7d32',
-                      bgcolor: 'rgba(76, 175, 80, 0.04)'
-                    },
                     '&.Mui-disabled': {
                       borderColor: '#ccc',
                       color: '#999'
@@ -698,16 +691,7 @@ If the label shows per 100g or per serving, extract those values. Do not include
               type="submit" 
               variant="contained" 
               size="medium"
-              sx={{
-                borderRadius: 2,
-                px: 3,
-                textTransform: 'none',
-                fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                background: 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)',
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #2e7d32 0%, #4caf50 100%)'
-                }
-              }}
+              sx={primaryBtnSx}
             >
               {editing ? 'Update' : 'Add'}
             </Button>
@@ -716,14 +700,7 @@ If the label shows per 100g or per serving, extract those values. Do not include
                 variant="outlined" 
                 onClick={resetForm}
                 size="medium"
-                sx={{
-                  borderRadius: 2,
-                  px: 3,
-                  textTransform: 'none',
-                  fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                  borderColor: '#ccc',
-                  color: '#666'
-                }}
+                sx={outlinedBtnSx}
               >
                 Cancel
               </Button>
@@ -752,9 +729,9 @@ If the label shows per 100g or per serving, extract those values. Do not include
             style={{ display: 'none' }}
           />
           
-          <PhotoCameraIcon sx={{ fontSize: 80, color: '#4caf50', mb: 2 }} />
+          <PhotoCameraIcon sx={{ fontSize: 80, color: appColors.green, mb: 2 }} />
           
-          <Typography variant="h6" gutterBottom fontWeight="600" color="#4caf50">
+          <Typography variant="h6" gutterBottom fontWeight="600" color={appColors.green}>
             Scan Nutrition Facts Label
           </Typography>
           
@@ -774,17 +751,7 @@ If the label shows per 100g or per serving, extract those values. Do not include
             startIcon={scanning ? <CircularProgress size={20} color="inherit" /> : <CameraAltIcon />}
             onClick={() => fileInputRef.current?.click()}
             disabled={scanning}
-            sx={{
-              borderRadius: 2,
-              px: 4,
-              py: 1.5,
-              textTransform: 'none',
-              fontSize: '1rem',
-              background: 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)',
-              '&:hover': {
-                background: 'linear-gradient(135deg, #2e7d32 0%, #4caf50 100%)'
-              }
-            }}
+            sx={{ ...primaryBtnSx, py: 1.5, fontSize: '1rem' }}
           >
             {scanning ? 'Processing...' : 'Scan Nutrition Label'}
           </Button>
@@ -807,7 +774,7 @@ If the label shows per 100g or per serving, extract those values. Do not include
             borderRadius: 2,
             boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
           }}>
-            <Typography variant="body2" fontWeight="600" color="#4caf50" gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, mb: 1.5 }}>
+            <Typography variant="body2" fontWeight="600" color={appColors.green} gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, mb: 1.5 }}>
               Food Items ({foods.length})
             </Typography>
           
@@ -854,10 +821,10 @@ If the label shows per 100g or per serving, extract those values. Do not include
                       }}
                     />
                     <ListItemSecondaryAction>
-                      <IconButton edge="end" size="small" onClick={() => handleEdit(food)} sx={{ color: '#4caf50' }}>
+                      <IconButton edge="end" size="small" onClick={() => handleEdit(food)} sx={{ color: appColors.blue }}>
                         <EditIcon fontSize="small" />
                       </IconButton>
-                      <IconButton edge="end" size="small" onClick={() => handleDelete(food.id)} sx={{ color: '#ef5350' }}>
+                      <IconButton edge="end" size="small" onClick={() => handleDelete(food.id)} sx={{ color: appColors.red }}>
                         <DeleteIcon fontSize="small" />
                       </IconButton>
                     </ListItemSecondaryAction>
@@ -878,12 +845,12 @@ If the label shows per 100g or per serving, extract those values. Do not include
                 <Grid item xs={12} sm={6} md={4} key={food.id}>
                   <Box sx={{ 
                     p: 2, 
-                    bgcolor: '#f9f9f9', 
+                    bgcolor: appColors.bgPage, 
                     borderRadius: 1.5,
                     border: '1px solid #e0e0e0',
                     '&:hover': {
                       boxShadow: '0 2px 8px rgba(102, 126, 234, 0.15)',
-                      borderColor: '#4caf50'
+                      borderColor: appColors.blue
                     }
                   }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 0.5 }}>
@@ -917,10 +884,10 @@ If the label shows per 100g or per serving, extract those values. Do not include
                       {`P: ${food.Protien_in_gms}g | C: ${food.carb_in_gms}g | F: ${food.fat_in_gms}g`}
                     </Typography>
                     <Box sx={{ mt: 1.5, display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
-                      <IconButton size="small" onClick={() => handleEdit(food)} sx={{ color: '#4caf50' }}>
+                      <IconButton size="small" onClick={() => handleEdit(food)} sx={{ color: appColors.blue }}>
                         <EditIcon fontSize="small" />
                       </IconButton>
-                      <IconButton size="small" onClick={() => handleDelete(food.id)} sx={{ color: '#ef5350' }}>
+                      <IconButton size="small" onClick={() => handleDelete(food.id)} sx={{ color: appColors.red }}>
                         <DeleteIcon fontSize="small" />
                       </IconButton>
                     </Box>
@@ -929,7 +896,7 @@ If the label shows per 100g or per serving, extract those values. Do not include
               ))}
               {foods.length === 0 && (
                 <Grid item xs={12}>
-                  <Box sx={{ p: 2, textAlign: 'center', bgcolor: '#f9f9f9', borderRadius: 1.5 }}>
+                  <Box sx={{ p: 2, textAlign: 'center', bgcolor: appColors.bgPage, borderRadius: 1.5 }}>
                     <Typography variant="body2" color="text.secondary">No food items found. Add some!</Typography>
                   </Box>
                 </Grid>

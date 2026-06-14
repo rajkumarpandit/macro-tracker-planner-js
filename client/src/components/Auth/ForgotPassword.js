@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import LockResetIcon from '@mui/icons-material/LockReset';
 import { useAuth } from './AuthContext';
+import { appColors } from '../../theme';
 
 function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -93,7 +94,7 @@ function ForgotPassword() {
             p: 4, 
             width: '100%',
             borderRadius: 2,
-            background: 'linear-gradient(to bottom, #ffffff, #f5f7fa)'
+            background: `linear-gradient(to bottom, ${appColors.bgCard}, ${appColors.bgPage})`
           }}
         >
           <Box sx={{ textAlign: 'center', mb: 3 }}>

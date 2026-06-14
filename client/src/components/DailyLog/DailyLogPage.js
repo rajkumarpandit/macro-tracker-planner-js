@@ -31,7 +31,13 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow
 } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
@@ -47,6 +53,7 @@ import { calculateProteinBreakdown, getProteinSourceChartData, getProteinSourceW
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import Footer from '../Common/Footer';
 import { SEARCH_CONFIG } from '../../config/constants';
+import { appColors, cardSx, sectionTitleSx, primaryBtnSx, outlinedBtnSx } from '../../theme';
 
 function DailyLogPage() {
   const [foods, setFoods] = useState([]);
@@ -84,13 +91,7 @@ function DailyLogPage() {
 
   // Helper function to get protein source badge color
   const getProteinSourceColor = (source) => {
-    const colors = {
-      'Vegetarian': { bg: '#e8f5e9', text: '#2e7d32' },
-      'Animal': { bg: '#ffebee', text: '#c62828' },
-      'Mixed': { bg: '#fff3e0', text: '#e65100' },
-      'Low-Protein': { bg: '#fce4ec', text: '#ad1457' }
-    };
-    return colors[source] || { bg: '#f5f5f5', text: '#616161' };
+    return appColors.proteinSources[source] || { bg: appColors.bgPage, text: appColors.textSecondary };
   };
 
   // Handle info button click (for mobile and desktop)
@@ -240,6 +241,44 @@ function DailyLogPage() {
   const totalProtein = useMemo(() => {
     return Object.values(proteinBreakdown).reduce((sum, val) => sum + val, 0);
   }, [proteinBreakdown]);
+
+  // Calculate meal category breakdown
+  const mealCategoryBreakdown = useMemo(() => {
+    const breakdown = {};
+    dailyLogs.forEach(log => {
+      const category = log.mealCategory || 'Others';
+      if (!breakdown[category]) {
+        breakdown[category] = {
+          calories: 0,
+          protein: 0,
+          carbs: 0,
+          fat: 0,
+          count: 0
+        };
+      }
+      breakdown[category].calories += log.calories;
+      breakdown[category].protein += log.protein;
+      breakdown[category].carbs += log.carbs;
+      breakdown[category].fat += log.fat;
+      breakdown[category].count += 1;
+    });
+    
+    // Sort by meal order
+    const mealOrder = {
+      'Breakfast': 1,
+      'Pre-Lunch': 2,
+      'Lunch': 3,
+      'Evening-Snacks': 4,
+      'Dinner': 5,
+      'Extra Snacks': 6,
+      'Snack': 7,
+      'Others': 8
+    };
+    
+    return Object.entries(breakdown)
+      .sort(([a], [b]) => (mealOrder[a] || 99) - (mealOrder[b] || 99))
+      .map(([category, data]) => ({ category, ...data }));
+  }, [dailyLogs]);
 
   const handleFoodChange = (e) => {
     setSelectedFood(e.target.value);
@@ -619,7 +658,7 @@ function DailyLogPage() {
   return (
     <Box sx={{ 
       minHeight: '100vh',
-      bgcolor: '#f5f7fa',
+      bgcolor: appColors.bgPage,
       pb: 2
     }}>
       <Box sx={{ p: { xs: 2, sm: 3 } }}>
@@ -670,11 +709,11 @@ function DailyLogPage() {
               minHeight: { xs: 48, sm: 56 }
             },
             '& .Mui-selected': {
-              color: '#4caf50 !important'
+              color: appColors.blue + ' !important'
             },
             '& .MuiTabs-indicator': {
               height: 3,
-              background: 'linear-gradient(90deg, #4caf50 0%, #2e7d32 100%)'
+              background: `linear-gradient(90deg, ${appColors.blue} 0%, ${appColors.navyDark} 100%)`
             }
           }}
         >
@@ -707,10 +746,10 @@ function DailyLogPage() {
                               '& .MuiOutlinedInput-root': {
                                 borderRadius: 1.5,
                                 '&:hover fieldset': {
-                                  borderColor: '#4caf50'
+                                  borderColor: appColors.blue
                                 },
                                 '&.Mui-focused fieldset': {
-                                  borderColor: '#4caf50'
+                                  borderColor: appColors.blue
                                 }
                               }
                             }
@@ -767,9 +806,9 @@ function DailyLogPage() {
                         ]
                       )}
                       sx={{ 
-                        color: '#4caf50',
+                        color: appColors.blue,
                         '&:hover': { 
-                          bgcolor: 'rgba(76, 175, 80, 0.1)' 
+                          bgcolor: appColors.blueLight
                         }
                       }}
                     >
@@ -795,10 +834,10 @@ function DailyLogPage() {
                     sx={{
                       borderRadius: 1.5,
                       '&:hover .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#4caf50'
+                        borderColor: appColors.blue
                       },
                       '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                        borderColor: '#4caf50'
+                        borderColor: appColors.blue
                       }
                     }}
                   >
@@ -832,10 +871,10 @@ function DailyLogPage() {
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 1.5,
                       '&:hover fieldset': {
-                        borderColor: '#4caf50'
+                        borderColor: appColors.blue
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#4caf50'
+                        borderColor: appColors.blue
                       }
                     }
                   }}
@@ -860,10 +899,10 @@ function DailyLogPage() {
                   sx={{
                     borderRadius: 1.5,
                     '&:hover .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#4caf50'
+                      borderColor: appColors.blue
                     },
                     '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                      borderColor: '#4caf50'
+                      borderColor: appColors.blue
                     }
                   }}
                 >
@@ -885,17 +924,10 @@ function DailyLogPage() {
                 variant="outlined" 
                 size="medium"
                 sx={{
-                  borderRadius: 2,
+                  ...outlinedBtnSx,
                   px: 3,
-                  textTransform: 'none',
                   fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                  borderColor: '#4caf50',
-                  color: '#4caf50',
-                  whiteSpace: 'nowrap',
-                  '&:hover': {
-                    borderColor: '#4caf50',
-                    bgcolor: '#f1f8f4'
-                  }
+                  whiteSpace: 'nowrap'
                 }}
               >
                 Calculate Macros
@@ -907,9 +939,9 @@ function DailyLogPage() {
               <Box sx={{ 
                 mt: 2, 
                 p: { xs: 1.5, sm: 2 }, 
-                bgcolor: '#f1f8f4', 
+                bgcolor: appColors.blueLight, 
                 borderRadius: 2,
-                border: '1px solid #4caf50'
+                border: `1px solid ${appColors.blue}`
               }}>
                 <Typography variant="body2" gutterBottom fontWeight="600" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>
                   Calculated Nutrition for {calculatedMacros.quantity} {calculatedMacros.unit} of {calculatedMacros.food_name}:
@@ -952,8 +984,8 @@ function DailyLogPage() {
                       px: 3,
                       textTransform: 'none',
                       fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                      borderColor: '#ccc',
-                      color: '#666'
+                      borderColor: appColors.border,
+                      color: appColors.textSecondary
                     }}
                   >
                     Cancel
@@ -963,14 +995,9 @@ function DailyLogPage() {
                     variant="contained" 
                     size="medium"
                     sx={{
-                      borderRadius: 2,
+                      ...primaryBtnSx,
                       px: 3,
-                      textTransform: 'none',
-                      fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                      background: 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)',
-                      '&:hover': {
-                        background: 'linear-gradient(135deg, #2e7d32 0%, #4caf50 100%)'
-                      }
+                      fontSize: { xs: '0.85rem', sm: '0.95rem' }
                     }}
                   >
                     Add Food
@@ -1003,10 +1030,10 @@ function DailyLogPage() {
                               '& .MuiOutlinedInput-root': {
                                 borderRadius: 1.5,
                                 '&:hover fieldset': {
-                                  borderColor: '#4caf50'
+                                  borderColor: appColors.blue
                                 },
                                 '&.Mui-focused fieldset': {
-                                  borderColor: '#4caf50'
+                                  borderColor: appColors.blue
                                 }
                               }
                             }
@@ -1027,7 +1054,7 @@ function DailyLogPage() {
                         <Typography variant="caption" display="block" sx={{ mb: 0.5 }}>
                           This feature relies on internet data, which may not always precisely match your specific food item's macro information.
                         </Typography>
-                        <Typography variant="caption" display="block" sx={{ fontStyle: 'italic', mt: 1, color: '#4caf50' }}>
+                        <Typography variant="caption" display="block" sx={{ fontStyle: 'italic', mt: 1, color: appColors.blue }}>
                           💡 For accuracy, add frequently eaten foods to your Food Database first.
                         </Typography>
                       </Box>
@@ -1064,9 +1091,9 @@ function DailyLogPage() {
                         ]
                       )}
                       sx={{ 
-                        color: '#ff9800',
+                        color: appColors.warning,
                         '&:hover': { 
-                          bgcolor: 'rgba(255, 152, 0, 0.1)' 
+                          bgcolor: appColors.warningLight
                         }
                       }}
                     >
@@ -1090,10 +1117,10 @@ function DailyLogPage() {
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 1.5,
                       '&:hover fieldset': {
-                        borderColor: '#4caf50'
+                        borderColor: appColors.blue
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#4caf50'
+                        borderColor: appColors.blue
                       }
                     }
                   }}
@@ -1108,16 +1135,9 @@ function DailyLogPage() {
                 size="medium"
                 disabled={nlLoading || !nlText.trim()}
                 sx={{
-                  borderRadius: 2,
+                  ...outlinedBtnSx,
                   px: 3,
-                  textTransform: 'none',
-                  fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                  borderColor: '#4caf50',
-                  color: '#4caf50',
-                  '&:hover': {
-                    borderColor: '#4caf50',
-                    bgcolor: '#f1f8f4'
-                  }
+                  fontSize: { xs: '0.85rem', sm: '0.95rem' }
                 }}
               >
                 {nlLoading ? 'Processing...' : 'Parse Food'}
@@ -1129,9 +1149,9 @@ function DailyLogPage() {
               <Box sx={{ 
                 mt: 2, 
                 p: { xs: 1.5, sm: 2 }, 
-                bgcolor: '#f1f8f4', 
+                bgcolor: appColors.blueLight, 
                 borderRadius: 2,
-                border: '1px solid #4caf50'
+                border: `1px solid ${appColors.blue}`
               }}>
                 <Typography variant="body2" gutterBottom fontWeight="600" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>
                   Parsed Food Item:
@@ -1152,10 +1172,10 @@ function DailyLogPage() {
                         size="small"
                         sx={{ 
                           '& .MuiSwitch-switchBase.Mui-checked': {
-                            color: '#4caf50',
+                            color: appColors.blue,
                           },
                           '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                            backgroundColor: '#4caf50',
+                            backgroundColor: appColors.blue,
                           }
                         }}
                       />
@@ -1168,16 +1188,9 @@ function DailyLogPage() {
                     size="medium"
                     disabled={nlLoading}
                     sx={{
-                      borderRadius: 2,
+                      ...outlinedBtnSx,
                       px: 3,
-                      textTransform: 'none',
-                      fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                      borderColor: '#4caf50',
-                      color: '#4caf50',
-                      '&:hover': {
-                        borderColor: '#4caf50',
-                        bgcolor: '#f1f8f4'
-                      }
+                      fontSize: { xs: '0.85rem', sm: '0.95rem' }
                     }}
                   >
                     {nlLoading ? 'Fetching...' : 'Fetch Macro Info'}
@@ -1191,9 +1204,9 @@ function DailyLogPage() {
               <Box sx={{ 
                 mt: 2, 
                 p: { xs: 1.5, sm: 2 }, 
-                bgcolor: '#f1f8f4', 
+                bgcolor: appColors.blueLight, 
                 borderRadius: 2,
-                border: '1px solid #4caf50'
+                border: `1px solid ${appColors.blue}`
               }}>
                 <Typography variant="body2" gutterBottom fontWeight="600" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>
                   Nutrition Information (per {fetchedMacros.servingSize}):
@@ -1264,10 +1277,10 @@ function DailyLogPage() {
                         size="small"
                         sx={{ 
                           '& .MuiSwitch-switchBase.Mui-checked': {
-                            color: '#4caf50',
+                            color: appColors.blue,
                           },
                           '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                            backgroundColor: '#4caf50',
+                            backgroundColor: appColors.blue,
                           }
                         }}
                       />
@@ -1280,9 +1293,9 @@ function DailyLogPage() {
                 <Box sx={{ 
                   mt: 2, 
                   p: 1.5, 
-                  bgcolor: dataSource === 'database' ? '#e8f5e9' : '#e3f2fd', 
+                  bgcolor: dataSource === 'database' ? appColors.successLight : appColors.blueLight, 
                   borderRadius: 1.5,
-                  border: `1px solid ${dataSource === 'database' ? '#66bb6a' : '#42a5f5'}`
+                  border: `1px solid ${dataSource === 'database' ? appColors.success : appColors.blue}`
                 }}>
                   <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem' } }}>
                     {dataSource === 'database' ? (
@@ -1308,8 +1321,8 @@ function DailyLogPage() {
                       px: 3,
                       textTransform: 'none',
                       fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                      borderColor: '#ccc',
-                      color: '#666'
+                      borderColor: appColors.border,
+                      color: appColors.textSecondary
                     }}
                   >
                     Cancel
@@ -1319,14 +1332,9 @@ function DailyLogPage() {
                     variant="contained" 
                     size="medium"
                     sx={{
-                      borderRadius: 2,
+                      ...primaryBtnSx,
                       px: 3,
-                      textTransform: 'none',
-                      fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                      background: 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)',
-                      '&:hover': {
-                        background: 'linear-gradient(135deg, #2e7d32 0%, #4caf50 100%)'
-                      }
+                      fontSize: { xs: '0.85rem', sm: '0.95rem' }
                     }}
                   >
                     Add Food
@@ -1346,7 +1354,7 @@ function DailyLogPage() {
         borderRadius: 2,
         boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
       }}>
-        <Typography variant="body2" fontWeight="600" color="#4caf50" gutterBottom sx={{ mb: 1.5, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
+        <Typography variant="body2" fontWeight="600" color={appColors.blue} gutterBottom sx={{ mb: 1.5, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
           Today's Summary
         </Typography>
         <Grid container spacing={1.5}>
@@ -1408,6 +1416,205 @@ function DailyLogPage() {
         </Grid>
       </Box>
 
+      {/* Meal Category Breakdown Table */}
+      {mealCategoryBreakdown.length > 0 && (
+        <Box sx={{ 
+          mb: 2,
+          p: { xs: 1.5, sm: 2 },
+          bgcolor: 'white',
+          borderRadius: 2,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+        }}>
+          <Typography variant="body2" fontWeight="600" color={appColors.blue} gutterBottom sx={{ mb: 1.5, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
+            Meal-wise Breakdown
+          </Typography>
+          <TableContainer sx={{ overflowX: 'auto' }}>
+            <Table size="small" sx={{ minWidth: { xs: 280, sm: 650 } }}>
+              <TableHead>
+                <TableRow sx={{ bgcolor: appColors.bgPage }}>
+                  <TableCell sx={{ 
+                    fontWeight: 600, 
+                    fontSize: { xs: '0.7rem', sm: '0.85rem' },
+                    px: { xs: 0.5, sm: 2 },
+                    py: { xs: 0.75, sm: 1 },
+                    borderBottom: `2px solid ${appColors.borderDark}`
+                  }}>
+                    Meal
+                  </TableCell>
+                  <TableCell align="right" sx={{ 
+                    fontWeight: 600, 
+                    fontSize: { xs: '0.7rem', sm: '0.85rem' },
+                    px: { xs: 0.5, sm: 2 },
+                    py: { xs: 0.75, sm: 1 },
+                    borderBottom: `2px solid ${appColors.borderDark}`
+                  }}>
+                    {isMobile ? 'Cal' : 'Calories'}
+                  </TableCell>
+                  <TableCell align="right" sx={{ 
+                    fontWeight: 600, 
+                    fontSize: { xs: '0.7rem', sm: '0.85rem' },
+                    px: { xs: 0.5, sm: 2 },
+                    py: { xs: 0.75, sm: 1 },
+                    borderBottom: `2px solid ${appColors.borderDark}`
+                  }}>
+                    {isMobile ? 'Prot' : 'Protein'}
+                  </TableCell>
+                  <TableCell align="right" sx={{ 
+                    fontWeight: 600, 
+                    fontSize: { xs: '0.7rem', sm: '0.85rem' },
+                    px: { xs: 0.5, sm: 2 },
+                    py: { xs: 0.75, sm: 1 },
+                    borderBottom: `2px solid ${appColors.borderDark}`
+                  }}>
+                    Carbs
+                  </TableCell>
+                  <TableCell align="right" sx={{ 
+                    fontWeight: 600, 
+                    fontSize: { xs: '0.7rem', sm: '0.85rem' },
+                    px: { xs: 0.5, sm: 2 },
+                    py: { xs: 0.75, sm: 1 },
+                    borderBottom: `2px solid ${appColors.borderDark}`
+                  }}>
+                    Fat
+                  </TableCell>
+                  <TableCell align="right" sx={{ 
+                    fontWeight: 600, 
+                    fontSize: { xs: '0.7rem', sm: '0.85rem' },
+                    px: { xs: 0.5, sm: 2 },
+                    py: { xs: 0.75, sm: 1 },
+                    borderBottom: `2px solid ${appColors.borderDark}`,
+                    display: { xs: 'none', sm: 'table-cell' }
+                  }}>
+                    Items
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {mealCategoryBreakdown.map((meal) => (
+                  <TableRow 
+                    key={meal.category}
+                    sx={{ 
+                      '&:hover': { bgcolor: appColors.bgPage },
+                      '&:last-child td': { borderBottom: 0 }
+                    }}
+                  >
+                    <TableCell sx={{ 
+                      fontSize: { xs: '0.7rem', sm: '0.85rem' },
+                      px: { xs: 0.5, sm: 2 },
+                      py: { xs: 0.75, sm: 1 }
+                    }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'flex-start', sm: 'center' } }}>
+                        <Typography variant="body2" sx={{ fontSize: { xs: '0.7rem', sm: '0.85rem' }, fontWeight: 500 }}>
+                          {isMobile ? meal.category.replace('Evening-Snacks', 'Eve-Snack').replace('Extra Snacks', 'Ex-Snack').replace('Pre-Lunch', 'Pre-L') : meal.category}
+                        </Typography>
+                        <Typography variant="caption" sx={{ 
+                          display: { xs: 'inline', sm: 'none' },
+                          color: 'text.secondary',
+                          fontSize: '0.65rem'
+                        }}>
+                          ({meal.count})
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell align="right" sx={{ 
+                      fontSize: { xs: '0.7rem', sm: '0.85rem' },
+                      px: { xs: 0.5, sm: 2 },
+                      py: { xs: 0.75, sm: 1 }
+                    }}>
+                      {meal.calories.toFixed(0)}
+                    </TableCell>
+                    <TableCell align="right" sx={{ 
+                      fontSize: { xs: '0.7rem', sm: '0.85rem' },
+                      px: { xs: 0.5, sm: 2 },
+                      py: { xs: 0.75, sm: 1 }
+                    }}>
+                      {meal.protein.toFixed(1)}
+                    </TableCell>
+                    <TableCell align="right" sx={{ 
+                      fontSize: { xs: '0.7rem', sm: '0.85rem' },
+                      px: { xs: 0.5, sm: 2 },
+                      py: { xs: 0.75, sm: 1 }
+                    }}>
+                      {meal.carbs.toFixed(1)}
+                    </TableCell>
+                    <TableCell align="right" sx={{ 
+                      fontSize: { xs: '0.7rem', sm: '0.85rem' },
+                      px: { xs: 0.5, sm: 2 },
+                      py: { xs: 0.75, sm: 1 }
+                    }}>
+                      {meal.fat.toFixed(1)}
+                    </TableCell>
+                    <TableCell align="right" sx={{ 
+                      fontSize: { xs: '0.7rem', sm: '0.85rem' },
+                      px: { xs: 0.5, sm: 2 },
+                      py: { xs: 0.75, sm: 1 },
+                      display: { xs: 'none', sm: 'table-cell' }
+                    }}>
+                      {meal.count}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {/* Total Row */}
+                <TableRow sx={{ bgcolor: appColors.successLight, fontWeight: 600 }}>
+                  <TableCell sx={{ 
+                    fontWeight: 600, 
+                    fontSize: { xs: '0.75rem', sm: '0.9rem' },
+                    px: { xs: 0.5, sm: 2 },
+                    py: { xs: 0.75, sm: 1 }
+                  }}>
+                    Total
+                  </TableCell>
+                  <TableCell align="right" sx={{ 
+                    fontWeight: 600, 
+                    fontSize: { xs: '0.75rem', sm: '0.9rem' },
+                    px: { xs: 0.5, sm: 2 },
+                    py: { xs: 0.75, sm: 1 }
+                  }}>
+                    {dailySummary.calories.toFixed(0)}
+                  </TableCell>
+                  <TableCell align="right" sx={{ 
+                    fontWeight: 600, 
+                    fontSize: { xs: '0.75rem', sm: '0.9rem' },
+                    px: { xs: 0.5, sm: 2 },
+                    py: { xs: 0.75, sm: 1 }
+                  }}>
+                    {dailySummary.protein.toFixed(1)}
+                  </TableCell>
+                  <TableCell align="right" sx={{ 
+                    fontWeight: 600, 
+                    fontSize: { xs: '0.75rem', sm: '0.9rem' },
+                    px: { xs: 0.5, sm: 2 },
+                    py: { xs: 0.75, sm: 1 }
+                  }}>
+                    {dailySummary.carbs.toFixed(1)}
+                  </TableCell>
+                  <TableCell align="right" sx={{ 
+                    fontWeight: 600, 
+                    fontSize: { xs: '0.75rem', sm: '0.9rem' },
+                    px: { xs: 0.5, sm: 2 },
+                    py: { xs: 0.75, sm: 1 }
+                  }}>
+                    {dailySummary.fat.toFixed(1)}
+                  </TableCell>
+                  <TableCell align="right" sx={{ 
+                    fontWeight: 600, 
+                    fontSize: { xs: '0.75rem', sm: '0.9rem' },
+                    px: { xs: 0.5, sm: 2 },
+                    py: { xs: 0.75, sm: 1 },
+                    display: { xs: 'none', sm: 'table-cell' }
+                  }}>
+                    {dailyLogs.length}
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', fontSize: { xs: '0.7rem', sm: '0.75rem' }, fontStyle: 'italic' }}>
+            Note: Calories in kcal, Protein/Carbs/Fat in grams (g)
+          </Typography>
+        </Box>
+      )}
+
       {/* Protein Source Analysis Chart */}
       {totalProtein > 0 && (
         <Box sx={{ 
@@ -1417,19 +1624,19 @@ function DailyLogPage() {
           borderRadius: 2,
           boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
         }}>
-          <Typography variant="body2" fontWeight="600" color="#4caf50" gutterBottom sx={{ mb: 1.5, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
+          <Typography variant="body2" fontWeight="600" color={appColors.blue} gutterBottom sx={{ mb: 1.5, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
             Protein Source Analysis
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: 'center', gap: 2 }}>
-            <Box sx={{ width: { xs: '100%', md: '300px' }, height: '250px' }}>
+            <Box sx={{ width: { xs: '100%', md: '220px' }, height: '180px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={proteinChartData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
+                    innerRadius={45}
+                    outerRadius={70}
                     paddingAngle={2}
                     dataKey="value"
                     label={false}
@@ -1443,7 +1650,7 @@ function DailyLogPage() {
                     formatter={(value) => `${value.toFixed(1)}g`}
                     contentStyle={{ 
                       backgroundColor: 'rgba(255, 255, 255, 0.95)', 
-                      border: '1px solid #ddd', 
+                      border: `1px solid ${appColors.border}`, 
                       borderRadius: '8px',
                       padding: '8px 12px'
                     }}
@@ -1494,7 +1701,7 @@ function DailyLogPage() {
         borderRadius: 2,
         boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
       }}>
-        <Typography variant="body2" fontWeight="600" color="#4caf50" gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, mb: 1.5 }}>
+        <Typography variant="body2" fontWeight="600" color={appColors.blue} gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' }, mb: 1.5 }}>
           Today's Food Log
         </Typography>
         
@@ -1530,8 +1737,8 @@ function DailyLogPage() {
                           sx={{ 
                             px: 1, 
                             py: 0.25, 
-                            bgcolor: '#e3f2fd', 
-                            color: '#1976d2',
+                            bgcolor: appColors.meals[log.mealCategory]?.bg || appColors.blueLight, 
+                            color: appColors.meals[log.mealCategory]?.text || appColors.blue,
                             borderRadius: 1,
                             fontSize: { xs: '0.7rem', sm: '0.75rem' },
                             fontWeight: 500,
@@ -1618,7 +1825,7 @@ function DailyLogPage() {
         }}
       >
         <DialogTitle sx={{ 
-          bgcolor: '#4caf50', 
+          bgcolor: appColors.blue, 
           color: 'white',
           fontWeight: 600
         }}>
@@ -1632,7 +1839,7 @@ function DailyLogPage() {
                 variant="body2" 
                 sx={{ 
                   mb: line === '' ? 1 : 0.5,
-                  color: line.includes('💡') ? '#4caf50' : 'text.primary',
+                  color: line.includes('💡') ? appColors.blue : 'text.primary',
                   fontStyle: line.includes('💡') ? 'italic' : 'normal'
                 }}
               >
@@ -1648,7 +1855,7 @@ function DailyLogPage() {
             onClick={handleInfoDialogClose} 
             variant="contained"
             sx={{
-              background: 'linear-gradient(135deg, #66bb6a 0%, #2e7d32 100%)',
+              ...primaryBtnSx,
               textTransform: 'none'
             }}
           >

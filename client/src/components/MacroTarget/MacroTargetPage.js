@@ -14,14 +14,14 @@ import {
   Snackbar,
   Alert,
   Tabs,
-  Tab,
-  Divider
+  Tab
 } from '@mui/material';
-import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
+import TrackChangesIcon from '@mui/icons-material/TrackChanges';
 import { collection, addDoc, getDocs, query, where, updateDoc, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase/firebase';
 import { useAuth } from '../Auth/AuthContext';
 import Footer from '../Common/Footer';
+import { appColors, primaryBtnSx, outlinedBtnSx } from '../../theme';
 import { MACRO_TARGET_PRESETS, FIREBASE_COLLECTIONS } from '../../config/constants';
 
 function MacroTargetPage() {
@@ -52,11 +52,16 @@ function MacroTargetPage() {
   const [calcSex, setCalcSex] = useState('');
   const [calcActivityLevel, setCalcActivityLevel] = useState('1.55');
   const [calcBMR, setCalcBMR] = useState(null);
+  const [calcBMI, setCalcBMI] = useState(null);
+  const [calcRecommendedGoal, setCalcRecommendedGoal] = useState('');
+  
+  // Results for all three goal types
+  const [calcMaintenance, setCalcMaintenance] = useState(null);
+  const [calcDeficit, setCalcDeficit] = useState(null);
+  const [calcBulking, setCalcBulking] = useState(null);
+  
+  // Legacy states (kept for backward compatibility with existing UI)
   const [calcMaintenanceCalories, setCalcMaintenanceCalories] = useState(null);
-  const [calcProtein, setCalcProtein] = useState(null);
-  const [calcFat, setCalcFat] = useState(null);
-  const [calcCarbs, setCalcCarbs] = useState(null);
-  const [calcError, setCalcError] = useState('');
 
   // Preset values for different target types (convert to strings for TextField)
   const presets = {
@@ -235,12 +240,8 @@ function MacroTargetPage() {
       }
       
       setCalcBMR(bmr ? Math.round(bmr) : null);
-      setCalcError('');
     } else {
       setCalcBMR(null);
-      if (!calcWeight || !calcHeightCm || !calcAge || !calcSex) {
-        setCalcError('Please fill in all required fields (Weight, Height, DOB, and Sex)');
-      }
     }
   }, [calcWeight, calcHeightCm, calcAge, calcSex]);
 
@@ -254,30 +255,84 @@ function MacroTargetPage() {
     }
   }, [calcBMR, calcActivityLevel]);
 
-  // Calculate macro breakdown
+  // Calculate BMI and recommend goal
+  useEffect(() => {
+    if (calcWeight && calcHeightCm) {
+      const weight = Number(calcWeight);
+      const heightM = Number(calcHeightCm) / 100; // convert cm to meters
+      const bmi = weight / (heightM * heightM);
+      setCalcBMI(bmi.toFixed(1));
+      
+      // Recommend goal based on BMI
+      if (bmi < 18.5) {
+        setCalcRecommendedGoal('bulking');
+      } else if (bmi >= 25) {
+        setCalcRecommendedGoal('deficit');
+      } else {
+        setCalcRecommendedGoal('maintenance');
+      }
+    } else {
+      setCalcBMI(null);
+      setCalcRecommendedGoal('');
+    }
+  }, [calcWeight, calcHeightCm]);
+
+  // Calculate macro breakdown for all three goals
   useEffect(() => {
     if (calcMaintenanceCalories && calcWeight) {
       const weight = Number(calcWeight);
+      const maintenanceCal = calcMaintenanceCalories;
       
-      // Protein: 1.5 × weight in kg
-      const proteinGrams = Math.round(1.5 * weight);
-      const proteinCalories = proteinGrams * 4;
+      // MAINTENANCE: 1.6g/kg protein, 27.5% fat
+      const maintProtein = Math.round(1.6 * weight);
+      const maintProteinCal = maintProtein * 4;
+      const maintFatCal = Math.round(maintenanceCal * 0.275);
+      const maintFat = Math.round(maintFatCal / 9);
+      const maintCarbsCal = maintenanceCal - maintProteinCal - maintFatCal;
+      const maintCarbs = Math.round(maintCarbsCal / 4);
       
-      // Fat: 27.5% of total calories (middle of 25-30%)
-      const fatCalories = Math.round(calcMaintenanceCalories * 0.275);
-      const fatGrams = Math.round(fatCalories / 9);
+      setCalcMaintenance({
+        calories: maintenanceCal,
+        protein: maintProtein,
+        fat: maintFat,
+        carbs: maintCarbs
+      });
       
-      // Carbs: Remaining calories
-      const remainingCalories = calcMaintenanceCalories - proteinCalories - fatCalories;
-      const carbsGrams = Math.round(remainingCalories / 4);
+      // DEFICIT: Maintenance - 500 cal, 2.0g/kg protein (preserve muscle), 25% fat
+      const deficitCal = Math.max(1200, maintenanceCal - 500); // Don't go below 1200
+      const deficitProtein = Math.round(2.0 * weight);
+      const deficitProteinCal = deficitProtein * 4;
+      const deficitFatCal = Math.round(deficitCal * 0.25);
+      const deficitFat = Math.round(deficitFatCal / 9);
+      const deficitCarbsCal = deficitCal - deficitProteinCal - deficitFatCal;
+      const deficitCarbs = Math.max(0, Math.round(deficitCarbsCal / 4));
       
-      setCalcProtein(proteinGrams);
-      setCalcFat(fatGrams);
-      setCalcCarbs(carbsGrams);
+      setCalcDeficit({
+        calories: deficitCal,
+        protein: deficitProtein,
+        fat: deficitFat,
+        carbs: deficitCarbs
+      });
+      
+      // BULKING: Maintenance + 300 cal, 1.8g/kg protein, 30% fat
+      const bulkingCal = maintenanceCal + 300;
+      const bulkingProtein = Math.round(1.8 * weight);
+      const bulkingProteinCal = bulkingProtein * 4;
+      const bulkingFatCal = Math.round(bulkingCal * 0.30);
+      const bulkingFat = Math.round(bulkingFatCal / 9);
+      const bulkingCarbsCal = bulkingCal - bulkingProteinCal - bulkingFatCal;
+      const bulkingCarbs = Math.round(bulkingCarbsCal / 4);
+      
+      setCalcBulking({
+        calories: bulkingCal,
+        protein: bulkingProtein,
+        fat: bulkingFat,
+        carbs: bulkingCarbs
+      });
     } else {
-      setCalcProtein(null);
-      setCalcFat(null);
-      setCalcCarbs(null);
+      setCalcMaintenance(null);
+      setCalcDeficit(null);
+      setCalcBulking(null);
     }
   }, [calcMaintenanceCalories, calcWeight]);
 
@@ -373,16 +428,35 @@ function MacroTargetPage() {
     setMessage({ text: '', type: '' });
   };
 
+  // Helper function to get BMI category
+  const getBMICategory = (bmi) => {
+    if (!bmi) return '';
+    const bmiNum = Number(bmi);
+    if (bmiNum < 18.5) return 'Underweight';
+    if (bmiNum < 25) return 'Normal Weight';
+    if (bmiNum < 30) return 'Overweight';
+    return 'Obese';
+  };
+
   // Handle transfer of calculated values to Set Target tab
-  const handleUseCalculatedValues = () => {
-    if (calcMaintenanceCalories && calcProtein && calcFat && calcCarbs) {
-      setTargetType('maintenance');
-      setCalories(calcMaintenanceCalories.toString());
-      setProtein(calcProtein.toString());
-      setFat(calcFat.toString());
-      setCarbs(calcCarbs.toString());
+  const handleUseCalculatedValues = (goalType = 'maintenance') => {
+    let goalData;
+    if (goalType === 'deficit' && calcDeficit) {
+      goalData = calcDeficit;
+    } else if (goalType === 'bulking' && calcBulking) {
+      goalData = calcBulking;
+    } else if (goalType === 'maintenance' && calcMaintenance) {
+      goalData = calcMaintenance;
+    }
+    
+    if (goalData) {
+      setTargetType(goalType);
+      setCalories(goalData.calories.toString());
+      setProtein(goalData.protein.toString());
+      setFat(goalData.fat.toString());
+      setCarbs(goalData.carbs.toString());
       setTabValue(0); // Switch to Set Target tab
-      setMessage({ text: 'Calculated values transferred to Set Target tab', type: 'success' });
+      setMessage({ text: `${goalType.charAt(0).toUpperCase() + goalType.slice(1)} values transferred to Set Target tab`, type: 'success' });
     }
   };
 
@@ -397,7 +471,7 @@ function MacroTargetPage() {
   return (
     <Box sx={{ 
       minHeight: '100vh',
-      bgcolor: '#f5f7fa',
+      bgcolor: appColors.bgPage,
       pb: 2
     }}>
       <Box sx={{ p: { xs: 2, sm: 3 } }}>
@@ -407,7 +481,7 @@ function MacroTargetPage() {
           gap: 1.5, 
           mb: 2
         }}>
-          <FitnessCenterIcon sx={{ fontSize: { xs: 28, sm: 36 }, color: 'primary.main' }} />
+          <TrackChangesIcon sx={{ fontSize: { xs: 28, sm: 36 }, color: 'primary.main' }} />
           <Typography variant="h6" component="h1" fontWeight="600" sx={{ fontSize: { xs: '1.1rem', sm: '1.5rem' }, color: 'text.primary' }}>
             Daily Macro Target
           </Typography>
@@ -441,7 +515,7 @@ function MacroTargetPage() {
             onChange={(e, newValue) => setTabValue(newValue)}
             variant="fullWidth"
             sx={{ 
-              bgcolor: 'white',
+              bgcolor: appColors.bgCard,
               '& .MuiTab-root': {
                 fontSize: { xs: '0.85rem', sm: '0.95rem' },
                 fontWeight: 600,
@@ -450,11 +524,11 @@ function MacroTargetPage() {
                 minHeight: { xs: 48, sm: 56 }
               },
               '& .Mui-selected': {
-                color: '#4caf50 !important'
+                color: `${appColors.blue} !important`
               },
               '& .MuiTabs-indicator': {
                 height: 3,
-                background: 'linear-gradient(90deg, #4caf50 0%, #2e7d32 100%)'
+                background: `linear-gradient(90deg, ${appColors.blue} 0%, ${appColors.blueDark} 100%)`
               }
             }}
           >
@@ -468,7 +542,7 @@ function MacroTargetPage() {
 
           {/* Tab 1: Set Target */}
           {tabValue === 0 && (
-            <Box sx={{ p: { xs: 2, sm: 3 }, bgcolor: 'white' }}>
+            <Box sx={{ p: { xs: 2, sm: 3 }, bgcolor: appColors.bgCard }}>
               <FormControl component="fieldset" sx={{ mb: 3, width: '100%' }}>
                 <FormLabel 
                   component="legend" 
@@ -476,7 +550,7 @@ function MacroTargetPage() {
                     fontSize: { xs: '0.95rem', sm: '1rem' },
                     fontWeight: 600, 
                     mb: 1.5,
-                    color: '#4caf50'
+                    color: appColors.blue
                   }}
                 >
                   Select Your Goal
@@ -495,8 +569,8 @@ function MacroTargetPage() {
                     sx={{ 
                       flex: 1,
                       cursor: 'pointer',
-                      border: targetType === 'deficit' ? '2px solid #4caf50' : '1px solid #e0e0e0',
-                      bgcolor: targetType === 'deficit' ? '#f1f8f4' : 'white',
+                      border: targetType === 'deficit' ? `2px solid ${appColors.blue}` : `1px solid ${appColors.border}`,
+                      bgcolor: targetType === 'deficit' ? appColors.blueLight : appColors.bgCard,
                       p: { xs: 1.5, sm: 2 },
                       borderRadius: 2,
                       transition: 'all 0.2s',
@@ -513,7 +587,7 @@ function MacroTargetPage() {
                       value="deficit"
                       sx={{ 
                         p: 0,
-                        '&.Mui-checked': { color: '#4caf50' }
+                        '&.Mui-checked': { color: appColors.blue }
                       }}
                     />
                     <Box sx={{ flex: 1 }}>
@@ -531,8 +605,8 @@ function MacroTargetPage() {
                     sx={{ 
                       flex: 1,
                       cursor: 'pointer',
-                      border: targetType === 'maintenance' ? '2px solid #4caf50' : '1px solid #e0e0e0',
-                      bgcolor: targetType === 'maintenance' ? '#f1f8f4' : 'white',
+                      border: targetType === 'maintenance' ? `2px solid ${appColors.blue}` : `1px solid ${appColors.border}`,
+                      bgcolor: targetType === 'maintenance' ? appColors.blueLight : appColors.bgCard,
                       p: { xs: 1.5, sm: 2 },
                       borderRadius: 2,
                       transition: 'all 0.2s',
@@ -549,7 +623,7 @@ function MacroTargetPage() {
                       value="maintenance"
                       sx={{ 
                         p: 0,
-                        '&.Mui-checked': { color: '#4caf50' }
+                        '&.Mui-checked': { color: appColors.blue }
                       }}
                     />
                     <Box sx={{ flex: 1 }}>
@@ -567,8 +641,8 @@ function MacroTargetPage() {
                     sx={{ 
                       flex: 1,
                       cursor: 'pointer',
-                      border: targetType === 'bulking' ? '2px solid #4caf50' : '1px solid #e0e0e0',
-                      bgcolor: targetType === 'bulking' ? '#f1f8f4' : 'white',
+                      border: targetType === 'bulking' ? `2px solid ${appColors.blue}` : `1px solid ${appColors.border}`,
+                      bgcolor: targetType === 'bulking' ? appColors.blueLight : appColors.bgCard,
                       p: { xs: 1.5, sm: 2 },
                       borderRadius: 2,
                       transition: 'all 0.2s',
@@ -585,7 +659,7 @@ function MacroTargetPage() {
                       value="bulking"
                       sx={{ 
                         p: 0,
-                        '&.Mui-checked': { color: '#4caf50' }
+                        '&.Mui-checked': { color: appColors.blue }
                       }}
                     />
                     <Box sx={{ flex: 1 }}>
@@ -615,10 +689,10 @@ function MacroTargetPage() {
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 1.5,
                       '&:hover fieldset': {
-                        borderColor: '#4caf50'
+                        borderColor: appColors.blue
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#4caf50'
+                        borderColor: appColors.blue
                       }
                     }
                   }}
@@ -638,10 +712,10 @@ function MacroTargetPage() {
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 1.5,
                       '&:hover fieldset': {
-                        borderColor: '#4caf50'
+                        borderColor: appColors.blue
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#4caf50'
+                        borderColor: appColors.blue
                       }
                     }
                   }}
@@ -661,10 +735,10 @@ function MacroTargetPage() {
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 1.5,
                       '&:hover fieldset': {
-                        borderColor: '#4caf50'
+                        borderColor: appColors.blue
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#4caf50'
+                        borderColor: appColors.blue
                       }
                     }
                   }}
@@ -684,10 +758,10 @@ function MacroTargetPage() {
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 1.5,
                       '&:hover fieldset': {
-                        borderColor: '#4caf50'
+                        borderColor: appColors.blue
                       },
                       '&.Mui-focused fieldset': {
-                        borderColor: '#4caf50'
+                        borderColor: appColors.blue
                       }
                     }
                   }}
@@ -701,16 +775,9 @@ function MacroTargetPage() {
                 onClick={handleCancel}
                 size="medium"
                 sx={{
-                  borderRadius: 2,
+                  ...outlinedBtnSx,
                   px: 3,
-                  textTransform: 'none',
-                  fontSize: { xs: '0.9rem', sm: '0.95rem' },
-                  borderColor: '#4caf50',
-                  color: '#4caf50',
-                  '&:hover': {
-                    borderColor: '#2e7d32',
-                    bgcolor: '#f1f8f4'
-                  }
+                  fontSize: { xs: '0.9rem', sm: '0.95rem' }
                 }}
               >
                 Cancel
@@ -720,16 +787,9 @@ function MacroTargetPage() {
                 onClick={handleSave}
                 size="medium"
                 sx={{
-                  borderRadius: 2,
+                  ...primaryBtnSx,
                   px: 3,
-                  textTransform: 'none',
-                  fontSize: { xs: '0.9rem', sm: '0.95rem' },
-                  background: 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)',
-                  boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #2e7d32 0%, #4caf50 100%)',
-                    boxShadow: '0 3px 12px rgba(102, 126, 234, 0.4)'
-                  }
+                  fontSize: { xs: '0.9rem', sm: '0.95rem' }
                 }}
               >
                 Save
@@ -741,34 +801,34 @@ function MacroTargetPage() {
                 sx={{ 
                   mt: 3,
                   p: 2,
-                  background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
-                  border: '2px solid #66bb6a',
+                  background: `linear-gradient(135deg, ${appColors.successLight} 0%, ${appColors.blueLight} 100%)`,
+                  border: `2px solid ${appColors.success}`,
                   borderRadius: 2
                 }}
               >
-                <Typography variant="body2" gutterBottom fontWeight="600" color="#2e7d32">
+                <Typography variant="body2" gutterBottom fontWeight="600" color={appColors.success}>
                   ✓ Saved Target
                 </Typography>
                 <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1.5, mt: 1.5 }}>
-                  <Box sx={{ bgcolor: 'white', p: 1.5, borderRadius: 1 }}>
+                  <Box sx={{ bgcolor: appColors.bgCard, p: 1.5, borderRadius: 1 }}>
                     <Typography variant="caption" color="text.secondary">Goal</Typography>
                     <Typography variant="body2" fontWeight="600">
                       {savedTargets.targetType.charAt(0).toUpperCase() + savedTargets.targetType.slice(1)}
                     </Typography>
                   </Box>
-                  <Box sx={{ bgcolor: 'white', p: 1.5, borderRadius: 1 }}>
+                  <Box sx={{ bgcolor: appColors.bgCard, p: 1.5, borderRadius: 1 }}>
                     <Typography variant="caption" color="text.secondary">Calories</Typography>
                     <Typography variant="body2" fontWeight="600">{savedTargets.calories}</Typography>
                   </Box>
-                  <Box sx={{ bgcolor: 'white', p: 1.5, borderRadius: 1 }}>
+                  <Box sx={{ bgcolor: appColors.bgCard, p: 1.5, borderRadius: 1 }}>
                     <Typography variant="caption" color="text.secondary">Protein</Typography>
                     <Typography variant="body2" fontWeight="600">{savedTargets.protein}g</Typography>
                   </Box>
-                  <Box sx={{ bgcolor: 'white', p: 1.5, borderRadius: 1 }}>
+                  <Box sx={{ bgcolor: appColors.bgCard, p: 1.5, borderRadius: 1 }}>
                     <Typography variant="caption" color="text.secondary">Carbs</Typography>
                     <Typography variant="body2" fontWeight="600">{savedTargets.carbs}g</Typography>
                   </Box>
-                  <Box sx={{ bgcolor: 'white', p: 1.5, borderRadius: 1 }}>
+                  <Box sx={{ bgcolor: appColors.bgCard, p: 1.5, borderRadius: 1 }}>
                     <Typography variant="caption" color="text.secondary">Fat</Typography>
                     <Typography variant="body2" fontWeight="600">{savedTargets.fat}g</Typography>
                   </Box>
@@ -780,427 +840,615 @@ function MacroTargetPage() {
 
         {/* Tab 2: Calculate Macro Target */}
         {tabValue === 1 && (
-          <Box sx={{ p: { xs: 2, sm: 3 }, bgcolor: 'white' }}>
+          <Box sx={{ p: { xs: 2, sm: 3 }, bgcolor: appColors.bgCard }}>
             <Box sx={{ 
-              mb: 2, 
+              mb: 3, 
               p: { xs: 1.5, sm: 2 }, 
-              bgcolor: '#f1f8f4', 
+              bgcolor: appColors.blueLight, 
               borderRadius: 2,
-              borderLeft: '3px solid #4caf50'
+              borderLeft: `3px solid ${appColors.blue}`
             }}>
-              <Typography variant="body2" fontWeight="600" color="#4caf50" gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
-                BMR Calculator
+              <Typography variant="body2" fontWeight="600" color={appColors.blue} gutterBottom sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
+                📊 Macro Calculator Questionnaire
               </Typography>
               <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.75rem', sm: '0.8rem' } }}>
-                Calculate your daily needs using Harris-Benedict formula
+                Answer a few questions to get personalized macro recommendations
               </Typography>
             </Box>
 
-            {calcError && (
-              <Alert 
-                severity="warning" 
-                sx={{ 
-                  mb: 2,
-                  borderRadius: 1.5,
-                  fontSize: { xs: '0.85rem', sm: '0.9rem' }
-                }}
-              >
-                {calcError}
-              </Alert>
-            )}
-
-            <Grid container spacing={1.5}>
-              {/* Weight in kg (editable) */}
-              <Grid item xs={5} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Weight (kg)"
-                  type="number"
-                  value={calcWeight}
-                  onChange={(e) => setCalcWeight(e.target.value)}
-                  placeholder="kg"
-                  inputProps={{ min: 0, step: 0.1 }}
-                  size="small"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 1.5,
-                      '&:hover fieldset': {
-                        borderColor: '#4caf50'
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#4caf50'
-                      }
-                    }
-                  }}
-                />
-              </Grid>
-
-              {/* Weight in lbs (calculated display) */}
-              <Grid item xs={7} sm={6}>
-                <Box sx={{ 
-                  p: 1.5,
-                  bgcolor: '#f5f5f5',
-                  borderRadius: 1.5,
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 1
-                }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', whiteSpace: 'nowrap' }}>
-                    Weight (lbs):
-                  </Typography>
-                  <Typography variant="body2" color="#4caf50" fontWeight="600">
-                    {calcWeightLbs || '-'}
-                  </Typography>
-                </Box>
-              </Grid>
-
-              {/* Height Feet */}
-              <Grid item xs={3} sm={4}>
-                <TextField
-                  fullWidth
-                  label="Height (ft)"
-                  type="number"
-                  value={calcHeightFeet}
-                  onChange={(e) => setCalcHeightFeet(e.target.value)}
-                  placeholder="ft"
-                  inputProps={{ min: 0, max: 8, step: 1 }}
-                  size="small"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 1.5,
-                      '&:hover fieldset': {
-                        borderColor: '#4caf50'
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#4caf50'
-                      }
-                    }
-                  }}
-                />
-              </Grid>
-
-              {/* Height Inches */}
-              <Grid item xs={3} sm={4}>
-                <TextField
-                  fullWidth
-                  label="Height (inch)"
-                  type="number"
-                  value={calcHeightInches}
-                  onChange={(e) => setCalcHeightInches(e.target.value)}
-                  placeholder="in"
-                  inputProps={{ min: 0, max: 11.9, step: 0.1 }}
-                  size="small"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 1.5,
-                      '&:hover fieldset': {
-                        borderColor: '#4caf50'
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#4caf50'
-                      }
-                    }
-                  }}
-                />
-              </Grid>
-
-              {/* Height in cm (calculated display) */}
-              <Grid item xs={6} sm={4}>
-                <Box sx={{ 
-                  p: 1.5,
-                  bgcolor: '#f5f5f5',
-                  borderRadius: 1.5,
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 1
-                }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', whiteSpace: 'nowrap' }}>
-                    Height (cm):
-                  </Typography>
-                  <Typography variant="body2" color="#4caf50" fontWeight="600">
-                    {calcHeightCm || '-'}
-                  </Typography>
-                </Box>
-              </Grid>
-
-              {/* Date of Birth */}
-              <Grid item xs={5} sm={6}>
-                <TextField
-                  fullWidth
-                  label="DoB"
-                  type="date"
-                  value={calcDOB}
-                  onChange={(e) => setCalcDOB(e.target.value)}
-                  InputLabelProps={{ shrink: true }}
-                  size="small"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 1.5,
-                      '&:hover fieldset': {
-                        borderColor: '#4caf50'
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#4caf50'
-                      }
-                    }
-                  }}
-                />
-              </Grid>
-
-              {/* Age (calculated display) */}
-              <Grid item xs={7} sm={6}>
-                <Box sx={{ 
-                  p: 1.5,
-                  bgcolor: '#f5f5f5',
-                  borderRadius: 1.5,
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 1
-                }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', whiteSpace: 'nowrap' }}>
-                    Age (years):
-                  </Typography>
-                  <Typography variant="body2" color="#4caf50" fontWeight="600">
-                    {calcAge || '-'}
-                  </Typography>
-                </Box>
-              </Grid>
-
-              {/* Sex */}
-              <Grid item xs={12}>
-                <FormControl component="fieldset" sx={{ width: '100%' }}>
-                  <FormLabel component="legend" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' }, mb: 1 }}>Sex</FormLabel>
-                  <RadioGroup
-                    row
-                    value={calcSex}
-                    onChange={(e) => setCalcSex(e.target.value)}
-                    sx={{ gap: 1 }}
-                  >
-                    <Box
-                      onClick={() => setCalcSex('male')}
-                      sx={{
-                        flex: 1,
-                        cursor: 'pointer',
-                        border: calcSex === 'male' ? '2px solid #4caf50' : '1px solid #e0e0e0',
-                        bgcolor: calcSex === 'male' ? '#f1f8f4' : 'white',
-                        p: 1,
+            {/* Question 1: Weight */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body2" fontWeight="600" gutterBottom sx={{ color: appColors.blue, mb: 1.5, fontSize: { xs: '0.95rem', sm: '1rem' } }}>
+                Q1. What is your weight?
+              </Typography>
+              <Grid container spacing={1.5}>
+                <Grid item xs={5} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Weight (kg)"
+                    type="number"
+                    value={calcWeight}
+                    onChange={(e) => setCalcWeight(e.target.value)}
+                    placeholder="kg"
+                    inputProps={{ min: 0, step: 0.1 }}
+                    size="small"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
                         borderRadius: 1.5,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 0.5,
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      <Radio 
-                        checked={calcSex === 'male'} 
-                        value="male"
-                        size="small"
-                        sx={{ p: 0, '&.Mui-checked': { color: '#4caf50' } }}
-                      />
-                      <Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Male</Typography>
-                    </Box>
-                    <Box
-                      onClick={() => setCalcSex('female')}
-                      sx={{
-                        flex: 1,
-                        cursor: 'pointer',
-                        border: calcSex === 'female' ? '2px solid #4caf50' : '1px solid #e0e0e0',
-                        bgcolor: calcSex === 'female' ? '#f1f8f4' : 'white',
-                        p: 1,
-                        borderRadius: 1.5,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 0.5,
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      <Radio 
-                        checked={calcSex === 'female'} 
-                        value="female"
-                        size="small"
-                        sx={{ p: 0, '&.Mui-checked': { color: '#4caf50' } }}
-                      />
-                      <Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Female</Typography>
-                    </Box>
-                  </RadioGroup>
-                </FormControl>
+                        '&:hover fieldset': {
+                          borderColor: appColors.blue
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: appColors.blue
+                        }
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={7} sm={6}>
+                  <Box sx={{ 
+                    p: 1.5,
+                    bgcolor: appColors.bgPage,
+                    borderRadius: 1.5,
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 1
+                  }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', whiteSpace: 'nowrap' }}>
+                      Weight (lbs):
+                    </Typography>
+                    <Typography variant="body2" color={appColors.blue} fontWeight="600">
+                      {calcWeightLbs || '-'}
+                    </Typography>
+                  </Box>
+                </Grid>
               </Grid>
-            </Grid>
-
-            <Divider sx={{ my: 2 }} />
-
-            {/* BMR Display */}
-            {calcBMR && (
-              <Box 
-                sx={{ 
-                  mb: 2, 
-                  p: { xs: 1.5, sm: 2 },
-                  background: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
-                  border: '2px solid #42a5f5',
-                  borderRadius: 2
-                }}
-              >
-                <Typography variant="body1" gutterBottom fontWeight="600" color="#1976d2" sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' } }}>
-                  BMR: {calcBMR} cal/day
-                </Typography>
-                <Box sx={{ mt: 1, p: 1.5, bgcolor: 'white', borderRadius: 1.5 }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight="600" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
-                    Formula:
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block', fontSize: { xs: '0.65rem', sm: '0.7rem' } }}>
-                    {calcSex === 'male' 
-                      ? '(13.397 × weight kg) + (4.799 × height cm) - (5.677 × age) + 88.362'
-                      : '(9.247 × weight kg) + (3.098 × height cm) - (4.330 × age) + 447.593'}
-                  </Typography>
-                </Box>
-              </Box>
-            )}
-
-            {/* Activity Level */}
-            <Box sx={{ mb: 2 }}>
-              <FormControl component="fieldset" sx={{ width: '100%' }}>
-                <FormLabel 
-                  component="legend" 
-                  sx={{ 
-                    fontSize: { xs: '0.95rem', sm: '1rem' },
-                    fontWeight: 600, 
-                    mb: 1.5,
-                    color: '#4caf50'
-                  }}
-                >
-                  Activity Level
-                </FormLabel>
-                <RadioGroup
-                  value={calcActivityLevel}
-                  onChange={(e) => setCalcActivityLevel(e.target.value)}
-                  sx={{ gap: 0.5 }}
-                >
-                  <FormControlLabel 
-                    value="1.2" 
-                    control={<Radio size="small" sx={{ '&.Mui-checked': { color: '#4caf50' } }} />} 
-                    label={<Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Sedentary (little or no exercise)</Typography>}
-                    sx={{ mx: 0 }}
-                  />
-                  <FormControlLabel 
-                    value="1.375" 
-                    control={<Radio size="small" sx={{ '&.Mui-checked': { color: '#4caf50' } }} />} 
-                    label={<Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Lightly active (exercise 1-3 days/week)</Typography>}
-                    sx={{ mx: 0 }}
-                  />
-                  <FormControlLabel 
-                    value="1.55" 
-                    control={<Radio size="small" sx={{ '&.Mui-checked': { color: '#4caf50' } }} />} 
-                    label={<Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Moderately active (exercise 3-5 days/week)</Typography>}
-                    sx={{ mx: 0 }}
-                  />
-                  <FormControlLabel 
-                    value="1.725" 
-                    control={<Radio size="small" sx={{ '&.Mui-checked': { color: '#4caf50' } }} />} 
-                    label={<Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Active (hard exercise 6-7 days/week)</Typography>}
-                    sx={{ mx: 0 }}
-                  />
-                  <FormControlLabel 
-                    value="1.9" 
-                    control={<Radio size="small" sx={{ '&.Mui-checked': { color: '#4caf50' } }} />} 
-                    label={<Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Very active (very hard exercise & physical job)</Typography>}
-                    sx={{ mx: 0 }}
-                  />
-                </RadioGroup>
-              </FormControl>
             </Box>
 
-            {/* Maintenance Calories and Macro Breakdown */}
-            {calcMaintenanceCalories && calcProtein && calcFat && calcCarbs && (
-              <Box 
-                sx={{ 
-                  background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
-                  border: '2px solid #66bb6a',
-                  borderRadius: 2,
-                  p: { xs: 1.5, sm: 2 },
-                  mt: 2
-                }}
-              >
-                <Typography variant="body1" gutterBottom fontWeight="600" color="#2e7d32" sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' } }}>
-                  Daily Maintenance: {calcMaintenanceCalories} cal
-                </Typography>
-                <Typography variant="caption" sx={{ mb: 1.5, display: 'block', fontSize: { xs: '0.75rem', sm: '0.8rem' } }} color="text.secondary">
-                  Based on BMR and activity level
-                </Typography>
-                
-                <Box sx={{ bgcolor: 'white', p: 1.5, borderRadius: 1.5, mb: 2 }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight="600" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
-                    Your Calculation:
-                  </Typography>
-                  {calcBMR && (
-                    <Typography variant="body2" color="#2e7d32" component="div" sx={{ mt: 0.5, fontWeight: '600', fontSize: { xs: '0.8rem', sm: '0.85rem' } }}>
-                      {calcBMR} cal × {calcActivityLevel} = {calcMaintenanceCalories} cal
+            {/* Question 2: Height */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body2" fontWeight="600" gutterBottom sx={{ color: appColors.blue, mb: 1.5, fontSize: { xs: '0.95rem', sm: '1rem' } }}>
+                Q2. What is your height?
+              </Typography>
+              <Grid container spacing={1.5}>
+                <Grid item xs={3} sm={4}>
+                  <TextField
+                    fullWidth
+                    label="Feet"
+                    type="number"
+                    value={calcHeightFeet}
+                    onChange={(e) => setCalcHeightFeet(e.target.value)}
+                    placeholder="ft"
+                    inputProps={{ min: 0, max: 8, step: 1 }}
+                    size="small"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 1.5,
+                        '&:hover fieldset': {
+                          borderColor: appColors.blue
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: appColors.blue
+                        }
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={3} sm={4}>
+                  <TextField
+                    fullWidth
+                    label="Inches"
+                    type="number"
+                    value={calcHeightInches}
+                    onChange={(e) => setCalcHeightInches(e.target.value)}
+                    placeholder="in"
+                    inputProps={{ min: 0, max: 11.9, step: 0.1 }}
+                    size="small"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 1.5,
+                        '&:hover fieldset': {
+                          borderColor: appColors.blue
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: appColors.blue
+                        }
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={6} sm={4}>
+                  <Box sx={{ 
+                    p: 1.5,
+                    bgcolor: appColors.bgPage,
+                    borderRadius: 1.5,
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 1
+                  }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', whiteSpace: 'nowrap' }}>
+                      Height (cm):
                     </Typography>
-                  )}
+                    <Typography variant="body2" color={appColors.blue} fontWeight="600">
+                      {calcHeightCm || '-'}
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Box>
+
+            {/* Question 3: Age/DOB */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body2" fontWeight="600" gutterBottom sx={{ color: appColors.blue, mb: 1.5, fontSize: { xs: '0.95rem', sm: '1rem' } }}>
+                Q3. What is your date of birth?
+              </Typography>
+              <Grid container spacing={1.5}>
+                <Grid item xs={5} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Date of Birth"
+                    type="date"
+                    value={calcDOB}
+                    onChange={(e) => setCalcDOB(e.target.value)}
+                    InputLabelProps={{ shrink: true }}
+                    size="small"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 1.5,
+                        '&:hover fieldset': {
+                          borderColor: appColors.blue
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: appColors.blue
+                        }
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={7} sm={6}>
+                  <Box sx={{ 
+                    p: 1.5,
+                    bgcolor: appColors.bgPage,
+                    borderRadius: 1.5,
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 1
+                  }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem', whiteSpace: 'nowrap' }}>
+                      Age (years):
+                    </Typography>
+                    <Typography variant="body2" color={appColors.blue} fontWeight="600">
+                      {calcAge || '-'}
+                    </Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Box>
+
+            {/* Question 4: Sex */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body2" fontWeight="600" gutterBottom sx={{ color: appColors.blue, mb: 1.5, fontSize: { xs: '0.95rem', sm: '1rem' } }}>
+                Q4. What is your biological sex?
+              </Typography>
+              <RadioGroup
+                row
+                value={calcSex}
+                onChange={(e) => setCalcSex(e.target.value)}
+                sx={{ gap: 1 }}
+              >
+                <Box
+                  onClick={() => setCalcSex('male')}
+                  sx={{
+                    flex: 1,
+                    cursor: 'pointer',
+                    border: calcSex === 'male' ? `2px solid ${appColors.blue}` : `1px solid ${appColors.border}`,
+                    bgcolor: calcSex === 'male' ? appColors.blueLight : appColors.bgCard,
+                    p: 1.5,
+                    borderRadius: 1.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 0.5,
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <Radio 
+                    checked={calcSex === 'male'} 
+                    value="male"
+                    size="small"
+                    sx={{ p: 0, '&.Mui-checked': { color: appColors.blue } }}
+                  />
+                  <Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Male</Typography>
                 </Box>
+                <Box
+                  onClick={() => setCalcSex('female')}
+                  sx={{
+                    flex: 1,
+                    cursor: 'pointer',
+                    border: calcSex === 'female' ? `2px solid ${appColors.blue}` : `1px solid ${appColors.border}`,
+                    bgcolor: calcSex === 'female' ? appColors.blueLight : appColors.bgCard,
+                    p: 1.5,
+                    borderRadius: 1.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 0.5,
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <Radio 
+                    checked={calcSex === 'female'} 
+                    value="female"
+                    size="small"
+                    sx={{ p: 0, '&.Mui-checked': { color: appColors.blue } }}
+                  />
+                  <Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Female</Typography>
+                </Box>
+              </RadioGroup>
+            </Box>
 
-                <Divider sx={{ my: 1.5 }} />
-
-                <Typography variant="body2" gutterBottom fontWeight="600" color="#2e7d32" sx={{ mb: 1.5, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
-                  Macro Breakdown:
+            {/* BMR & BMI Results */}
+            {calcBMR && calcBMI && (
+              <Box sx={{ 
+                mb: 3,
+                p: 2,
+                bgcolor: appColors.blueLight,
+                border: `2px solid ${appColors.blue}`,
+                borderRadius: 2
+              }}>
+                <Typography variant="body2" fontWeight="600" color={appColors.blue} gutterBottom>
+                  📈 Your Results:
                 </Typography>
-                
-                <Grid container spacing={1.5}>
-                  <Grid item xs={6} sm={4}>
-                    <Box sx={{ bgcolor: '#fff3e0', border: '2px solid #ff9800', textAlign: 'center', p: 1.5, borderRadius: 1.5 }}>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.7rem' } }}>PROTEIN</Typography>
-                      <Typography variant="h6" fontWeight="bold" color="#f57c00" sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem' } }}>{calcProtein}g</Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.6rem', sm: '0.65rem' } }}>
-                        {calcProtein * 4} cal
+                <Grid container spacing={2} sx={{ mt: 0.5 }}>
+                  <Grid item xs={6}>
+                    <Box sx={{ bgcolor: appColors.bgCard, p: 1.5, borderRadius: 1.5 }}>
+                      <Typography variant="caption" color="text.secondary">BMR (Basal Metabolic Rate)</Typography>
+                      <Typography variant="h6" fontWeight="bold" color={appColors.blue}>{calcBMR} cal</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                        Calories at rest
                       </Typography>
                     </Box>
                   </Grid>
-                  <Grid item xs={6} sm={4}>
-                    <Box sx={{ bgcolor: '#fce4ec', border: '2px solid #ec407a', textAlign: 'center', p: 1.5, borderRadius: 1.5 }}>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.7rem' } }}>FAT</Typography>
-                      <Typography variant="h6" fontWeight="bold" color="#c2185b" sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem' } }}>{calcFat}g</Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.6rem', sm: '0.65rem' } }}>
-                        {calcFat * 9} cal
-                      </Typography>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
-                    <Box sx={{ bgcolor: '#e1f5fe', border: '2px solid #03a9f4', textAlign: 'center', p: 1.5, borderRadius: 1.5 }}>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.7rem' } }}>CARBS</Typography>
-                      <Typography variant="h6" fontWeight="bold" color="#0277bd" sx={{ fontSize: { xs: '1.2rem', sm: '1.5rem' } }}>{calcCarbs}g</Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.6rem', sm: '0.65rem' } }}>
-                        {calcCarbs * 4} cal
+                  <Grid item xs={6}>
+                    <Box sx={{ bgcolor: appColors.bgCard, p: 1.5, borderRadius: 1.5 }}>
+                      <Typography variant="caption" color="text.secondary">BMI (Body Mass Index)</Typography>
+                      <Typography variant="h6" fontWeight="bold" color={appColors.blue}>{calcBMI}</Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                        {getBMICategory(calcBMI)}
                       </Typography>
                     </Box>
                   </Grid>
                 </Grid>
+              </Box>
+            )}
 
-                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                  <Button 
-                    variant="contained" 
-                    onClick={handleUseCalculatedValues}
-                    size="medium"
-                    sx={{
+            {/* Question 5: Activity Level */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body2" fontWeight="600" gutterBottom sx={{ color: appColors.blue, mb: 1.5, fontSize: { xs: '0.95rem', sm: '1rem' } }}>
+                Q5. What is your activity level?
+              </Typography>
+              <RadioGroup
+                value={calcActivityLevel}
+                onChange={(e) => setCalcActivityLevel(e.target.value)}
+                sx={{ gap: 0.5 }}
+              >
+                <FormControlLabel 
+                  value="1.2" 
+                  control={<Radio size="small" sx={{ '&.Mui-checked': { color: appColors.blue } }} />} 
+                  label={<Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Sedentary (little or no exercise)</Typography>}
+                  sx={{ mx: 0 }}
+                />
+                <FormControlLabel 
+                  value="1.375" 
+                  control={<Radio size="small" sx={{ '&.Mui-checked': { color: appColors.blue } }} />} 
+                  label={<Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Lightly active (exercise 1-3 days/week)</Typography>}
+                  sx={{ mx: 0 }}
+                />
+                <FormControlLabel 
+                  value="1.55" 
+                  control={<Radio size="small" sx={{ '&.Mui-checked': { color: appColors.blue } }} />} 
+                  label={<Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Moderately active (exercise 3-5 days/week)</Typography>}
+                  sx={{ mx: 0 }}
+                />
+                <FormControlLabel 
+                  value="1.725" 
+                  control={<Radio size="small" sx={{ '&.Mui-checked': { color: appColors.blue } }} />} 
+                  label={<Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Active (hard exercise 6-7 days/week)</Typography>}
+                  sx={{ mx: 0 }}
+                />
+                <FormControlLabel 
+                  value="1.9" 
+                  control={<Radio size="small" sx={{ '&.Mui-checked': { color: appColors.blue } }} />} 
+                  label={<Typography variant="body2" sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}>Very active (very hard exercise & physical job)</Typography>}
+                  sx={{ mx: 0 }}
+                />
+              </RadioGroup>
+            </Box>
+
+            {/* Question 6: Recommendations for All Goals */}
+            {calcMaintenance && calcDeficit && calcBulking && (
+              <Box>
+                <Typography variant="body2" fontWeight="600" gutterBottom sx={{ color: appColors.blue, mb: 2, fontSize: { xs: '0.95rem', sm: '1rem' } }}>
+                  Q6. Choose your goal - Here are your personalized recommendations:
+                </Typography>
+
+                {/* BMI-based Recommendation Banner */}
+                {calcRecommendedGoal && (
+                  <Box sx={{ 
+                    mb: { xs: 2, sm: 3 }, 
+                    p: { xs: 1.5, sm: 2 }, 
+                    bgcolor: appColors.successLight,
+                    border: `2px solid ${appColors.success}`,
+                    borderRadius: 2
+                  }}>
+                    <Typography variant="body2" fontWeight="600" color={appColors.success} gutterBottom sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>
+                      💡 Based on your BMI ({calcBMI} - {getBMICategory(calcBMI)}):
+                    </Typography>
+                    <Typography variant="body2" color="text.primary" sx={{ fontSize: { xs: '0.8rem', sm: '0.9rem' } }}>
+                      We recommend the <strong>{calcRecommendedGoal.toUpperCase()}</strong> plan to help you achieve a healthy weight.
+                    </Typography>
+                  </Box>
+                )}
+
+                <Grid container spacing={{ xs: 2, sm: 2, md: 2 }}>
+                  {/* DEFICIT Card */}
+                  <Grid item xs={12} sm={12} md={6} lg={4}>
+                    <Box sx={{ 
+                      p: { xs: 1.5, sm: 2, md: 2.5 },
+                      bgcolor: calcRecommendedGoal === 'deficit' ? appColors.successLight : appColors.bgCard,
+                      border: calcRecommendedGoal === 'deficit' ? `3px solid ${appColors.success}` : `2px solid ${appColors.border}`,
                       borderRadius: 2,
-                      px: 3,
-                      textTransform: 'none',
-                      fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                      background: 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)',
-                      '&:hover': {
-                        background: 'linear-gradient(135deg, #2e7d32 0%, #4caf50 100%)'
-                      }
-                    }}
-                  >
-                    Use These Values
-                  </Button>
-                </Box>
+                      position: 'relative',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column'
+                    }}>
+                      {calcRecommendedGoal === 'deficit' && (
+                        <Box sx={{ 
+                          position: 'absolute', 
+                          top: -10, 
+                          right: 10,
+                          bgcolor: appColors.success,
+                          color: 'white',
+                          px: 1.5,
+                          py: 0.5,
+                          borderRadius: 1,
+                          fontSize: '0.75rem',
+                          fontWeight: 600
+                        }}>
+                          RECOMMENDED
+                        </Box>
+                      )}
+                      <Typography variant="h6" fontWeight="700" gutterBottom color={appColors.blue} sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+                        🔥 Calorie Deficit
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" gutterBottom sx={{ mb: 2, fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>
+                        For weight loss (-500 cal/day ≈ 1 lb/week)
+                      </Typography>
+
+                      <Box sx={{ mb: 2, p: { xs: 1, sm: 1.5 }, bgcolor: appColors.bgPage, borderRadius: 1.5 }}>
+                        <Typography variant="h5" fontWeight="bold" color={appColors.blue} sx={{ fontSize: { xs: '1.3rem', sm: '1.5rem' } }}>
+                          {calcDeficit.calories} cal/day
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {calcBMR} × {calcActivityLevel} - 500
+                        </Typography>
+                      </Box>
+
+                      <Typography variant="caption" fontWeight="600" color="text.secondary" gutterBottom sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+                        Macro Targets:
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: { xs: 0.5, sm: 1 }, mb: 2 }}>
+                        <Box sx={{ flex: 1, textAlign: 'center', p: { xs: 0.75, sm: 1 }, bgcolor: appColors.proteinLight, borderRadius: 1 }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>Protein</Typography>
+                          <Typography variant="body2" fontWeight="600" color={appColors.protein} sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>{calcDeficit.protein}g</Typography>
+                        </Box>
+                        <Box sx={{ flex: 1, textAlign: 'center', p: { xs: 0.75, sm: 1 }, bgcolor: appColors.fatLight, borderRadius: 1 }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>Fat</Typography>
+                          <Typography variant="body2" fontWeight="600" color={appColors.fat} sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>{calcDeficit.fat}g</Typography>
+                        </Box>
+                        <Box sx={{ flex: 1, textAlign: 'center', p: { xs: 0.75, sm: 1 }, bgcolor: appColors.carbsLight, borderRadius: 1 }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>Carbs</Typography>
+                          <Typography variant="body2" fontWeight="600" color={appColors.carbs} sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>{calcDeficit.carbs}g</Typography>
+                        </Box>
+                      </Box>
+
+                      <Typography variant="caption" sx={{ mb: 2, fontSize: '0.7rem' }} color="text.secondary">
+                        • High protein (2.0g/kg) to preserve muscle<br/>
+                        • Lower fat (25%) for calorie reduction
+                      </Typography>
+
+                      <Button 
+                        variant={calcRecommendedGoal === 'deficit' ? 'contained' : 'outlined'}
+                        onClick={() => handleUseCalculatedValues('deficit')}
+                        fullWidth
+                        sx={{
+                          mt: 'auto',
+                          ...(calcRecommendedGoal === 'deficit' ? primaryBtnSx : outlinedBtnSx),
+                          fontSize: { xs: '0.85rem', sm: '0.9rem' },
+                          minHeight: { xs: 44, sm: 40 },
+                          py: { xs: 1.25, sm: 1 }
+                        }}
+                      >
+                        Apply Deficit Plan
+                      </Button>
+                    </Box>
+                  </Grid>
+
+                  {/* MAINTENANCE Card */}
+                  <Grid item xs={12} sm={12} md={6} lg={4}>
+                    <Box sx={{ 
+                      p: { xs: 1.5, sm: 2, md: 2.5 },
+                      bgcolor: calcRecommendedGoal === 'maintenance' ? appColors.successLight : appColors.bgCard,
+                      border: calcRecommendedGoal === 'maintenance' ? `3px solid ${appColors.success}` : `2px solid ${appColors.border}`,
+                      borderRadius: 2,
+                      position: 'relative',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column'
+                    }}>
+                      {calcRecommendedGoal === 'maintenance' && (
+                        <Box sx={{ 
+                          position: 'absolute', 
+                          top: -10, 
+                          right: 10,
+                          bgcolor: appColors.success,
+                          color: 'white',
+                          px: 1.5,
+                          py: 0.5,
+                          borderRadius: 1,
+                          fontSize: '0.75rem',
+                          fontWeight: 600
+                        }}>
+                          RECOMMENDED
+                        </Box>
+                      )}
+                      <Typography variant="h6" fontWeight="700" gutterBottom color={appColors.blue} sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+                        ⚖️ Maintenance
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" gutterBottom sx={{ mb: 2, fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>
+                        For maintaining current weight
+                      </Typography>
+
+                      <Box sx={{ mb: 2, p: { xs: 1, sm: 1.5 }, bgcolor: appColors.bgPage, borderRadius: 1.5 }}>
+                        <Typography variant="h5" fontWeight="bold" color={appColors.blue} sx={{ fontSize: { xs: '1.3rem', sm: '1.5rem' } }}>
+                          {calcMaintenance.calories} cal/day
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {calcBMR} × {calcActivityLevel}
+                        </Typography>
+                      </Box>
+
+                      <Typography variant="caption" fontWeight="600" color="text.secondary" gutterBottom sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+                        Macro Targets:
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: { xs: 0.5, sm: 1 }, mb: 2 }}>
+                        <Box sx={{ flex: 1, textAlign: 'center', p: { xs: 0.75, sm: 1 }, bgcolor: appColors.proteinLight, borderRadius: 1 }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>Protein</Typography>
+                          <Typography variant="body2" fontWeight="600" color={appColors.protein} sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>{calcMaintenance.protein}g</Typography>
+                        </Box>
+                        <Box sx={{ flex: 1, textAlign: 'center', p: { xs: 0.75, sm: 1 }, bgcolor: appColors.fatLight, borderRadius: 1 }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>Fat</Typography>
+                          <Typography variant="body2" fontWeight="600" color={appColors.fat} sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>{calcMaintenance.fat}g</Typography>
+                        </Box>
+                        <Box sx={{ flex: 1, textAlign: 'center', p: { xs: 0.75, sm: 1 }, bgcolor: appColors.carbsLight, borderRadius: 1 }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>Carbs</Typography>
+                          <Typography variant="body2" fontWeight="600" color={appColors.carbs} sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>{calcMaintenance.carbs}g</Typography>
+                        </Box>
+                      </Box>
+
+                      <Typography variant="caption" sx={{ mb: 2, fontSize: '0.7rem' }} color="text.secondary">
+                        • Moderate protein (1.6g/kg)<br/>
+                        • Balanced fat (27.5%) for health
+                      </Typography>
+
+                      <Button 
+                        variant={calcRecommendedGoal === 'maintenance' ? 'contained' : 'outlined'}
+                        onClick={() => handleUseCalculatedValues('maintenance')}
+                        fullWidth
+                        sx={{
+                          mt: 'auto',
+                          ...(calcRecommendedGoal === 'maintenance' ? primaryBtnSx : outlinedBtnSx),
+                          fontSize: { xs: '0.85rem', sm: '0.9rem' },
+                          minHeight: { xs: 44, sm: 40 },
+                          py: { xs: 1.25, sm: 1 }
+                        }}
+                      >
+                        Apply Maintenance Plan
+                      </Button>
+                    </Box>
+                  </Grid>
+
+                  {/* BULKING Card */}
+                  <Grid item xs={12} sm={12} md={12} lg={4}>
+                    <Box sx={{ 
+                      p: { xs: 1.5, sm: 2, md: 2.5 },
+                      bgcolor: calcRecommendedGoal === 'bulking' ? appColors.successLight : appColors.bgCard,
+                      border: calcRecommendedGoal === 'bulking' ? `3px solid ${appColors.success}` : `2px solid ${appColors.border}`,
+                      borderRadius: 2,
+                      position: 'relative',
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column'
+                    }}>
+                      {calcRecommendedGoal === 'bulking' && (
+                        <Box sx={{ 
+                          position: 'absolute', 
+                          top: -10, 
+                          right: 10,
+                          bgcolor: appColors.success,
+                          color: 'white',
+                          px: 1.5,
+                          py: 0.5,
+                          borderRadius: 1,
+                          fontSize: '0.75rem',
+                          fontWeight: 600
+                        }}>
+                          RECOMMENDED
+                        </Box>
+                      )}
+                      <Typography variant="h6" fontWeight="700" gutterBottom color={appColors.blue} sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+                        💪 Bulking
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" gutterBottom sx={{ mb: 2, fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>
+                        For muscle gain (+300 cal/day)
+                      </Typography>
+
+                      <Box sx={{ mb: 2, p: { xs: 1, sm: 1.5 }, bgcolor: appColors.bgPage, borderRadius: 1.5 }}>
+                        <Typography variant="h5" fontWeight="bold" color={appColors.blue} sx={{ fontSize: { xs: '1.3rem', sm: '1.5rem' } }}>
+                          {calcBulking.calories} cal/day
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {calcBMR} × {calcActivityLevel} + 300
+                        </Typography>
+                      </Box>
+
+                      <Typography variant="caption" fontWeight="600" color="text.secondary" gutterBottom sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+                        Macro Targets:
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: { xs: 0.5, sm: 1 }, mb: 2 }}>
+                        <Box sx={{ flex: 1, textAlign: 'center', p: { xs: 0.75, sm: 1 }, bgcolor: appColors.proteinLight, borderRadius: 1 }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>Protein</Typography>
+                          <Typography variant="body2" fontWeight="600" color={appColors.protein} sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>{calcBulking.protein}g</Typography>
+                        </Box>
+                        <Box sx={{ flex: 1, textAlign: 'center', p: { xs: 0.75, sm: 1 }, bgcolor: appColors.fatLight, borderRadius: 1 }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>Fat</Typography>
+                          <Typography variant="body2" fontWeight="600" color={appColors.fat} sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>{calcBulking.fat}g</Typography>
+                        </Box>
+                        <Box sx={{ flex: 1, textAlign: 'center', p: { xs: 0.75, sm: 1 }, bgcolor: appColors.carbsLight, borderRadius: 1 }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>Carbs</Typography>
+                          <Typography variant="body2" fontWeight="600" color={appColors.carbs} sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>{calcBulking.carbs}g</Typography>
+                        </Box>
+                      </Box>
+
+                      <Typography variant="caption" sx={{ mb: 2, fontSize: '0.7rem' }} color="text.secondary">
+                        • Higher protein (1.8g/kg) for muscle growth<br/>
+                        • Higher fat (30%) for extra calories
+                      </Typography>
+
+                      <Button 
+                        variant={calcRecommendedGoal === 'bulking' ? 'contained' : 'outlined'}
+                        onClick={() => handleUseCalculatedValues('bulking')}
+                        fullWidth
+                        sx={{
+                          mt: 'auto',
+                          ...(calcRecommendedGoal === 'bulking' ? primaryBtnSx : outlinedBtnSx),
+                          fontSize: { xs: '0.85rem', sm: '0.9rem' },
+                          minHeight: { xs: 44, sm: 40 },
+                          py: { xs: 1.25, sm: 1 }
+                        }}
+                      >
+                        Apply Bulking Plan
+                      </Button>
+                    </Box>
+                  </Grid>
+                </Grid>
               </Box>
             )}
           </Box>

@@ -13,24 +13,30 @@ export const GEMINI_CONFIG = {
 };
 
 // ===== MACRO TARGET PRESETS =====
+// Note: These are sample presets for demonstration.
+// Users should use the calculator for personalized targets.
+// Formulas used:
+// - Deficit: -500 cal from maintenance, 2.0g/kg protein (preserve muscle), 25% fat
+// - Maintenance: BMR × activity level, 1.6g/kg protein, 27.5% fat  
+// - Bulking: +300 cal from maintenance, 1.8g/kg protein, 30% fat
 export const MACRO_TARGET_PRESETS = {
   deficit: {
-    calories: 1600,
-    protein: 140,
-    carbs: 150,
-    fat: 70
+    calories: 1700,
+    protein: 150,
+    carbs: 140,
+    fat: 60
   },
   maintenance: {
-    calories: 2000,
+    calories: 2200,
     protein: 140,
-    carbs: 200,
-    fat: 100
+    carbs: 210,
+    fat: 80
   },
   bulking: {
-    calories: 3000,
-    protein: 180,
+    calories: 2500,
+    protein: 150,
     carbs: 250,
-    fat: 150
+    fat: 95
   }
 };
 
